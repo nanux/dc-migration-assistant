@@ -27,7 +27,7 @@ Resources:
   DatabaseTransferBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub 'dbtransbucket-${AWS::Region}-${AWS::AccountId}'
+      BucketName: !Sub 'dbtransbucket-${AWS::StackName}'
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -158,6 +158,7 @@ Resources:
                 - 'ec2.amazonaws.com'
             Action:
               - 'sts:AssumeRole'
+      # TODO: Reduce this to minimum required perms
       Policies:
         - PolicyName: Administrator
           PolicyDocument:
