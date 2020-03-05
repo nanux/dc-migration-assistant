@@ -32,6 +32,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -78,27 +80,28 @@ public class S3DatabaseBackupService implements DatabaseBackupService {
         String fileName = generateChangeLog(connection, snapshotTypes, author, diffOutputControl);
         File dumpFile = new File(fileName);
 
+        ExecutorService executor = Executors.newCachedThreadPool();
+
         CreateMultipartUploadRequest uploadRequest = CreateMultipartUploadRequest.builder().bucket(properties.getS3BucketName()).key(fileName).serverSideEncryption(ServerSideEncryption.AES256).build();
         CreateMultipartUploadResponse response = s3Client.createMultipartUpload(uploadRequest);
         String uploadId = response.uploadId();
         // Upload all the different parts of the object
         RandomAccessFile randomAccessFile = new RandomAccessFile(dumpFile, "r");
-
         FileChannel inChannel = randomAccessFile.getChannel();
-        ByteBuffer buffer = ByteBuffer.allocate(5120);
-        List<CompletedPart> parts = new ArrayList<>();
+        ByteBuffer buffer = ByteBuffer.allocate((5 * 1024 * 1025));
+        final List<CompletedPart> parts = new ArrayList<>();
         int p = 1;
         while (inChannel.read(buffer) > 0) {
             buffer.flip();
-            for (int i = 0; i < buffer.limit(); i++) {
-                System.out.print((char) buffer.get());
-            }
-            UploadPartRequest uploadPartRequest = UploadPartRequest.builder().bucket(properties.getS3BucketName()).key(fileName)
-                    .uploadId(uploadId)
-                    .partNumber(p).build();
-            String etag = s3Client.uploadPart(uploadPartRequest, RequestBody.fromByteBuffer(buffer)).eTag();
-            CompletedPart completedPart = CompletedPart.builder().partNumber(p).eTag(etag).build();
-            parts.add(completedPart);
+            final int num = p;
+            executor.submit(() -> {
+                UploadPartRequest uploadPartRequest = UploadPartRequest.builder().bucket(properties.getS3BucketName()).key(fileName)
+                        .uploadId(uploadId)
+                        .partNumber(num).build();
+                String etag = s3Client.uploadPart(uploadPartRequest, RequestBody.fromByteBuffer(buffer)).eTag();
+                CompletedPart completedPart = CompletedPart.builder().partNumber(num).eTag(etag).build();
+                parts.add(completedPart);
+            });
             p++;
             buffer.clear();
         }
