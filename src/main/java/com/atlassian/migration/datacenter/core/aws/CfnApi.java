@@ -1,6 +1,7 @@
 package com.atlassian.migration.datacenter.core.aws;
 
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -31,6 +32,7 @@ public class CfnApi {
 
     private Optional<CloudFormationAsyncClient> client;
 
+    @Autowired
     public CfnApi(AwsCredentialsProvider credentialsProvider, RegionService regionManager) {
         this.credentialsProvider = credentialsProvider;
         this.regionManager = regionManager;
