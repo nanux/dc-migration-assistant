@@ -21,20 +21,19 @@ import software.amazon.awssdk.services.s3.model.*;
 
 import javax.inject.Inject;
 import javax.xml.parsers.ParserConfigurationException;
+import java.io.BufferedInputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.sql.Connection;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -80,45 +79,61 @@ public class S3DatabaseBackupService implements DatabaseBackupService {
         String fileName = generateChangeLog(connection, snapshotTypes, author, diffOutputControl);
         File dumpFile = new File(fileName);
 
-        ExecutorService executor = Executors.newCachedThreadPool();
+        int cores = Runtime.getRuntime().availableProcessors();
+        ExecutorService executor = Executors.newFixedThreadPool(cores);
 
         CreateMultipartUploadRequest uploadRequest = CreateMultipartUploadRequest.builder().bucket(properties.getS3BucketName()).key(fileName).serverSideEncryption(ServerSideEncryption.AES256).build();
         CreateMultipartUploadResponse response = s3Client.createMultipartUpload(uploadRequest);
         String uploadId = response.uploadId();
-        // Upload all the different parts of the object
-        RandomAccessFile randomAccessFile = new RandomAccessFile(dumpFile, "r");
-        FileChannel inChannel = randomAccessFile.getChannel();
-        ByteBuffer buffer = ByteBuffer.allocate((5 * 1024 * 1025));
-        final List<CompletedPart> parts = new ArrayList<>();
-        int p = 1;
-        while (inChannel.read(buffer) > 0) {
-            buffer.flip();
-            final int num = p;
-            executor.submit(() -> {
-                UploadPartRequest uploadPartRequest = UploadPartRequest.builder().bucket(properties.getS3BucketName()).key(fileName)
-                        .uploadId(uploadId)
-                        .partNumber(num).build();
-                String etag = s3Client.uploadPart(uploadPartRequest, RequestBody.fromByteBuffer(buffer)).eTag();
-                CompletedPart completedPart = CompletedPart.builder().partNumber(num).eTag(etag).build();
-                parts.add(completedPart);
-            });
-            p++;
-            buffer.clear();
-        }
-        inChannel.close();
 
-        CompletedMultipartUpload completedMultipartUpload = CompletedMultipartUpload.builder().parts(parts).build();
-        CompleteMultipartUploadRequest completeMultipartUploadRequest =
-                CompleteMultipartUploadRequest.builder()
-                        .bucket(properties.getS3BucketName())
-                        .key(fileName)
-                        .uploadId(uploadId)
-                        .multipartUpload(completedMultipartUpload)
-                        .build();
-        s3Client.completeMultipartUpload(completeMultipartUploadRequest);
+        final int sizeToUpload = 100 * 1024 * 1024;
+        byte[] buf = new byte[sizeToUpload];
+        final List<Future<CompletedPart>> parts = new ArrayList<>();
+        try (FileInputStream fileInputStream = new FileInputStream(dumpFile);
+             BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream)) {
+            int partNum = 1;
+            while (bufferedInputStream.read(buf) > 0) {
+                final int num = new Integer(partNum);
+                final byte[] uploadBytes = buf.clone();
 
-        if (properties.isDeleteFileAfterSend()) {
-            deleteFile(fileName);
+                parts.add(executor.submit(() -> {
+                    UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
+                            .bucket(properties.getS3BucketName())
+                            .key(fileName)
+                            .uploadId(uploadId)
+                            .partNumber(num)
+                            .build();
+                    String etag = s3Client.uploadPart(uploadPartRequest, RequestBody.fromBytes(uploadBytes)).eTag();
+                    return CompletedPart.builder()
+                            .partNumber(num)
+                            .eTag(etag)
+                            .build();
+                }));
+
+                partNum++;
+            }
+
+            try (Stream<Future<CompletedPart>> partStream = parts.parallelStream()) {
+
+                List<CompletedPart> partList = partStream.map(future -> {
+                    return future.get(60, TimeUnit.SECONDS);
+                }).collect(Collectors.toList());
+
+                CompletedMultipartUpload completedMultipartUpload = CompletedMultipartUpload.builder().parts(partList).build();
+                CompleteMultipartUploadRequest completeMultipartUploadRequest =
+                        CompleteMultipartUploadRequest.builder()
+                                .bucket(properties.getS3BucketName())
+                                .key(fileName)
+                                .uploadId(uploadId)
+                                .multipartUpload(completedMultipartUpload)
+                                .build();
+                s3Client.completeMultipartUpload(completeMultipartUploadRequest);
+            }
+
+
+            if (properties.isDeleteFileAfterSend()) {
+                deleteFile(fileName);
+            }
         }
     }
 
