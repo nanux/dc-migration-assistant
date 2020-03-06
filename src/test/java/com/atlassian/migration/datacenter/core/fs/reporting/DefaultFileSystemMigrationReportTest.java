@@ -20,6 +20,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.List;
+import java.util.Set;
 
 import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.DONE;
 import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.FAILED;
@@ -75,13 +76,13 @@ public class DefaultFileSystemMigrationReportTest {
     @Test
     void shouldDelegateToWrappedProgress() {
         final Path path = Paths.get("file");
-        sut.reportFileMigrated(path);
+        sut.reportFileMigrated();
 
-        verify(progress).reportFileMigrated(path);
+        verify(progress).reportFileMigrated();
 
-        sut.getMigratedFiles();
+        sut.getCountOfMigratedFiles();
 
-        verify(progress).getMigratedFiles();
+        verify(progress).getCountOfMigratedFiles();
     }
 
     @Test
@@ -133,13 +134,11 @@ public class DefaultFileSystemMigrationReportTest {
 
     @Test
     void testToString() {
-        final List migratedList = mock(List.class);
-        final int successfullyMigrated = 888;
+        final long successfullyMigrated = 888L;
         final int failedFiles = 666;
-        when(migratedList.size()).thenReturn(successfullyMigrated);
-        when(progress.getMigratedFiles()).thenReturn(migratedList);
+        when(progress.getCountOfMigratedFiles()).thenReturn(successfullyMigrated);
 
-        final List errorList = mock(List.class);
+        final Set errorList = mock(Set.class);
         when(errorList.size()).thenReturn(failedFiles);
         when(errors.getFailedFiles()).thenReturn(errorList);
 

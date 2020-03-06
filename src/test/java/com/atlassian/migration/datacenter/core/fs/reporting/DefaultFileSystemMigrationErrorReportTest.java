@@ -32,9 +32,6 @@ public class DefaultFileSystemMigrationErrorReportTest {
 
         assertEquals(1, sut.getFailedFiles().size());
 
-        final FailedFileMigration failedFileMigration = sut.getFailedFiles().get(0);
-
-        assertEquals(testFile, failedFileMigration.getFilePath());
-        assertEquals(testReason, failedFileMigration.getReason());
+        assertTrue(sut.getFailedFiles().contains(new FailedFileMigration(testFile, testReason)));
     }
 }

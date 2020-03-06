@@ -5,7 +5,9 @@ import com.atlassian.migration.datacenter.core.exceptions.InfrastructureProvisio
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.fs.S3UploadJobRunner;
 import com.atlassian.migration.datacenter.dto.Migration;
+import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
+import com.atlassian.migration.datacenter.spi.MigrationServiceV2;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
 import com.atlassian.migration.datacenter.spi.infrastructure.ProvisioningConfig;
@@ -24,19 +26,23 @@ import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 import java.util.Optional;
 
+import static com.atlassian.migration.datacenter.spi.MigrationStage.AUTHENTICATION;
+import static com.atlassian.migration.datacenter.spi.MigrationStage.ERROR;
+import static com.atlassian.migration.datacenter.spi.MigrationStage.NOT_STARTED;
+import static com.atlassian.migration.datacenter.spi.MigrationStage.PROVISION_APPLICATION;
+import static com.atlassian.migration.datacenter.spi.MigrationStage.WAIT_PROVISION_APPLICATION;
 import static java.util.Objects.requireNonNull;
 
 /**
  * Manages a migration from on-premise to self-hosted AWS.
  */
 @Component
-public class AWSMigrationService implements MigrationService {
+public class AWSMigrationService implements MigrationService, MigrationServiceV2 {
     private static final Logger log = LoggerFactory.getLogger(AWSMigrationService.class);
     private final FilesystemMigrationService fsService;
     private final SchedulerService schedulerService;
     private final CfnApi cfnApi;
     private ActiveObjects ao;
-    private Migration migration;
 
     /**
      * Creates a new, unstarted AWS Migration
@@ -56,11 +62,11 @@ public class AWSMigrationService implements MigrationService {
      */
     @Override
     public boolean startMigration() {
-        if (getMigrationStage() != MigrationStage.NOT_STARTED) {
+        if (getMigrationStage() != NOT_STARTED) {
             return false;
         }
 
-        updateMigrationStage(MigrationStage.STARTED);
+        updateMigrationStage(AUTHENTICATION);
 
         return true;
     }
@@ -70,24 +76,29 @@ public class AWSMigrationService implements MigrationService {
      */
     @Override
     public MigrationStage getMigrationStage() {
-        return getMigration().getStage();
+        return loadMigration().getStage();
     }
 
-    private Migration getMigration() {
-        if (migration == null) {
-            Migration[] migrations = ao.find(Migration.class);
-            if (migrations.length == 1) {
-                // In case we have interrupted migration (e.g. the node went down), we want to pick up where we've
-                // left off.
-                migration = migrations[0];
-            } else {
-                // We didn't start the migration, so we need to create record in the db
-                migration = ao.create(Migration.class);
-                migration.setStage(MigrationStage.NOT_STARTED);
-                migration.save();
-            }
+    private Migration loadMigration() {
+        Migration[] migrations = ao.find(Migration.class);
+        if (migrations.length == 1) {
+            // In case we have interrupted migration (e.g. the node went down), we want to pick up where we've
+            // left off.
+            return migrations[0];
+        } else if (migrations.length == 0){
+            // We didn't start the migration, so we need to create record in the db and a migration context
+            Migration migration = ao.create(Migration.class);
+            migration.setStage(NOT_STARTED);
+            migration.save();
+
+            MigrationContext context = ao.create(MigrationContext.class);
+            context.setMigration(migration);
+            context.save();
+
+            return migration;
+        } else {
+            throw new RuntimeException("Invalid State - should only be 1 migration");
         }
-        return migration;
     }
 
 
@@ -98,16 +109,16 @@ public class AWSMigrationService implements MigrationService {
     public String provisionInfrastructure(ProvisioningConfig config) throws InvalidMigrationStageError, InfrastructureProvisioningError {
         //TODO: Refactor this to a state machine as part of https://aws-partner.atlassian.net/browse/CHET-101. This will be extracted to a different class then
         MigrationStage currentMigrationStage = getMigrationStage();
-        if (currentMigrationStage != MigrationStage.STARTED) {
-            throw new InvalidMigrationStageError(String.format("Expected migration stage was %s, but found %s", MigrationStage.READY_TO_PROVISION, currentMigrationStage));
+        if (currentMigrationStage != PROVISION_APPLICATION) {
+            throw new InvalidMigrationStageError(String.format("Expected migration stage was %s, but found %s", PROVISION_APPLICATION, currentMigrationStage));
         }
 
         Optional<String> stackIdentifier = this.cfnApi.provisionStack(config.getTemplateUrl(), config.getStackName(), config.getParams());
         if (stackIdentifier.isPresent()) {
-            updateMigrationStage(MigrationStage.PROVISIONING_IN_PROGRESS);
+            updateMigrationStage(WAIT_PROVISION_APPLICATION);
             return stackIdentifier.get();
         } else {
-            updateMigrationStage(MigrationStage.PROVISIONING_ERROR);
+            updateMigrationStage(ERROR);
             throw new InfrastructureProvisioningError(String.format("Unable to provision stack (URL - %s) with name - %s", config.getTemplateUrl(), config.getStackName()));
         }
     }
@@ -123,13 +134,14 @@ public class AWSMigrationService implements MigrationService {
     }
 
     public void updateMigrationStage(MigrationStage stage) {
+        Migration migration = loadMigration();
         migration.setStage(stage);
         migration.save();
     }
 
     public boolean startFilesystemMigration() {
-        final Migration migration = getMigration();
-        if (migration.getStage() == MigrationStage.NOT_STARTED) {
+        Migration migration = loadMigration();
+        if (migration.getStage() == NOT_STARTED) {
             return false;
         }
         final JobRunnerKey runnerKey = JobRunnerKey.of(S3UploadJobRunner.KEY);
@@ -159,5 +171,41 @@ public class AWSMigrationService implements MigrationService {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public Migration createMigration() {
+        Migration migration = loadMigration();
+        if (migration.getStage().equals(NOT_STARTED)) {
+            return migration;
+        }
+        throw new RuntimeException("Migration already exists");
+    }
+
+    @Override
+    public MigrationStage getCurrentStage() {
+        return loadMigration().getStage();
+    }
+
+    @Override
+    public void transition(MigrationStage from, MigrationStage to) throws InvalidMigrationStageError {
+        Migration migration = loadMigration();
+        final MigrationStage currentStage = migration.getStage();
+        if (!currentStage.equals(from)) {
+            throw new InvalidMigrationStageError(String.format("expected to be in %s but was in %s", from.toString(), currentStage.toString()));
+        }
+
+        setCurrentStage(migration, to);
+    }
+
+    @Override
+    public void error() {
+        Migration migration = loadMigration();
+        setCurrentStage(migration, ERROR);
+    }
+
+    private void setCurrentStage(Migration migration, MigrationStage stage) {
+        migration.setStage(stage);
+        migration.save();
     }
 }

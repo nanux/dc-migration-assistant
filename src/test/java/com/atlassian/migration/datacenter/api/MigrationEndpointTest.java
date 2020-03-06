@@ -24,11 +24,11 @@ public class MigrationEndpointTest {
 
     @Test
     public void testOKAndMigrationStatusWhenMigrationExists() {
-        when(mockMigrationService.getMigrationStage()).thenReturn(MigrationStage.STARTED);
+        when(mockMigrationService.getMigrationStage()).thenReturn(MigrationStage.AUTHENTICATION);
 
         Response response = sut.getMigrationStatus();
 
-        assertEquals("started", response.getEntity());
+        assertEquals(MigrationStage.AUTHENTICATION.toString(), response.getEntity());
     }
 
     @Test

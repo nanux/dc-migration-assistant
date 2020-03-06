@@ -21,23 +21,23 @@ import javax.annotation.Nullable;
 public class S3UploadJobRunner implements JobRunner {
     public static String KEY = "com.atlassian.migration.datacenter.fs.S3UploadJobRunner";
     private static Logger log = LoggerFactory.getLogger(S3UploadJobRunner.class);
-    private final FilesystemMigrationService s3Service;
+    private final FilesystemMigrationService fsMigrationService;
 
     public S3UploadJobRunner(FilesystemMigrationService fsMigrationService) {
-        this.s3Service = fsMigrationService;
+        this.fsMigrationService = fsMigrationService;
     }
 
     @Nullable
     @Override
     public JobRunnerResponse runJob(JobRunnerRequest jobRunnerRequest) {
-        if (s3Service.isRunning()) {
+        if (fsMigrationService.isRunning()) {
             return JobRunnerResponse.aborted("S3 upload job is still running");
         }
 
         log.info("Starting S3 migration job");
-        s3Service.startMigration();
+        fsMigrationService.startMigration();
 
-        final FileSystemMigrationReport report = s3Service.getReport();
+        final FileSystemMigrationReport report = fsMigrationService.getReport();
         log.info("Finished S3 migration job: {}", report.toString());
 
         return JobRunnerResponse.success("S3 upload completed.");

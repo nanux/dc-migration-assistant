@@ -6,11 +6,10 @@ import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationPr
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus;
 
-import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
+import java.util.Set;
 
 import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.DONE;
 import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.FAILED;
@@ -64,26 +63,6 @@ public class DefaultFileSystemMigrationReport implements FileSystemMigrationRepo
         return currentStatus == RUNNING;
     }
 
-    @Override
-    public List<FailedFileMigration> getFailedFiles() {
-        return errorReport.getFailedFiles();
-    }
-
-    @Override
-    public void reportFileNotMigrated(FailedFileMigration failedFileMigration) {
-        errorReport.reportFileNotMigrated(failedFileMigration);
-    }
-
-    @Override
-    public List<Path> getMigratedFiles() {
-        return progress.getMigratedFiles();
-    }
-
-    @Override
-    public void reportFileMigrated(Path path) {
-        progress.reportFileMigrated(path);
-    }
-
     public void setClock(Clock clock) {
         this.clock = clock;
     }
@@ -104,9 +83,53 @@ public class DefaultFileSystemMigrationReport implements FileSystemMigrationRepo
     public String toString() {
         return String.format("Filesystem migration report = { status: %s, migratedFiles: %d, erroredFiles: %d }",
                 currentStatus,
-                progress.getMigratedFiles().size(),
+                progress.getCountOfMigratedFiles(),
                 errorReport.getFailedFiles().size()
         );
+    }
+
+    /*
+    DELEGATED METHODS FOLLOW
+     */
+
+    @Override
+    public Set<FailedFileMigration> getFailedFiles() {
+        return errorReport.getFailedFiles();
+    }
+
+    @Override
+    public void reportFileNotMigrated(FailedFileMigration failedFileMigration) {
+        errorReport.reportFileNotMigrated(failedFileMigration);
+    }
+
+    @Override
+    public Long getNumberOfFilesFound() {
+        return progress.getNumberOfFilesFound();
+    }
+
+    @Override
+    public void reportFileFound() {
+        progress.reportFileFound();
+    }
+
+    @Override
+    public Long getNumberOfFilesInFlight() {
+        return progress.getNumberOfFilesInFlight();
+    }
+
+    @Override
+    public void reportFileInFlight() {
+        progress.reportFileInFlight();
+    }
+
+    @Override
+    public Long getCountOfMigratedFiles() {
+        return progress.getCountOfMigratedFiles();
+    }
+
+    @Override
+    public void reportFileMigrated() {
+        progress.reportFileMigrated();
     }
 }
 

@@ -109,7 +109,7 @@ class S3UploaderTest {
         });
 
         submit.get();
-        assertTrue(progress.getMigratedFiles().contains(testPath));
+        assertEquals(1, progress.getCountOfMigratedFiles());
     }
 
     @Test
@@ -121,6 +121,29 @@ class S3UploaderTest {
         uploader.upload(queue, isCrawlDone);
 
         assertEquals(errorReport.getFailedFiles().size(), 1);
+    }
+
+    @Test
+    void shouldReportFileAsInFlightWhenUploadStarts() throws Exception {
+        PutObjectResponse putObjectResponse = (PutObjectResponse) PutObjectResponse.builder().sdkHttpResponse(sdkHttpResponse).build();
+        when(sdkHttpResponse.isSuccessful()).thenReturn(true);
+        when(s3response.get()).thenReturn(putObjectResponse);
+        when(s3AsyncClient.putObject(any(PutObjectRequest.class), any(Path.class))).thenReturn(s3response);
+
+        addFileToQueue("file1");
+
+        final Future<?> submit = Executors.newFixedThreadPool(1).submit(() -> {
+            uploader.upload(queue, isCrawlDone);
+        });
+
+        Thread.sleep(100);
+
+        assertEquals(1, progress.getNumberOfFilesInFlight());
+
+        isCrawlDone.set(true);
+
+        submit.get();
+        assertEquals(0, progress.getNumberOfFilesInFlight());
     }
 
     Path addFileToQueue(String fileName) throws IOException {

@@ -1,6 +1,7 @@
 package com.atlassian.migration.datacenter.core.aws;
 
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
@@ -31,11 +32,20 @@ public class CfnApi {
 
     private Optional<CloudFormationAsyncClient> client;
 
-    public CfnApi(AwsCredentialsProvider credentialsProvider, RegionService regionManager)
-    {
+    @Autowired
+    public CfnApi(AwsCredentialsProvider credentialsProvider, RegionService regionManager) {
         this.credentialsProvider = credentialsProvider;
         this.regionManager = regionManager;
         this.client = Optional.empty();
+    }
+
+    /**
+     * Package private constructor to consume a CFn Async Client. Currently used for testing. This will not be called by spring as no injectable <code>CloudFormationAsyncClient</code> instance exists in the container.
+     *
+     * @param client An async CloudFormation client
+     */
+    CfnApi(CloudFormationAsyncClient client) {
+        this.client = Optional.of(client);
     }
 
     /**

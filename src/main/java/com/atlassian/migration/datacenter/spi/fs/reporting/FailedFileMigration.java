@@ -25,4 +25,14 @@ public class FailedFileMigration {
     public String getReason() {
         return reason;
     }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof FailedFileMigration) {
+            FailedFileMigration that = (FailedFileMigration) obj;
+
+            return this.filePath.equals(that.filePath) && this.reason.equals(that.reason);
+        }
+        return false;
+    }
 }

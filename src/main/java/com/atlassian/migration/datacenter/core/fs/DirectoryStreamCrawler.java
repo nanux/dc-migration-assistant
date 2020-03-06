@@ -2,6 +2,7 @@ package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.migration.datacenter.spi.fs.reporting.FailedFileMigration;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
+import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,11 +16,11 @@ public class DirectoryStreamCrawler implements Crawler {
     private static final Logger logger = LoggerFactory.getLogger(DirectoryStreamCrawler.class);
 
     private FileSystemMigrationErrorReport report;
+    private FileSystemMigrationProgress progress;
 
-    private long totalFilesCrawled = 0L;
-
-    public DirectoryStreamCrawler(FileSystemMigrationErrorReport report) {
+    public DirectoryStreamCrawler(FileSystemMigrationErrorReport report, FileSystemMigrationProgress progress) {
         this.report = report;
+        this.progress = progress;
     }
 
     @Override
@@ -27,7 +28,7 @@ public class DirectoryStreamCrawler implements Crawler {
         final DirectoryStream<Path> paths;
         paths = Files.newDirectoryStream(start);
         listDirectories(queue, paths);
-        logger.info("Crawled and added {} files for upload.", totalFilesCrawled);
+        logger.info("Crawled and added {} files for upload.", progress.getNumberOfFilesFound());
     }
 
     private void listDirectories(ConcurrentLinkedQueue<Path> queue, DirectoryStream<Path> paths) {
@@ -41,7 +42,7 @@ public class DirectoryStreamCrawler implements Crawler {
                 }
             } else {
                 queue.add(p);
-                totalFilesCrawled++;
+                progress.reportFileFound();
             }
         });
     }

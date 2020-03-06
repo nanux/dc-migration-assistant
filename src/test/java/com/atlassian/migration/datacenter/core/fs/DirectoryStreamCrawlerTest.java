@@ -1,7 +1,9 @@
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
+import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
+import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -28,13 +30,15 @@ class DirectoryStreamCrawlerTest {
     private ConcurrentLinkedQueue<Path> queue;
     private Set<Path> expectedPaths;
     private FileSystemMigrationErrorReport errorReport;
+    private FileSystemMigrationProgress progress;
 
     @BeforeEach
     void createFiles() throws Exception {
         queue = new ConcurrentLinkedQueue<>();
         expectedPaths = new HashSet<>();
         errorReport = new DefaultFileSystemMigrationErrorReport();
-        directoryStreamCrawler = new DirectoryStreamCrawler(errorReport);
+        progress = new DefaultFilesystemMigrationProgress();
+        directoryStreamCrawler = new DirectoryStreamCrawler(errorReport, progress);
 
         expectedPaths.add(Files.write(tempDir.resolve("newfile.txt"), "newfile content".getBytes()));
         final Path subdirectory = Files.createDirectory(tempDir.resolve("subdirectory"));
@@ -43,7 +47,7 @@ class DirectoryStreamCrawlerTest {
 
     @Test
     void shouldListAllSubdirectories() throws Exception {
-        directoryStreamCrawler = new DirectoryStreamCrawler(errorReport);
+        directoryStreamCrawler = new DirectoryStreamCrawler(errorReport, progress);
         directoryStreamCrawler.crawlDirectory(tempDir, queue);
 
         expectedPaths.forEach(path -> assertTrue(queue.contains(path), String.format("Expected %s is absent from crawler queue", path)));
@@ -52,6 +56,14 @@ class DirectoryStreamCrawlerTest {
     @Test
     void incorrectStartDirectoryShouldReport() {
         assertThrows(IOException.class, () -> directoryStreamCrawler.crawlDirectory(Paths.get("nonexistent-directory-2010"), queue));
+    }
+
+    @Test
+    void shouldReportFileAsFoundWhenCrawled() throws Exception {
+        directoryStreamCrawler = new DirectoryStreamCrawler(errorReport, progress);
+        directoryStreamCrawler.crawlDirectory(tempDir, queue);
+
+        assertEquals(expectedPaths.size(), progress.getNumberOfFilesFound());
     }
 
     @Test

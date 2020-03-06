@@ -138,6 +138,12 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+            <version>${spring.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>org.osgi</groupId>
             <artifactId>org.osgi.core</artifactId>
             <version>6.0.0</version>
@@ -250,7 +256,7 @@
         <dependency>
             <groupId>cloud.localstack</groupId>
             <artifactId>localstack-utils</artifactId>
-            <version>0.2.0</version>
+            <version>${localstack.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -289,6 +295,7 @@
                 <version>${amps.version}</version>
                 <extensions>true</extensions>
                 <configuration>
+                    <product>jira</product>
                     <enableQuickReload>true</enableQuickReload>
                     <instructions>
                         <Bundle-Activator>com.atlassian.migration.datacenter.BundleActivator</Bundle-Activator>
@@ -539,6 +546,7 @@
         <mockito.version>3.2.4</mockito.version>
         <junit.version>5.4.2</junit.version>
         <aws.sdk.version>2.10.61</aws.sdk.version>
+        <localstack.version>0.2.1</localstack.version>
     </properties>
 
 </project>

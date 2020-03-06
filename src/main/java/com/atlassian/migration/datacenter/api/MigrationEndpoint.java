@@ -6,7 +6,6 @@ import com.atlassian.migration.datacenter.spi.MigrationStage;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
@@ -62,14 +61,5 @@ public class MigrationEndpoint {
                     .entity("migration already exists")
                     .build();
         }
-    }
-
-    @PUT
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    @Path("/filesystem")
-    public Response runFileMigration() {
-        boolean started = migrationService.startFilesystemMigration();
-        return Response.status(Response.Status.ACCEPTED).entity("S3 Migration started = " + started).build();
     }
 }
