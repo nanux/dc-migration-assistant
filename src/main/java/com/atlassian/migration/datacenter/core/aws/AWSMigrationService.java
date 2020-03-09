@@ -192,9 +192,8 @@ public class AWSMigrationService implements MigrationService, MigrationServiceV2
         Migration migration = loadMigration();
         final MigrationStage currentStage = migration.getStage();
         if (!currentStage.equals(from)) {
-            throw new InvalidMigrationStageError(String.format("expected to be in %s but was in %s", from.toString(), currentStage.toString()));
+            throw InvalidMigrationStageError.errorWithMessage(from,currentStage);
         }
-
         setCurrentStage(migration, to);
     }
 

@@ -39,8 +39,8 @@ public class S3UploadJobRunner implements JobRunner {
         try {
             fsMigrationService.startMigration();
         } catch (InvalidMigrationStageError e) {
-            log.error("Invalid migration error - {}", e.getMessage());
-            return JobRunnerResponse.failed("Encountered an invalid migration stage");
+            log.error("Invalid migration transition - {}", e.getMessage());
+            return JobRunnerResponse.failed(e);
         }
 
         final FileSystemMigrationReport report = fsMigrationService.getReport();

@@ -118,7 +118,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
             uploader.upload(uploadQueue, isDoneCrawling);
         };
 
-        IntStream.range(0, NUM_UPLOAD_THREADS).forEach((_x) -> completionService.submit(uploaderFunction, null));
+        IntStream.range(0, NUM_UPLOAD_THREADS).forEach(x -> completionService.submit(uploaderFunction, null));
 
         return completionService;
     }
