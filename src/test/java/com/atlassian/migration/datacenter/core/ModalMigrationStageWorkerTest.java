@@ -1,7 +1,6 @@
 package com.atlassian.migration.datacenter.core;
 
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
-import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.spi.MigrationServiceV2;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.sal.api.pluginsettings.PluginSettings;
@@ -11,9 +10,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.NullSource;
-import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -47,7 +45,7 @@ class ModalMigrationStageWorkerTest {
 
     @Test
     void shouldTransitionToShortCircuitWhenModeIsPassthrough() throws InvalidMigrationStageError {
-        when(mockPluginSettings.get("com.atlassian.migration.datacenter.core.mode")).thenReturn("passthrough");
+        when(mockPluginSettings.get("com.atlassian.migration.datacenter.core.mode")).thenReturn(ModalMigrationStageWorker.DCMigrationAssistantMode.PASSTHROUGH);
         when(mockMigrationService.getCurrentStage()).thenReturn(MigrationStage.PROVISION_APPLICATION);
 
         sut.runAccordingToCurrentMode(Assertions::fail, MigrationStage.AUTHENTICATION, MigrationStage.DB_MIGRATION_EXPORT);
@@ -57,7 +55,7 @@ class ModalMigrationStageWorkerTest {
 
     @Test
     void shouldRunOperationEvenWhenCurrentStageIsNotExpectedStageWhenModeIsNoVerify() {
-        when(mockPluginSettings.get("com.atlassian.migration.datacenter.core.mode")).thenReturn("no-verify");
+        when(mockPluginSettings.get("com.atlassian.migration.datacenter.core.mode")).thenReturn(ModalMigrationStageWorker.DCMigrationAssistantMode.NO_VERIFY);
 
         /*
          * This mock is lenient because we want to be explicit that the current stage is not equal to the expected
@@ -72,9 +70,9 @@ class ModalMigrationStageWorkerTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = "default")
+    @EnumSource(value = ModalMigrationStageWorker.DCMigrationAssistantMode.class, names = { "DEFAULT" })
     @NullSource
-    void shouldRunOperationWhenModeIsDefaultAndCurrentStageMatchesExpectedStage(String mode) {
+    void shouldRunOperationWhenModeIsDefaultAndCurrentStageMatchesExpectedStage(ModalMigrationStageWorker.DCMigrationAssistantMode mode) {
         when(mockPluginSettings.get("com.atlassian.migration.datacenter.core.mode")).thenReturn(mode);
         final MigrationStage currentStage = MigrationStage.PROVISION_APPLICATION;
         when(mockMigrationService.getCurrentStage()).thenReturn(currentStage);
@@ -87,7 +85,7 @@ class ModalMigrationStageWorkerTest {
 
     @Test
     void shouldNotRunOperationWhenModeIsDefaultAndCurrentStageDoesNotMatchExpectedStage() {
-        when(mockPluginSettings.get("com.atlassian.migration.datacenter.core.mode")).thenReturn("default");
+        when(mockPluginSettings.get("com.atlassian.migration.datacenter.core.mode")).thenReturn(ModalMigrationStageWorker.DCMigrationAssistantMode.DEFAULT);
         when(mockMigrationService.getCurrentStage()).thenReturn(MigrationStage.PROVISION_APPLICATION);
 
         sut.runAccordingToCurrentMode(Assertions::fail, MigrationStage.AUTHENTICATION, MigrationStage.DB_MIGRATION_EXPORT);

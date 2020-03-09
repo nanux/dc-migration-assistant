@@ -35,22 +35,22 @@ public class ModalMigrationStageWorker {
      */
     public void runAccordingToCurrentMode(MigrationOperation operation, MigrationStage expectedCurrentStage, MigrationStage passThroughStage) {
         PluginSettings settings = pluginSettingsFactory.createGlobalSettings();
-        String mode = (String) settings.get(MIGRATION_MODE_PLUGIN_SETTINGS_KEY);
+        DCMigrationAssistantMode mode = (DCMigrationAssistantMode) settings.get(MIGRATION_MODE_PLUGIN_SETTINGS_KEY);
 
-        if (mode == null || mode.equals("default")) {
+        if (mode == null || mode.equals(DCMigrationAssistantMode.DEFAULT)) {
             if (migrationService.getCurrentStage().equals(expectedCurrentStage)) {
                 operation.migrate();
             }
             return;
         }
 
-        if (mode.equals("passthrough")) {
+        if (mode.equals(DCMigrationAssistantMode.PASSTHROUGH)) {
             try {
                 migrationService.transition(migrationService.getCurrentStage(), passThroughStage);
             } catch (InvalidMigrationStageError e) {
                 logger.error("Unable to transition from current stage to {}", passThroughStage, e);
             }
-        } else if (mode.equals("no-verify")) {
+        } else if (mode.equals(DCMigrationAssistantMode.NO_VERIFY)) {
             operation.migrate();
         }
     }
@@ -63,6 +63,16 @@ public class ModalMigrationStageWorker {
     public interface MigrationOperation {
 
         void migrate();
+    }
+
+    public enum DCMigrationAssistantMode {
+        DEFAULT("default"), PASSTHROUGH("passthrough"), NO_VERIFY("no-verify");
+
+        private final String mode;
+
+        DCMigrationAssistantMode(String mode) {
+            this.mode = mode;
+        }
     }
 
 }
