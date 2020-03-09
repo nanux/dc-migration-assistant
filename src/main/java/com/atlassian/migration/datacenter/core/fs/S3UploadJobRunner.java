@@ -44,7 +44,7 @@ public class S3UploadJobRunner implements JobRunner {
         }
 
         final FileSystemMigrationReport report = fsMigrationService.getReport();
-        log.info("Finished S3 migration job: {}", report.toString());
+        log.info("Finished S3 migration job: {}", report);
 
         return JobRunnerResponse.success("S3 upload completed.");
     }
