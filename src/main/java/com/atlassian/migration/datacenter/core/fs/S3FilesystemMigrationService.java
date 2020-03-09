@@ -95,8 +95,9 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         isDoneCrawling = new AtomicBoolean(false);
         uploadQueue = new ConcurrentLinkedQueue<>();
 
-        report.setStatus(RUNNING);
         migrationService.transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
+
+        report.setStatus(RUNNING);
 
         S3AsyncClient s3AsyncClient = buildS3Client();
         config = new S3UploadConfig(getS3Bucket(), s3AsyncClient, getSharedHomeDir());

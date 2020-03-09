@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.regions.Region;
 
@@ -20,6 +21,10 @@ import java.nio.file.Paths;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -46,7 +51,7 @@ class S3FilesystemMigrationServiceTest {
     }
 
     @Test
-    void migrationShouldFailWithIncorrectDirectory() throws InvalidMigrationStageError {
+    void shouldFailMigrationWhenSharedHomeDirectoryIsInvalid() throws InvalidMigrationStageError {
         Path nonexistentDir = Paths.get(UUID.randomUUID().toString());
         when(jiraHome.getHome()).thenReturn(nonexistentDir.toFile());
         when(regionService.getRegion()).thenReturn(Region.US_EAST_1.toString());
@@ -55,5 +60,16 @@ class S3FilesystemMigrationServiceTest {
 
         assertEquals(FilesystemMigrationStatus.FAILED, fsService.getReport().getStatus());
         verify(migrationService).transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
+    }
+
+    @Test
+    void shouldFailMigrationWhenMigrationStageIsInvalid() throws InvalidMigrationStageError {
+        Mockito.doThrow(InvalidMigrationStageError.class).when(migrationService).transition(any(),any());
+
+        assertThrows(InvalidMigrationStageError.class, () -> {
+            fsService.startMigration();
+        });
+
+        assertEquals(FilesystemMigrationStatus.NOT_STARTED, fsService.getReport().getStatus());
     }
 }
