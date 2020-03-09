@@ -37,12 +37,18 @@ public class ModalMigrationStageWorker {
         PluginSettings settings = pluginSettingsFactory.createGlobalSettings();
         String mode = (String) settings.get(MIGRATION_MODE_PLUGIN_SETTINGS_KEY);
 
-        if (mode != null && mode.equals("passthrough")) {
+        if (mode == null) {
+            return;
+        }
+
+        if (mode.equals("passthrough")) {
             try {
                 migrationService.transition(migrationService.getCurrentStage(), passThroughStage);
             } catch (InvalidMigrationStageError e) {
                 logger.error("Unable to transition from current stage to {}", passThroughStage, e);
             }
+        } else if (mode.equals("no-verify")) {
+            operation.migrate();
         }
 
     }
