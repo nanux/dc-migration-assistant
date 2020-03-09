@@ -66,7 +66,7 @@ public class ModalMigrationStageWorker {
 
     public DCMigrationAssistantMode getMode() {
         PluginSettings settings = pluginSettingsFactory.createGlobalSettings();
-        DCMigrationAssistantMode mode = (DCMigrationAssistantMode) settings.get(MIGRATION_MODE_PLUGIN_SETTINGS_KEY);
+        DCMigrationAssistantMode mode = DCMigrationAssistantMode.fromModeName((String) settings.get(MIGRATION_MODE_PLUGIN_SETTINGS_KEY));
         if (mode == null) {
             return DCMigrationAssistantMode.DEFAULT;
         }

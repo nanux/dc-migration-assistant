@@ -76,6 +76,7 @@ public class MigrationEndpoint {
     /**
      * Sets the current mode of the migration assistant
      * @see DCMigrationAssistantMode
+     * @param
      */
     @Path("/mode")
     @POST
@@ -107,6 +108,7 @@ public class MigrationEndpoint {
      * @see DCMigrationAssistantMode
      */
     @Path("/mode")
+    @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAppMode() {
         return Response
