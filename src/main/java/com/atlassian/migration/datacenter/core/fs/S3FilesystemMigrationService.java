@@ -2,9 +2,12 @@ package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
+import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
+import com.atlassian.migration.datacenter.spi.MigrationServiceV2;
+import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
@@ -17,7 +20,6 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.concurrent.CompletionService;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
@@ -41,6 +43,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private final AwsCredentialsProvider credentialsProvider;
     private final RegionService regionService;
     private final JiraHome jiraHome;
+    private final MigrationServiceV2 migrationService;
 
     private FileSystemMigrationReport report;
     private AtomicBoolean isDoneCrawling;
@@ -49,15 +52,16 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
     public S3FilesystemMigrationService(RegionService regionService,
                                         AwsCredentialsProvider credentialsProvider,
-                                        @ComponentImport JiraHome jiraHome) {
+                                        @ComponentImport JiraHome jiraHome, MigrationServiceV2 migrationService) {
         this.regionService = regionService;
         this.credentialsProvider = credentialsProvider;
         this.jiraHome = jiraHome;
+        this.migrationService = migrationService;
     }
 
     @Override
     public boolean isRunning() {
-        return report != null && report.getStatus().equals(RUNNING);
+        return this.migrationService.getCurrentStage().equals(MigrationStage.WAIT_FS_MIGRATION_COPY);
     }
 
     @Override
@@ -70,12 +74,11 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
      * or preferably from ScheduledJob
      */
     @Override
-    public void startMigration() {
+    public void startMigration() throws InvalidMigrationStageError {
         if (isRunning()) {
             logger.warn("Filesystem migration is currently in progress, aborting new execution.");
             return;
         }
-
         initialiseMigration();
 
         CompletionService<Void> uploadResults = startUploadingFromQueue();
@@ -87,11 +90,14 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         finaliseMigration();
     }
 
-    private void initialiseMigration() {
+    private void initialiseMigration() throws InvalidMigrationStageError {
         report = new DefaultFileSystemMigrationReport(new DefaultFileSystemMigrationErrorReport(), new DefaultFilesystemMigrationProgress());
-        report.setStatus(RUNNING);
         isDoneCrawling = new AtomicBoolean(false);
         uploadQueue = new ConcurrentLinkedQueue<>();
+
+        report.setStatus(RUNNING);
+        migrationService.transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
+
         S3AsyncClient s3AsyncClient = buildS3Client();
         config = new S3UploadConfig(getS3Bucket(), s3AsyncClient, getSharedHomeDir());
     }
@@ -104,16 +110,15 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     }
 
     private CompletionService<Void> startUploadingFromQueue() {
-        ExecutorService uploadService = Executors.newFixedThreadPool(NUM_UPLOAD_THREADS);
-        CompletionService<Void> completionService = new ExecutorCompletionService<>(uploadService);
+        ExecutorService uploadExecutorService = Executors.newFixedThreadPool(NUM_UPLOAD_THREADS);
+        CompletionService<Void> completionService = new ExecutorCompletionService<>(uploadExecutorService);
 
         Runnable uploaderFunction = () -> {
             Uploader uploader = new S3Uploader(config, report, report);
             uploader.upload(uploadQueue, isDoneCrawling);
         };
 
-        Collections.nCopies(NUM_UPLOAD_THREADS, uploaderFunction)
-                .forEach(runnable -> completionService.submit(runnable, null));
+        IntStream.range(0, NUM_UPLOAD_THREADS).forEach((_x) -> completionService.submit(uploaderFunction, null));
 
         return completionService;
     }
@@ -144,8 +149,11 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
                 });
     }
 
-    private void finaliseMigration() {
-        if (!report.getStatus().equals(FAILED)) {
+    private void finaliseMigration() throws InvalidMigrationStageError {
+        if (report.getStatus().equals(DONE)) {
+            this.migrationService.transition(MigrationStage.WAIT_FS_MIGRATION_COPY, MigrationStage.OFFLINE_WARNING);
+        } else if (!report.getStatus().equals(FAILED)) {
+            this.migrationService.error();
             report.setStatus(DONE);
         }
     }
