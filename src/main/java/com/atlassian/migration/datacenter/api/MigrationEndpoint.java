@@ -76,7 +76,10 @@ public class MigrationEndpoint {
     /**
      * Sets the current mode of the migration assistant
      * @see DCMigrationAssistantMode
-     * @param
+     * @param request a JSON object with a single key - "mode", the value of which must be a valid mode
+     *                - no-verify
+     *                - passthrough
+     *                - default
      */
     @Path("/mode")
     @POST
