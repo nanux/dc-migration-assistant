@@ -1,6 +1,7 @@
 package com.atlassian.migration.datacenter.core.aws.infrastructure;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
+import com.atlassian.migration.datacenter.core.ModalMigrationStageWorker;
 import com.atlassian.migration.datacenter.core.aws.CfnApi;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.dto.MigrationContext;
@@ -29,11 +30,13 @@ public class QuickstartDeploymentService implements ApplicationDeploymentService
     private final CfnApi cfnApi;
     private final MigrationServiceV2 migrationService;
     private final ActiveObjects ao;
+    private final ModalMigrationStageWorker modalMigrationStageWorker;
 
-    public QuickstartDeploymentService(@ComponentImport ActiveObjects ao, CfnApi cfnApi, MigrationServiceV2 migrationService) {
+    public QuickstartDeploymentService(@ComponentImport ActiveObjects ao, CfnApi cfnApi, MigrationServiceV2 migrationService, ModalMigrationStageWorker modalMigrationStageWorker) {
         this.ao = ao;
         this.cfnApi = cfnApi;
         this.migrationService = migrationService;
+        this.modalMigrationStageWorker = modalMigrationStageWorker;
     }
 
     /**
@@ -46,6 +49,10 @@ public class QuickstartDeploymentService implements ApplicationDeploymentService
      */
     @Override
     public void deployApplication(String deploymentId, Map<String, String> params) throws InvalidMigrationStageError {
+        modalMigrationStageWorker.runAccordingToCurrentMode(() -> doDeployApplication(deploymentId, params), MigrationStage.PROVISION_APPLICATION, MigrationStage.PROVISION_MIGRATION_STACK);
+    }
+
+    private void doDeployApplication(String deploymentId, Map<String, String> params) throws InvalidMigrationStageError {
         logger.info("received request to deploy application");
         migrationService.transition(MigrationStage.PROVISION_APPLICATION, MigrationStage.WAIT_PROVISION_APPLICATION);
 

@@ -12,9 +12,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class ModalMigrationStageWorker {
+    public static final String MIGRATION_MODE_PLUGIN_SETTINGS_KEY = "com.atlassian.migration.datacenter.core.mode";
 
     private static final Logger logger = LoggerFactory.getLogger(ModalMigrationStageWorker.class);
-    private static final String MIGRATION_MODE_PLUGIN_SETTINGS_KEY = "com.atlassian.migration.datacenter.core.mode";
 
     private final MigrationServiceV2 migrationService;
     private final PluginSettingsFactory pluginSettingsFactory;
