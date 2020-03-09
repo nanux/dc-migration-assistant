@@ -4,6 +4,8 @@ import com.atlassian.migration.datacenter.core.ModalMigrationStageWorker;
 import com.atlassian.migration.datacenter.core.ModalMigrationStageWorker.DCMigrationAssistantMode;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -22,12 +24,14 @@ import java.util.Map;
 @Path("/migration")
 public class MigrationEndpoint {
 
-    private MigrationService migrationService;
+    private static final Logger logger = LoggerFactory.getLogger(MigrationEndpoint.class);
+    private final MigrationService migrationService;
 
-    private ModalMigrationStageWorker modalMigrationStageWorker;
+    private final ModalMigrationStageWorker modalMigrationStageWorker;
 
-    public MigrationEndpoint(MigrationService migrationService) {
+    public MigrationEndpoint(MigrationService migrationService, ModalMigrationStageWorker modalMigrationStageWorker) {
         this.migrationService = migrationService;
+        this.modalMigrationStageWorker = modalMigrationStageWorker;
     }
 
     /**
@@ -80,12 +84,13 @@ public class MigrationEndpoint {
     public Response setAppMode(Map<String, String> request) {
         String requestMode = request.get("mode");
         try {
-            DCMigrationAssistantMode mode = DCMigrationAssistantMode.valueOf(requestMode);
+            DCMigrationAssistantMode mode = DCMigrationAssistantMode.fromModeName(requestMode);
             modalMigrationStageWorker.setMode(mode);
             return Response
                     .ok()
                     .build();
         } catch (IllegalArgumentException e) {
+            logger.error("unable to set application mode to: {}", requestMode, e);
             Map<String, String> error = new HashMap<String, String>() {{
                 put("error", "mode: " + requestMode + " is not a valid mode");
             }};

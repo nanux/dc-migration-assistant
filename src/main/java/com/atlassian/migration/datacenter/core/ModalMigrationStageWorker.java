@@ -61,7 +61,7 @@ public class ModalMigrationStageWorker {
 
     public void setMode(DCMigrationAssistantMode mode) {
         PluginSettings settings = pluginSettingsFactory.createGlobalSettings();
-        settings.put(MIGRATION_MODE_PLUGIN_SETTINGS_KEY, mode);
+        settings.put(MIGRATION_MODE_PLUGIN_SETTINGS_KEY, mode.toString());
     }
 
     public DCMigrationAssistantMode getMode() {
@@ -95,6 +95,22 @@ public class ModalMigrationStageWorker {
         @Override
         public String toString() {
             return mode;
+        }
+
+        public static DCMigrationAssistantMode fromModeName(String mode) {
+            if (mode == null) {
+                throw new IllegalArgumentException("mode cannot be null");
+            }
+            if (mode.equals(DEFAULT.mode)) {
+                return DEFAULT;
+            } else if (mode.equals(PASSTHROUGH.mode)) {
+                return PASSTHROUGH;
+            } else if (mode.equals(NO_VERIFY.mode)) {
+                return NO_VERIFY;
+            } else {
+                logger.error("tried to get DCMigrationAssistantMode from invalid string: {}", mode);
+                throw new IllegalArgumentException(mode + " is not a valid DC Migration Assistant mode");
+            }
         }
     }
 
