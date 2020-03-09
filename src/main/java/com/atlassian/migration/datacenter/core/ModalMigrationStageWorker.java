@@ -37,7 +37,10 @@ public class ModalMigrationStageWorker {
         PluginSettings settings = pluginSettingsFactory.createGlobalSettings();
         String mode = (String) settings.get(MIGRATION_MODE_PLUGIN_SETTINGS_KEY);
 
-        if (mode == null) {
+        if (mode == null || mode.equals("default")) {
+            if (migrationService.getCurrentStage().equals(expectedCurrentStage)) {
+                operation.migrate();
+            }
             return;
         }
 
@@ -49,12 +52,7 @@ public class ModalMigrationStageWorker {
             }
         } else if (mode.equals("no-verify")) {
             operation.migrate();
-        } else if (mode.equals("default")) {
-            if (migrationService.getCurrentStage().equals(expectedCurrentStage)) {
-                operation.migrate();
-            }
         }
-
     }
 
     /**

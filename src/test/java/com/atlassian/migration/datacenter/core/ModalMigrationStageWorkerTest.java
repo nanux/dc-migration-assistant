@@ -9,6 +9,10 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -66,9 +70,11 @@ class ModalMigrationStageWorkerTest {
         assertTrue(hasFuncBeenRun.get(), "expected operation to be executed when mode is no-verify");
     }
 
-    @Test
-    void shouldRunOperationWhenModeIsDefaultAndCurrentStageMatchesExpectedStage() {
-        when(mockPluginSettings.get("com.atlassian.migration.datacenter.core.mode")).thenReturn("default");
+    @ParameterizedTest
+    @ValueSource(strings = "default")
+    @NullSource
+    void shouldRunOperationWhenModeIsDefaultAndCurrentStageMatchesExpectedStage(String mode) {
+        when(mockPluginSettings.get("com.atlassian.migration.datacenter.core.mode")).thenReturn(mode);
         final MigrationStage currentStage = MigrationStage.PROVISION_APPLICATION;
         when(mockMigrationService.getCurrentStage()).thenReturn(currentStage);
 
