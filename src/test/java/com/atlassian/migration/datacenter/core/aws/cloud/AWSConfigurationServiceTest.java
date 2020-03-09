@@ -1,11 +1,15 @@
 package com.atlassian.migration.datacenter.core.aws.cloud;
 
+import com.atlassian.migration.datacenter.core.ModalMigrationStageWorker;
 import com.atlassian.migration.datacenter.core.aws.auth.WriteCredentialsService;
 import com.atlassian.migration.datacenter.core.aws.region.InvalidAWSRegionException;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.MigrationServiceV2;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
+import com.atlassian.sal.api.pluginsettings.PluginSettings;
+import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -33,8 +37,23 @@ class AWSConfigurationServiceTest {
     @Mock
     MigrationServiceV2 mockMigrationService;
 
-    @InjectMocks
-    AWSConfigurationService sut;
+    @Mock
+    PluginSettingsFactory pluginSettingsFactory;
+
+    @Mock
+    PluginSettings pluginSettings;
+
+    private AWSConfigurationService sut;
+
+    @BeforeEach
+    void setUp() {
+        when(pluginSettingsFactory.createGlobalSettings()).thenReturn(pluginSettings);
+        when(pluginSettings.get(ModalMigrationStageWorker.MIGRATION_MODE_PLUGIN_SETTINGS_KEY)).thenReturn(ModalMigrationStageWorker.DCMigrationAssistantMode.DEFAULT);
+
+        ModalMigrationStageWorker worker = new ModalMigrationStageWorker(pluginSettingsFactory, mockMigrationService);
+
+        sut = new AWSConfigurationService(mockCredentialsWriter, mockRegionService, mockMigrationService, worker);
+    }
 
     @Test
     void shouldStoreCredentials() throws InvalidMigrationStageError {

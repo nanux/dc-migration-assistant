@@ -37,16 +37,20 @@ public class ModalMigrationStageWorker {
         PluginSettings settings = pluginSettingsFactory.createGlobalSettings();
         DCMigrationAssistantMode mode = (DCMigrationAssistantMode) settings.get(MIGRATION_MODE_PLUGIN_SETTINGS_KEY);
 
+        final MigrationStage currentStage = migrationService.getCurrentStage();
         if (mode == null || mode.equals(DCMigrationAssistantMode.DEFAULT)) {
-            if (migrationService.getCurrentStage().equals(expectedCurrentStage)) {
+            if (currentStage.equals(expectedCurrentStage)) {
                 operation.migrate();
+                return;
+            } else {
+                logger.error("tried to configure AWS when in invalid stage {}", currentStage);
+                throw new InvalidMigrationStageError("expected to be in stage " + MigrationStage.AUTHENTICATION + " but was in " + currentStage);
             }
-            return;
         }
 
         if (mode.equals(DCMigrationAssistantMode.PASSTHROUGH)) {
             try {
-                migrationService.transition(migrationService.getCurrentStage(), passThroughStage);
+                migrationService.transition(currentStage, passThroughStage);
             } catch (InvalidMigrationStageError e) {
                 logger.error("Unable to transition from current stage to {}", passThroughStage, e);
             }

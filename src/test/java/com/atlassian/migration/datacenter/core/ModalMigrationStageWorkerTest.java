@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
@@ -84,10 +85,10 @@ class ModalMigrationStageWorkerTest {
     }
 
     @Test
-    void shouldNotRunOperationWhenModeIsDefaultAndCurrentStageDoesNotMatchExpectedStage() throws InvalidMigrationStageError {
+    void shouldNotRunOperationWhenModeIsDefaultAndCurrentStageDoesNotMatchExpectedStage() {
         when(mockPluginSettings.get("com.atlassian.migration.datacenter.core.mode")).thenReturn(ModalMigrationStageWorker.DCMigrationAssistantMode.DEFAULT);
         when(mockMigrationService.getCurrentStage()).thenReturn(MigrationStage.PROVISION_APPLICATION);
 
-        sut.runAccordingToCurrentMode(Assertions::fail, MigrationStage.AUTHENTICATION, MigrationStage.DB_MIGRATION_EXPORT);
+        assertThrows(InvalidMigrationStageError.class, () -> sut.runAccordingToCurrentMode(Assertions::fail, MigrationStage.AUTHENTICATION, MigrationStage.DB_MIGRATION_EXPORT));
     }
 }
