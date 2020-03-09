@@ -1,5 +1,7 @@
 package com.atlassian.migration.datacenter.api;
 
+import com.atlassian.migration.datacenter.core.ModalMigrationStageWorker;
+import com.atlassian.migration.datacenter.core.ModalMigrationStageWorker.DCMigrationAssistantMode;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 
@@ -10,6 +12,8 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * REST API Endpoint for managing in-product DC migrations.
@@ -19,6 +23,8 @@ import javax.ws.rs.core.Response;
 public class MigrationEndpoint {
 
     private MigrationService migrationService;
+
+    private ModalMigrationStageWorker modalMigrationStageWorker;
 
     public MigrationEndpoint(MigrationService migrationService) {
         this.migrationService = migrationService;
@@ -62,4 +68,45 @@ public class MigrationEndpoint {
                     .build();
         }
     }
+
+    /**
+     * Sets the current mode of the migration assistant
+     * @see DCMigrationAssistantMode
+     */
+    @Path("/mode")
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response setAppMode(Map<String, String> request) {
+        String requestMode = request.get("mode");
+        try {
+            DCMigrationAssistantMode mode = DCMigrationAssistantMode.valueOf(requestMode);
+            modalMigrationStageWorker.setMode(mode);
+            return Response
+                    .ok()
+                    .build();
+        } catch (IllegalArgumentException e) {
+            Map<String, String> error = new HashMap<String, String>() {{
+                put("error", "mode: " + requestMode + " is not a valid mode");
+            }};
+
+            return Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(error)
+                    .build();
+        }
+    }
+
+    /**
+     * Gets the current mode of the migration assistant
+     * @see DCMigrationAssistantMode
+     */
+    @Path("/mode")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getAppMode() {
+        return Response
+                .ok(modalMigrationStageWorker.getMode())
+                .build();
+    }
+
 }

@@ -54,7 +54,7 @@ class ModalMigrationStageWorkerTest {
     }
 
     @Test
-    void shouldRunOperationEvenWhenCurrentStageIsNotExpectedStageWhenModeIsNoVerify() {
+    void shouldRunOperationEvenWhenCurrentStageIsNotExpectedStageWhenModeIsNoVerify() throws InvalidMigrationStageError {
         when(mockPluginSettings.get("com.atlassian.migration.datacenter.core.mode")).thenReturn(ModalMigrationStageWorker.DCMigrationAssistantMode.NO_VERIFY);
 
         /*
@@ -72,7 +72,7 @@ class ModalMigrationStageWorkerTest {
     @ParameterizedTest
     @EnumSource(value = ModalMigrationStageWorker.DCMigrationAssistantMode.class, names = { "DEFAULT" })
     @NullSource
-    void shouldRunOperationWhenModeIsDefaultAndCurrentStageMatchesExpectedStage(ModalMigrationStageWorker.DCMigrationAssistantMode mode) {
+    void shouldRunOperationWhenModeIsDefaultAndCurrentStageMatchesExpectedStage(ModalMigrationStageWorker.DCMigrationAssistantMode mode) throws InvalidMigrationStageError {
         when(mockPluginSettings.get("com.atlassian.migration.datacenter.core.mode")).thenReturn(mode);
         final MigrationStage currentStage = MigrationStage.PROVISION_APPLICATION;
         when(mockMigrationService.getCurrentStage()).thenReturn(currentStage);
@@ -84,7 +84,7 @@ class ModalMigrationStageWorkerTest {
     }
 
     @Test
-    void shouldNotRunOperationWhenModeIsDefaultAndCurrentStageDoesNotMatchExpectedStage() {
+    void shouldNotRunOperationWhenModeIsDefaultAndCurrentStageDoesNotMatchExpectedStage() throws InvalidMigrationStageError {
         when(mockPluginSettings.get("com.atlassian.migration.datacenter.core.mode")).thenReturn(ModalMigrationStageWorker.DCMigrationAssistantMode.DEFAULT);
         when(mockMigrationService.getCurrentStage()).thenReturn(MigrationStage.PROVISION_APPLICATION);
 

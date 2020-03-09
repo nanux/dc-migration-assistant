@@ -33,7 +33,7 @@ public class ModalMigrationStageWorker {
      * @param expectedCurrentStage The stage that the migration is expected to be in to run the given operation
      * @param passThroughStage The stage that should be transitioned to if passing through this migration operation
      */
-    public void runAccordingToCurrentMode(MigrationOperation operation, MigrationStage expectedCurrentStage, MigrationStage passThroughStage) {
+    public void runAccordingToCurrentMode(MigrationOperation operation, MigrationStage expectedCurrentStage, MigrationStage passThroughStage) throws InvalidMigrationStageError {
         PluginSettings settings = pluginSettingsFactory.createGlobalSettings();
         DCMigrationAssistantMode mode = (DCMigrationAssistantMode) settings.get(MIGRATION_MODE_PLUGIN_SETTINGS_KEY);
 
@@ -55,6 +55,20 @@ public class ModalMigrationStageWorker {
         }
     }
 
+    public void setMode(DCMigrationAssistantMode mode) {
+        PluginSettings settings = pluginSettingsFactory.createGlobalSettings();
+        settings.put(MIGRATION_MODE_PLUGIN_SETTINGS_KEY, mode);
+    }
+
+    public DCMigrationAssistantMode getMode() {
+        PluginSettings settings = pluginSettingsFactory.createGlobalSettings();
+        DCMigrationAssistantMode mode = (DCMigrationAssistantMode) settings.get(MIGRATION_MODE_PLUGIN_SETTINGS_KEY);
+        if (mode == null) {
+            return DCMigrationAssistantMode.DEFAULT;
+        }
+        return mode;
+    }
+
     /**
      * Represents one operation in a migration. It should do whatever tasks it deems necessary to facilitate the
      * migration and manage the transitions of the migration service.
@@ -62,7 +76,7 @@ public class ModalMigrationStageWorker {
     @FunctionalInterface
     public interface MigrationOperation {
 
-        void migrate();
+        void migrate() throws InvalidMigrationStageError;
     }
 
     public enum DCMigrationAssistantMode {
@@ -72,6 +86,11 @@ public class ModalMigrationStageWorker {
 
         DCMigrationAssistantMode(String mode) {
             this.mode = mode;
+        }
+
+        @Override
+        public String toString() {
+            return mode;
         }
     }
 
