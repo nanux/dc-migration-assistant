@@ -75,11 +75,12 @@ public class MigrationEndpoint {
 
     /**
      * Sets the current mode of the migration assistant
-     * @see DCMigrationAssistantMode
+     *
      * @param request a JSON object with a single key - "mode", the value of which must be a valid mode
      *                - no-verify
      *                - passthrough
      *                - default
+     * @see DCMigrationAssistantMode
      */
     @Path("/mode")
     @POST
@@ -108,14 +109,19 @@ public class MigrationEndpoint {
 
     /**
      * Gets the current mode of the migration assistant
+     *
      * @see DCMigrationAssistantMode
      */
     @Path("/mode")
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     public Response getAppMode() {
+        String mode = modalMigrationStageWorker.getMode().toString();
+        Map<String, String> entity = new HashMap<String, String>() {{
+            put("mode", mode);
+        }};
         return Response
-                .ok(modalMigrationStageWorker.getMode())
+                .ok(entity)
                 .build();
     }
 
