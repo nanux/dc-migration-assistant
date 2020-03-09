@@ -49,6 +49,10 @@ public class ModalMigrationStageWorker {
             }
         } else if (mode.equals("no-verify")) {
             operation.migrate();
+        } else if (mode.equals("default")) {
+            if (migrationService.getCurrentStage().equals(expectedCurrentStage)) {
+                operation.migrate();
+            }
         }
 
     }

@@ -1,8 +1,6 @@
 package com.atlassian.migration.datacenter.core;
 
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
-import com.atlassian.migration.datacenter.dto.Migration;
-import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationServiceV2;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.sal.api.pluginsettings.PluginSettings;
@@ -66,5 +64,17 @@ class ModalMigrationStageWorkerTest {
         sut.runAccordingToCurrentMode(() -> hasFuncBeenRun.set(true), MigrationStage.AUTHENTICATION, MigrationStage.DB_MIGRATION_EXPORT);
 
         assertTrue(hasFuncBeenRun.get(), "expected operation to be executed when mode is no-verify");
+    }
+
+    @Test
+    void shouldRunOperationWhenModeIsDefaultAndCurrentStageMatchesExpectedStage() {
+        when(mockPluginSettings.get("com.atlassian.migration.datacenter.core.mode")).thenReturn("default");
+        final MigrationStage currentStage = MigrationStage.PROVISION_APPLICATION;
+        when(mockMigrationService.getCurrentStage()).thenReturn(currentStage);
+
+        AtomicBoolean hasFuncBeenRun = new AtomicBoolean(false);
+        sut.runAccordingToCurrentMode(() -> hasFuncBeenRun.set(true), currentStage, MigrationStage.DB_MIGRATION_EXPORT);
+
+        assertTrue(hasFuncBeenRun.get(), "expected operation to be executed when mode is default and current stage matches expected stage");
     }
 }
