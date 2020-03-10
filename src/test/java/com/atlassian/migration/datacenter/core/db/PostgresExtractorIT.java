@@ -1,4 +1,4 @@
-package com.atlassian.migration.datacenter.core.aws.db;
+package com.atlassian.migration.datacenter.core.db;
 
 import com.atlassian.migration.datacenter.core.application.ApplicationConfiguration;
 import com.atlassian.migration.datacenter.core.application.DatabaseConfiguration;
@@ -25,7 +25,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Properties;
-import java.util.concurrent.TimeUnit;
 import java.util.zip.GZIPInputStream;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -89,7 +88,7 @@ class PostgresMigrationIT
     @Test
     void testDatabaseDump() throws InterruptedException, IOException
     {
-        PostgresMigration migration = new PostgresMigration(configuration);
+        PostgresExtractor migration = new PostgresExtractor(configuration);
         Path dumpFile = tempDir.resolve("dump.sql.gz");
 
         migration.dumpDatabase(dumpFile.toFile());
