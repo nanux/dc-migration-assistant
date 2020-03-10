@@ -54,7 +54,8 @@ class PostgresMigrationIT
     void setUp()
     {
         when(configuration.getDatabaseConfiguration())
-            .thenReturn(new DatabaseConfiguration(postgres.getContainerIpAddress(),
+            .thenReturn(new DatabaseConfiguration(DatabaseConfiguration.DBType.POSTGRESQL,
+                                                  postgres.getContainerIpAddress(),
                                                   postgres.getMappedPort(5432),
                                                   postgres.getDatabaseName(),
                                                   postgres.getUsername(),
