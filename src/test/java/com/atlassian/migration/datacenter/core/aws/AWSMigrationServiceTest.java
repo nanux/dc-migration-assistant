@@ -25,10 +25,9 @@ import java.util.Optional;
 
 import static com.atlassian.migration.datacenter.spi.MigrationStage.AUTHENTICATION;
 import static com.atlassian.migration.datacenter.spi.MigrationStage.ERROR;
-import static com.atlassian.migration.datacenter.spi.MigrationStage.FS_MIGRATION_EXPORT;
+import static com.atlassian.migration.datacenter.spi.MigrationStage.FS_MIGRATION_COPY;;
 import static com.atlassian.migration.datacenter.spi.MigrationStage.NOT_STARTED;
 import static com.atlassian.migration.datacenter.spi.MigrationStage.PROVISION_APPLICATION;
-import static com.atlassian.migration.datacenter.spi.MigrationStage.READY_FS_MIGRATION;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -108,7 +107,7 @@ public class AWSMigrationServiceTest {
     }
 
     @Test
-    public void shouldNotStartFileSystemMigrationWhenNoMigrationExists() {
+    public void shouldNotStartFileSystemMigrationWhenNoMigrationExists() throws Exception {
         // given
         ao.migrate(Migration.class);
         // when
@@ -121,7 +120,7 @@ public class AWSMigrationServiceTest {
     @Test
     public void shouldStartFsMigrationWhenMigrationStageIsReadyForFsSync() {
         // given
-        initializeAndCreateSingleMigrationWithStage(READY_FS_MIGRATION);
+        initializeAndCreateSingleMigrationWithStage(FS_MIGRATION_COPY);
         // when
         boolean success = sut.startFilesystemMigration();
         // then
@@ -194,7 +193,7 @@ public class AWSMigrationServiceTest {
         initializeAndCreateSingleMigrationWithStage(AUTHENTICATION);
         assertEquals(AUTHENTICATION, sut.getCurrentStage());
 
-        assertThrows(InvalidMigrationStageError.class, () -> sut.transition(FS_MIGRATION_EXPORT, PROVISION_APPLICATION));
+        assertThrows(InvalidMigrationStageError.class, () -> sut.transition(FS_MIGRATION_COPY, PROVISION_APPLICATION));
         assertEquals(sut.getCurrentStage(), AUTHENTICATION);
     }
 

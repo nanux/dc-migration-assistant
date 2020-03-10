@@ -5,6 +5,9 @@ import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.aws.auth.AtlassianPluginAWSCredentialsProvider;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
+import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.MigrationServiceV2;
+import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus;
 import org.junit.jupiter.api.Assertions;
@@ -37,6 +40,10 @@ class S3FilesystemMigrationServiceIT {
     @Mock
     AtlassianPluginAWSCredentialsProvider credentialsProvider;
 
+    //TODO: Review why we use mocks in integration tests.
+    @Mock
+    MigrationServiceV2 migrationService;
+
     @Mock
     JiraHome jiraHome;
 
@@ -48,11 +55,12 @@ class S3FilesystemMigrationServiceIT {
     }
 
     @Test
-    void testSuccessfulDirectoryMigration(@TempDir Path dir) {
+    void testSuccessfulDirectoryMigration(@TempDir Path dir) throws InvalidMigrationStageError {
         when(regionService.getRegion()).thenReturn(Region.US_EAST_1.toString());
         when(jiraHome.getHome()).thenReturn(dir.toFile());
+        when(migrationService.getCurrentStage()).thenReturn(MigrationStage.FS_MIGRATION_COPY);
 
-        FilesystemMigrationService fsService = new S3FilesystemMigrationService(regionService, credentialsProvider, jiraHome);
+        FilesystemMigrationService fsService = new S3FilesystemMigrationService(regionService, credentialsProvider, jiraHome, migrationService);
 
         fsService.startMigration();
 

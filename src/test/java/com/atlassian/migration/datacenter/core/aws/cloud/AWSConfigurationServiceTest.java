@@ -79,7 +79,7 @@ class AWSConfigurationServiceTest {
 
     @Test
     void shouldStoreCredentialsOnlyWhenStateIsAuthentication() {
-        when(mockMigrationService.getCurrentStage()).thenReturn(MigrationStage.FS_MIGRATION_EXPORT);
+        when(mockMigrationService.getCurrentStage()).thenReturn(MigrationStage.WAIT_FS_MIGRATION_COPY);
         assertThrows(InvalidMigrationStageError.class, () -> sut.configureCloudProvider("garbage", "garbage", "garbage"));
     }
 

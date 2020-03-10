@@ -1,5 +1,6 @@
 package com.atlassian.migration.datacenter.core.fs;
 
+import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
 import com.atlassian.scheduler.JobRunner;
@@ -35,10 +36,15 @@ public class S3UploadJobRunner implements JobRunner {
         }
 
         log.info("Starting S3 migration job");
-        fsMigrationService.startMigration();
+        try {
+            fsMigrationService.startMigration();
+        } catch (InvalidMigrationStageError e) {
+            log.error("Invalid migration transition - {}", e.getMessage());
+            return JobRunnerResponse.failed(e);
+        }
 
         final FileSystemMigrationReport report = fsMigrationService.getReport();
-        log.info("Finished S3 migration job: {}", report.toString());
+        log.info("Finished S3 migration job: {}", report);
 
         return JobRunnerResponse.success("S3 upload completed.");
     }

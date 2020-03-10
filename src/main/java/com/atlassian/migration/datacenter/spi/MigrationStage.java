@@ -10,7 +10,7 @@ public enum MigrationStage {
     VALIDATE("validate"),
     DB_MIGRATION_IMPORT("db_migration_down"), DB_MIGRATION_EXPORT("db_migration_up"),
     OFFLINE_WARNING("cutover_warning"),
-    FS_MIGRATION_IMPORT("fs_migration_down"), FS_MIGRATION_EXPORT("fs_migration_up"), READY_FS_MIGRATION("ready_fs_migration"),
+    WAIT_FS_MIGRATION_COPY("wait_fs_migration_copy"), FS_MIGRATION_COPY("fs_migration_copy"),
     WAIT_PROVISION_MIGRATION_STACK("wait_provision_migration"), PROVISION_MIGRATION_STACK("provision_migration"),
     WAIT_PROVISION_APPLICATION("wait_provision_app"), PROVISION_APPLICATION("provision_app"),
     AUTHENTICATION("authentication"),

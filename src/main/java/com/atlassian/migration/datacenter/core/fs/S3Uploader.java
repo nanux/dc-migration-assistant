@@ -30,15 +30,15 @@ public class S3Uploader implements Uploader {
     private final S3UploadConfig config;
 
     public S3Uploader(S3UploadConfig config, FileSystemMigrationErrorReport report, FileSystemMigrationProgress progress) {
-        this.report = report;
         this.config = config;
+        this.report = report;
         this.progress = progress;
     }
 
     @Override
     public void upload(ConcurrentLinkedQueue<Path> queue, AtomicBoolean isCrawlDone) {
         Path path;
-        while (!((path = queue.poll()) == null) || !isCrawlDone.get()) {
+        while ((path = queue.poll()) != null || !isCrawlDone.get()) {
             if (responsesQueue.size() >= MAX_OPEN_CONNECTIONS) {
                 responsesQueue.forEach(this::handlePutObjectResponse);
             }

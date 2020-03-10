@@ -1,5 +1,6 @@
 package com.atlassian.migration.datacenter.spi.fs;
 
+import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
 
 /**
@@ -11,7 +12,7 @@ public interface FilesystemMigrationService {
      * separate thread or scheduled job. It finds all files located in the home (or shared home in case
      * of data center deployment) and upload it to the remote location.
      */
-    void startMigration();
+    void startMigration() throws InvalidMigrationStageError;
 
     /**
      * Provides filesystem migration report that can be used to monitor the operation
