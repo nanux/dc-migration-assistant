@@ -10,6 +10,7 @@ import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeployme
 import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 import java.util.Map;
@@ -19,6 +20,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+@Component
 public class QuickstartDeploymentService implements ApplicationDeploymentService {
 
     private final Logger logger = LoggerFactory.getLogger(QuickstartDeploymentService.class);

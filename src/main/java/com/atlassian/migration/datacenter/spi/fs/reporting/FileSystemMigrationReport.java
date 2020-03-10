@@ -1,8 +1,8 @@
 package com.atlassian.migration.datacenter.spi.fs.reporting;
 
-import java.time.Duration;
-
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import java.time.Duration;
 
 @JsonSerialize(as = FileSystemMigrationReport.class)
 public interface FileSystemMigrationReport extends FileSystemMigrationErrorReport, FileSystemMigrationProgress {
