@@ -1,4 +1,4 @@
-package com.atlassian.migration.datacenter.core.aws.db;
+package com.atlassian.migration.datacenter.core.db;
 
 import com.atlassian.migration.datacenter.core.application.ApplicationConfiguration;
 import com.atlassian.migration.datacenter.core.application.DatabaseConfiguration;
@@ -15,13 +15,13 @@ import java.util.Optional;
 /**
  * Copyright Atlassian: 03/03/2020
  */
-public class PostgresMigration implements DatabaseMigration
+public class PostgresExtractor implements DatabaseExtractor
 {
     private ApplicationConfiguration applicationConfiguration;
 
     private static String pddumpPaths[] = {"/usr/bin/pg_dump", "/usr/local/bin/pg_dump"};
 
-    public PostgresMigration(ApplicationConfiguration applicationConfiguration)
+    public PostgresExtractor(ApplicationConfiguration applicationConfiguration)
     {
         this.applicationConfiguration = applicationConfiguration;
     }
