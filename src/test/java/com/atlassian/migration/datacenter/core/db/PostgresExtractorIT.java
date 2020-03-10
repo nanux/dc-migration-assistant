@@ -36,7 +36,7 @@ import static org.mockito.Mockito.when;
  */
 @Testcontainers
 @ExtendWith(MockitoExtension.class)
-class PostgresMigrationIT
+class PostgresExtractorIT
 {
     @Container
     public static PostgreSQLContainer postgres = (PostgreSQLContainer) new PostgreSQLContainer("postgres:9.6")
