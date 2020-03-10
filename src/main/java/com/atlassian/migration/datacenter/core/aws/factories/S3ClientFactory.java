@@ -7,12 +7,12 @@ import lombok.Setter;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import javax.inject.Inject;
 
 @Component
-public class S3ClientFactory implements FactoryBean<S3Client> {
+public class S3ClientFactory implements FactoryBean<S3AsyncClient> {
 
     @Getter
     @Setter
@@ -24,17 +24,14 @@ public class S3ClientFactory implements FactoryBean<S3Client> {
     @Inject
     private RegionService regionService;
 
-    public S3ClientFactory() {
-    }
-
     @Override
-    public S3Client getObject() throws Exception {
-        return S3Client.builder().credentialsProvider(this.credentialsProvider).region(Region.of(this.regionService.getRegion())).build();
+    public S3AsyncClient getObject() throws Exception {
+        return S3AsyncClient.builder().credentialsProvider(this.credentialsProvider).region(Region.of(this.regionService.getRegion())).build();
     }
 
     @Override
     public Class<?> getObjectType() {
-        return S3Client.class;
+        return S3AsyncClient.class;
     }
 
     @Override

@@ -1,9 +1,13 @@
 package com.atlassian.migration.datacenter.core.database;
 
+import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.database.datasource.LiquibaseDatasource;
 import com.atlassian.migration.datacenter.core.database.enums.BackupFormat;
 import com.atlassian.migration.datacenter.core.database.enums.SnapshotType;
 import com.atlassian.migration.datacenter.core.database.properties.LiquibaseBackupProperties;
+import com.atlassian.migration.datacenter.core.fs.S3MultiPartUploader;
+import com.atlassian.migration.datacenter.core.fs.S3UploadConfig;
+import com.atlassian.plugin.spring.scanner.annotation.imports.ComponentImport;
 import liquibase.database.Database;
 import liquibase.database.DatabaseConnection;
 import liquibase.database.DatabaseFactory;
@@ -15,25 +19,18 @@ import liquibase.integration.commandline.CommandLineUtils;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import software.amazon.awssdk.core.sync.RequestBody;
-import software.amazon.awssdk.services.s3.S3Client;
-import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import javax.inject.Inject;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.Connection;
 import java.text.MessageFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Slf4j
 @Service
@@ -44,13 +41,15 @@ public class S3DatabaseBackupService implements DatabaseBackupService {
     private static final String ACCELLERATION_SUFFIX = ".s3-accelerate.dualstack.amazonaws.com";
     private final LiquibaseDatasource dataSource;
     private final LiquibaseBackupProperties properties;
-    private final S3Client s3Client;
+    private final S3AsyncClient s3Client;
+    private final JiraHome jiraHome;
 
     @Inject
-    public S3DatabaseBackupService(LiquibaseDatasource dataSource, LiquibaseBackupProperties properties, S3Client s3Client) {
+    public S3DatabaseBackupService(LiquibaseDatasource dataSource, LiquibaseBackupProperties properties, S3AsyncClient s3Client, @ComponentImport JiraHome jiraHome) {
         this.dataSource = dataSource;
         this.properties = properties;
         this.s3Client = s3Client;
+        this.jiraHome = jiraHome;
     }
 
     @Override
@@ -79,63 +78,16 @@ public class S3DatabaseBackupService implements DatabaseBackupService {
         String fileName = generateChangeLog(connection, snapshotTypes, author, diffOutputControl);
         File dumpFile = new File(fileName);
 
-        int cores = Runtime.getRuntime().availableProcessors();
-        ExecutorService executor = Executors.newFixedThreadPool(cores);
+        S3UploadConfig s3UploadConfig = new S3UploadConfig(this.properties.getS3BucketName(), this.s3Client, this.jiraHome.getHome().toPath());
+        S3MultiPartUploader multiPartUploader = new S3MultiPartUploader(s3UploadConfig);
 
-        CreateMultipartUploadRequest uploadRequest = CreateMultipartUploadRequest.builder().bucket(properties.getS3BucketName()).key(fileName).serverSideEncryption(ServerSideEncryption.AES256).build();
-        CreateMultipartUploadResponse response = s3Client.createMultipartUpload(uploadRequest);
-        String uploadId = response.uploadId();
+        multiPartUploader.multiPartUpload(dumpFile, fileName);
 
-        final int sizeToUpload = 100 * 1024 * 1024;
-        byte[] buf = new byte[sizeToUpload];
-        final List<Future<CompletedPart>> parts = new ArrayList<>();
-        try (FileInputStream fileInputStream = new FileInputStream(dumpFile);
-             BufferedInputStream bufferedInputStream = new BufferedInputStream(fileInputStream)) {
-            int partNum = 1;
-            while (bufferedInputStream.read(buf) > 0) {
-                final int num = new Integer(partNum);
-                final byte[] uploadBytes = buf.clone();
-
-                parts.add(executor.submit(() -> {
-                    UploadPartRequest uploadPartRequest = UploadPartRequest.builder()
-                            .bucket(properties.getS3BucketName())
-                            .key(fileName)
-                            .uploadId(uploadId)
-                            .partNumber(num)
-                            .build();
-                    String etag = s3Client.uploadPart(uploadPartRequest, RequestBody.fromBytes(uploadBytes)).eTag();
-                    return CompletedPart.builder()
-                            .partNumber(num)
-                            .eTag(etag)
-                            .build();
-                }));
-
-                partNum++;
-            }
-
-            try (Stream<Future<CompletedPart>> partStream = parts.parallelStream()) {
-
-                List<CompletedPart> partList = partStream.map(future -> {
-                    return future.get(60, TimeUnit.SECONDS);
-                }).collect(Collectors.toList());
-
-                CompletedMultipartUpload completedMultipartUpload = CompletedMultipartUpload.builder().parts(partList).build();
-                CompleteMultipartUploadRequest completeMultipartUploadRequest =
-                        CompleteMultipartUploadRequest.builder()
-                                .bucket(properties.getS3BucketName())
-                                .key(fileName)
-                                .uploadId(uploadId)
-                                .multipartUpload(completedMultipartUpload)
-                                .build();
-                s3Client.completeMultipartUpload(completeMultipartUploadRequest);
-            }
-
-
-            if (properties.isDeleteFileAfterSend()) {
-                deleteFile(fileName);
-            }
+        if (properties.isDeleteFileAfterSend()) {
+            deleteFile(fileName);
         }
     }
+
 
     private String generateChangeLog(Connection connection, String snapshotTypes, String author, DiffOutputControl diffOutputControl) throws IOException, ParserConfigurationException, LiquibaseException {
         Database database = getDatabase(connection);
