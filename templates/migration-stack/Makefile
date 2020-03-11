@@ -15,4 +15,4 @@ deletestack:
 	aws cloudformation delete-stack --stack-name $(STACK_NAME)
 updatestack:
 	aws cloudformation update-stack --stack-name $(STACK_NAME) --template-body file://migration-helper.yml --parameters $(PARAMS) --capabilities CAPABILITY_IAM
-q
+
