@@ -214,6 +214,7 @@ Resources:
       GroupDescription: Allow SSH Port from Trusted
       VpcId: !Ref HelperVpcId
 
+  # OpenEFS to Helper security group
   ExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
