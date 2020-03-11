@@ -113,6 +113,24 @@ Resources:
             users:
               jira:
                 uid: 2001
+            files:
+              /opt/atlassian/dc-migration-assistant/copy-shared-home:
+                content: !Sub
+                  - |
+                    #!/bin/bash
+                    echo "beginning s3 sync with shared home"
+                    aws s3 sync s3://${MigrationBucket}/shared-home /efs/jira/shared > /var/atlassian/dc-migration-assistant/sync-output.txt 2>/var/atlassian/dc-migration-assistant/sync-error.txt
+                    echo "s3 sync with shared home complete"
+                  - { MigrationBucket: !Ref DatabaseTransferBucket }
+                mode: "000755"
+            commands:
+              01_create_migration_dirs:
+                test: "test ! -d /var/atlassian/dc-migration-assistant"
+                command: mkdir -p /var/atlassian/dc-migration-assistant
+                ignoreErrors: false
+              02_set_migration_dir_perms:
+                command: chown jira:jira /var/atlassian/dc-migration-assistant
+                ignoreErrors: false
 
     Properties:
       ImageId: !Ref LatestAmiId
