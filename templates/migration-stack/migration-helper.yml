@@ -195,6 +195,9 @@ Resources:
                 Action: '*'
                 Effect: Allow
                 Resource: '*'
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/CloudWatchAgentServerPolicy'
   HelperSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
