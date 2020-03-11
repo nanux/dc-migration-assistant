@@ -6,6 +6,7 @@ import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageE
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
+import com.atlassian.migration.datacenter.core.fs.restore.RestorationConfigurationService;
 import com.atlassian.migration.datacenter.spi.MigrationServiceV2;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
@@ -20,18 +21,11 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
-import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.DONE;
-import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.FAILED;
-import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.RUNNING;
+import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.*;
 
 @Component
 public class S3FilesystemMigrationService implements FilesystemMigrationService {
@@ -44,6 +38,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private final RegionService regionService;
     private final JiraHome jiraHome;
     private final MigrationServiceV2 migrationService;
+    private final RestorationConfigurationService restorationConfigurationService;
 
     private FileSystemMigrationReport report;
     private AtomicBoolean isDoneCrawling;
@@ -52,11 +47,14 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
     public S3FilesystemMigrationService(RegionService regionService,
                                         AwsCredentialsProvider credentialsProvider,
-                                        @ComponentImport JiraHome jiraHome, MigrationServiceV2 migrationService) {
+                                        @ComponentImport JiraHome jiraHome,
+                                        MigrationServiceV2 migrationService,
+                                        RestorationConfigurationService restorationConfigurationService) {
         this.regionService = regionService;
         this.credentialsProvider = credentialsProvider;
         this.jiraHome = jiraHome;
         this.migrationService = migrationService;
+        this.restorationConfigurationService = restorationConfigurationService;
     }
 
     @Override
@@ -80,7 +78,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
             return;
         }
         initialiseMigration();
-
+        this.restorationConfigurationService.configureS3Bucket(getS3Bucket());
         CompletionService<Void> uploadResults = startUploadingFromQueue();
 
         populateUploadQueue();
