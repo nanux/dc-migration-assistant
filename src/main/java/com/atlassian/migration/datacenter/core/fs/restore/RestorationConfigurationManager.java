@@ -37,12 +37,13 @@ public class RestorationConfigurationManager implements RestorationConfiguration
         GetBucketNotificationConfigurationRequest getBucketNotificationConfigurationRequest = GetBucketNotificationConfigurationRequest.builder()
                 .bucket(bucketName)
                 .build();
-        GetBucketNotificationConfigurationResponse response = this.s3Client.getBucketNotificationConfiguration(getBucketNotificationConfigurationRequest);
-        if (response != null && !response.hasQueueConfigurations()) {
+        GetBucketNotificationConfigurationResponse getBucketNotificationConfigurationResponse = this.s3Client.getBucketNotificationConfiguration(getBucketNotificationConfigurationRequest);
+        if (getBucketNotificationConfigurationResponse != null && !getBucketNotificationConfigurationResponse.hasQueueConfigurations()) {
             String queueARN = this.configureNotificationQueue();
             this.buildPolicy(queueARN, bucketName);
             QueueConfiguration queueConfiguration = QueueConfiguration.builder()
                     .queueArn(queueARN)
+                    .events(Event.S3_OBJECT_CREATED, Event.S3_OBJECT_CREATED_COMPLETE_MULTIPART_UPLOAD)
                     .build();
             NotificationConfiguration notificationConfiguration = NotificationConfiguration.builder()
                     .queueConfigurations(queueConfiguration)

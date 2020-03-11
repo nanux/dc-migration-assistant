@@ -2,6 +2,7 @@ package com.atlassian.migration.datacenter.core.fs.restore;
 
 import cloud.localstack.docker.LocalstackDockerExtension;
 import cloud.localstack.docker.annotation.LocalstackDockerProperties;
+import com.atlassian.migration.datacenter.core.LocalStackEnvironmentVariables;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -22,12 +23,15 @@ import static org.mockito.Mockito.when;
 
 @Tag("integration")
 @ExtendWith({LocalstackDockerExtension.class, MockitoExtension.class})
-@LocalstackDockerProperties(services = {"s3", "iam", "sqs"}, imageTag = "0.10.8")
+@LocalstackDockerProperties(
+        environmentVariableProvider = LocalStackEnvironmentVariables.class,
+        services = {"iam:4555", "sqs", "s3"},
+        imageTag = "0.10.8")
 public class RestorationManagerIT {
 
     private static final String LOCALSTACK_S3_ENDPOINT = "http://localhost:4572";
     private static final String LOCALSTACK_SQS_ENDPOINT = "http://localhost:4576";
-    private static final String LOCALSTACK_IAM_ENDPOINT = "http://localhost:4593";
+    private static final String LOCALSTACK_IAM_ENDPOINT = "http://localhost:4555";
     private static final String TREBUCHET_LOCALSTACK_BUCKET = "trebuchet-localstack-bucket";
 
     @Mock
