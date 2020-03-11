@@ -107,9 +107,6 @@ Resources:
                 command: /tmp/mount-efs.sh
           prepare_efs_sync_script:
             # Default UID from dc-deployments-automation (not set by quick start) https://bitbucket.org/atlassian/dc-deployments-automation/src/81c2bc9fe8bd3fd00f3538f8d5cc7c32d3e24898/group_vars/aws_node_local.yml#lines-18
-            groups:
-              jira:
-                gid: 2001
             users:
               jira:
                 uid: 2001
