@@ -182,16 +182,29 @@ Resources:
                 - 'ec2.amazonaws.com'
             Action:
               - 'sts:AssumeRole'
-      # TODO: Reduce this to minimum required perms
       Policies:
-        - PolicyName: Administrator
+        - PolicyName: MigrationBucketFullAccess
           PolicyDocument:
             Version: 2012-10-17
             Statement:
-              - Sid: Administrator
-                Action: '*'
+              - Action: 's3:*'
                 Effect: Allow
-                Resource: '*'
+                Resource: !Sub ['arn:aws:s3:::${MigrationBucket}/*', { MigrationBucket: !Ref DatabaseTransferBucket }]
+              - Action:
+                  - 's3:ListBucket'
+                  - 's3:HeadBucket'
+                Effect: Allow
+                Resource: !Sub ['arn:aws:s3:::${MigrationBucket}', { MigrationBucket: !Ref DatabaseTransferBucket }]
+
+      # TODO: Reduce this to minimum required perms
+      #   - PolicyName: Administrator
+      #     PolicyDocument:
+      #       Version: 2012-10-17
+      #       Statement:
+      #         - Sid: Administrator
+      #           Action: '*'
+      #           Effect: Allow
+      #           Resource: '*'
       ManagedPolicyArns:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/CloudWatchAgentServerPolicy'
