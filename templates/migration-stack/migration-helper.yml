@@ -120,7 +120,7 @@ Resources:
               # Default UID from dc-deployments-automation (not set by quick start) https://bitbucket.org/atlassian/dc-deployments-automation/src/81c2bc9fe8bd3fd00f3538f8d5cc7c32d3e24898/group_vars/aws_node_local.yml#lines-18
               # We need to use useradd because using a cfn-init user gives us a non-interactive user
               01_create_jira_user:
-                test: "getent passwd jira"
+                test: "grep -qv jira /etc/passwd"
                 command: "useradd -u 2001 jira"
                 ignoreErrors: false
               02_create_migration_dirs:
