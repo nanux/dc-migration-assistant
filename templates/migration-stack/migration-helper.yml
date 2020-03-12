@@ -106,12 +106,8 @@ Resources:
               01_mount:
                 command: /tmp/mount-efs.sh
           prepare_efs_sync_script:
-            # Default UID from dc-deployments-automation (not set by quick start) https://bitbucket.org/atlassian/dc-deployments-automation/src/81c2bc9fe8bd3fd00f3538f8d5cc7c32d3e24898/group_vars/aws_node_local.yml#lines-18
-            users:
-              jira:
-                uid: 2001
             files:
-              /opt/atlassian/dc-migration-assistant/copy-shared-home:
+              /opt/atlassian/dc-migration-assistant/copy-shared-home.sh:
                 content: !Sub
                   - |
                     #!/bin/bash
@@ -121,11 +117,17 @@ Resources:
                   - { MigrationBucket: !Ref DatabaseTransferBucket }
                 mode: "000755"
             commands:
-              01_create_migration_dirs:
+              # Default UID from dc-deployments-automation (not set by quick start) https://bitbucket.org/atlassian/dc-deployments-automation/src/81c2bc9fe8bd3fd00f3538f8d5cc7c32d3e24898/group_vars/aws_node_local.yml#lines-18
+              # We need to use useradd because using a cfn-init user gives us a non-interactive user
+              01_create_jira_user:
+                test: "getent passwd jira"
+                command: "useradd -u 2001 jira"
+                ignoreErrors: false
+              02_create_migration_dirs:
                 test: "test ! -d /var/atlassian/dc-migration-assistant"
                 command: mkdir -p /var/atlassian/dc-migration-assistant
                 ignoreErrors: false
-              02_set_migration_dir_perms:
+              03_set_migration_dir_perms:
                 command: chown jira:jira /var/atlassian/dc-migration-assistant
                 ignoreErrors: false
 
@@ -318,3 +320,22 @@ Resources:
               - Effect: "Allow"
                 Action: "*"
                 Resource: "*"
+
+  # Shared Home Download SSM Document
+  SharedHomeDownloadDocument:
+    Type: "AWS::SSM::Document"
+    Properties:
+      Content:
+        schemaVersion: "2.2"
+        description: "This document is used by the Atlassian DC Migration Assistant to copy down your Jira shared home from S3 to the new stack EFS"
+        mainSteps:
+        - action: "aws:runShellScript"
+          name: "copySharedHomeFromS3ToEFS"
+          inputs:
+            runCommand:
+            - "#!/bin/bash"
+            - runuser -l jira -c 'at -f /opt/atlassian/dc-migration-assistant/copy-shared-home.sh' now
+            timeoutSeconds: "10"
+            workingDirectory: "/opt/atlassian/dc-migration-assistant/"
+      DocumentType: "Command"
+
