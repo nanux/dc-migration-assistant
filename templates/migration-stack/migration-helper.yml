@@ -1,22 +1,22 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Jira / Confluence Server to DC (AWS) Helper
 Parameters:
-
   NetworkPrivateSubnet:
     Description: "Private SubnetId where Migration helper will be placed - Must have connection to desitnation Storage"
-    Type: String
+    Type: AWS::EC2::Subnet::Id
   EFSFileSystemId:
     Description: "The Elastic File System Id we will mount to the Migration Helper EC2 Instance"
     Type: String
   EFSSecurityGroup:
     Description: "The Security Group attached to EFS, access to NFS port will be open from Migration Helper Security Group"
-    Type: String
+    Type: AWS::EC2::SecurityGroup::Id
   HelperInstanceType:
     Description: "The Instance Type of Helper EC2 Instance"
     Type: String
+    Default: 'm5a.xlarge'
   HelperVpcId:
     Description: "The VPC for Helper EC2 Instance"
-    Type: String
+    Type: AWS::EC2::VPC::Id
   LatestAmiId:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
@@ -26,23 +26,57 @@ Resources:
   #S3 Bucket for Database Transfer
   MigrationBucket:
     Type: AWS::S3::Bucket
+    DependsOn:
+      - QueuePolicy
     Properties:
       BucketName: !Sub 'atl-migrationbucket-${AWS::StackName}'
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
+      NotificationConfiguration:
+        QueueConfigurations:
+          - Queue: !GetAtt MigrationQueue.Arn
+            Event: s3:ObjectCreated:*
     DeletionPolicy: Delete
+
+  QueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: '*'
+            Action:
+              - SQS:SendMessage
+            Resource: '*'
+            Condition:
+              ArnEquals:
+                aws:SourceArn: "arn:aws:s3:::*"
+      Queues:
+        - !Ref MigrationQueue
+
+  MigrationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      DelaySeconds: 0
+      MaximumMessageSize: 262144
+      MessageRetentionPeriod: 864000
+      QueueName: !Sub 'atl-migration-queue-${AWS::StackName}'
+      ReceiveMessageWaitTimeSeconds: 0
+      VisibilityTimeout: 90
 
   #EC2 Migration Helper
   HelperLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Metadata:
-        AWS::CloudFormation::Init:
-          configSets:
-            full_efs_config: [create_efs_script,mount_efs,prepare_efs_sync_script]
-          create_efs_script:
-            files:
+      AWS::CloudFormation::Init:
+        configSets:
+          full_efs_config: [create_efs_script,mount_efs,prepare_efs_sync_script]
+        create_efs_script:
+          files:
               /opt/atlassian/dc-migration-assistant/mount-efs.sh:
                 content: !Sub
                   - |
@@ -299,6 +333,7 @@ Resources:
             except Exception as e:
                 responseData = {'Error': str(e)}
                 cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
+
   OpenEFSAccessExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -349,3 +384,6 @@ Outputs:
   MigrationBucket:
     Description: "The name of the s3 bucket to be used for facilitating this migration"
     Value: !Ref MigrationBucket
+  QueueARN:
+    Description: The queue events are sent to
+    Value: !GetAtt MigrationQueue.Arn
