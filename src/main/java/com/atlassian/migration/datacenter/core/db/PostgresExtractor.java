@@ -4,9 +4,7 @@ import com.atlassian.migration.datacenter.core.application.ApplicationConfigurat
 import com.atlassian.migration.datacenter.core.application.DatabaseConfiguration;
 import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
 
-import java.io.File;
 import java.io.IOException;
-import java.lang.ProcessBuilder.Redirect;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,7 +36,7 @@ public class PostgresExtractor implements DatabaseExtractor
     }
 
     @Override
-    public Process startDatabaseDump(File target) throws DatabaseMigrationFailure
+    public Process startDatabaseDump(Path target) throws DatabaseMigrationFailure
     {
         return startDatabaseDump(target, false);
     }
@@ -57,7 +55,7 @@ public class PostgresExtractor implements DatabaseExtractor
      * @throws DatabaseMigrationFailure on failure.
      */
     @Override
-    public Process startDatabaseDump(File target, Boolean parallel) throws DatabaseMigrationFailure
+    public Process startDatabaseDump(Path target, Boolean parallel) throws DatabaseMigrationFailure
     {
         String pgdump = getPgdumpPath()
             .orElseThrow(() -> new DatabaseMigrationFailure("Failed to find appropriate pg_dump executable."));
@@ -96,7 +94,7 @@ public class PostgresExtractor implements DatabaseExtractor
      * @throws DatabaseMigrationFailure on failure, including a non-zero exit code.
      */
     @Override
-    public void dumpDatabase(File to) throws DatabaseMigrationFailure
+    public void dumpDatabase(Path to) throws DatabaseMigrationFailure
     {
         Process proc = startDatabaseDump(to);
 

@@ -88,12 +88,12 @@ class PostgresExtractorIT
     }
 
     @Test
-    void testDatabaseDump() throws InterruptedException, IOException
+    void testDatabaseDump() throws IOException
     {
         PostgresExtractor migration = new PostgresExtractor(configuration);
         Path target = tempDir.resolve("database.dump");
 
-        migration.dumpDatabase(target.toFile());
+        migration.dumpDatabase(target);
         assertTrue(target.toFile().exists());
         assertTrue(target.toFile().isDirectory());
 
