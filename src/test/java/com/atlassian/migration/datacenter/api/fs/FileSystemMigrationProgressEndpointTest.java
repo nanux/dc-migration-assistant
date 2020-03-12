@@ -1,6 +1,5 @@
 package com.atlassian.migration.datacenter.api.fs;
 
-import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FailedFileMigration;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
@@ -14,12 +13,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.ws.rs.core.Response;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.RUNNING;
@@ -32,9 +33,6 @@ import static org.mockito.Mockito.when;
 public class FileSystemMigrationProgressEndpointTest {
 
     @Mock
-    private MigrationService migrationService;
-
-    @Mock
     private FilesystemMigrationService fsMigrationService;
 
     @Mock
@@ -44,7 +42,7 @@ public class FileSystemMigrationProgressEndpointTest {
 
     @BeforeEach
     void setUp() {
-        endpoint = new FileSystemMigrationEndpoint(migrationService, fsMigrationService);
+        endpoint = new FileSystemMigrationEndpoint(fsMigrationService);
     }
 
     @Test
@@ -133,5 +131,39 @@ public class FileSystemMigrationProgressEndpointTest {
 
         assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
         assertThat(response.getEntity().toString(), containsString("no file system migration exists"));
+    }
+
+    @Test
+    void shouldNotRunFileMigrationWhenExistingMigrationIsInProgress(){
+        FileSystemMigrationReport reportMock = Mockito.mock(FileSystemMigrationReport.class);
+        when(reportMock.getStatus()).thenReturn(RUNNING);
+
+        when(fsMigrationService.isRunning()).thenReturn(true);
+        when(fsMigrationService.getReport()).thenReturn(reportMock);
+
+        Response response = endpoint.runFileMigration();
+
+        assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
+        assertEquals(RUNNING, ((Map<String,String>) response.getEntity()).get("status"));
+    }
+
+    @Test
+    void shouldRunFileMigrationWhenNoOtherMigrationIsNotInProgress(){
+        when(fsMigrationService.isRunning()).thenReturn(false);
+        when(fsMigrationService.scheduleMigration()).thenReturn(true);
+        Response response = endpoint.runFileMigration();
+
+        assertEquals(Response.Status.ACCEPTED.getStatusCode(), response.getStatus());
+        assertEquals(true, ((Map<String,String>) response.getEntity()).get("migrationScheduled"));
+    }
+
+    @Test
+    void shouldNotRunFileMigrationWhenWhenUnableToScheduleMigration(){
+        when(fsMigrationService.isRunning()).thenReturn(false);
+        when(fsMigrationService.scheduleMigration()).thenReturn(false);
+        Response response = endpoint.runFileMigration();
+
+        assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
+        assertEquals(false, ((Map<String,String>) response.getEntity()).get("migrationScheduled"));
     }
 }

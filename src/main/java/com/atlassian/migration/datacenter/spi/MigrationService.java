@@ -1,40 +1,46 @@
 package com.atlassian.migration.datacenter.spi;
 
-import com.atlassian.activeobjects.tx.Transactional;
-import com.atlassian.migration.datacenter.core.exceptions.InfrastructureProvisioningError;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
-import com.atlassian.migration.datacenter.spi.infrastructure.ProvisioningConfig;
-
-import java.util.Optional;
+import com.atlassian.migration.datacenter.core.exceptions.MigrationAlreadyExistsException;
+import com.atlassian.migration.datacenter.dto.Migration;
 
 /**
- * Abstraction of an on-premise to cloud migration modeled as a finite state machine.
+ * Manages the lifecycle of the migration
  */
-@Transactional
 public interface MigrationService {
 
     /**
-     * Tries to begin an on-premise to cloud migration. The migration will only be created if a migration doesn't exist.
-     *
-     * @return true if the migration was created, false otherwise.
+     * Creates a new migration in the initial stage. Using this method will create just one migration object in the database
+     * <b>or</b> find the existing migration object and return it.
+     * @throws {@link MigrationAlreadyExistsException} when a migration object already exists.
      */
-    boolean startMigration();
+    Migration createMigration() throws MigrationAlreadyExistsException;
 
     /**
-     * @return the stage that the current migration is up to.
-     * @see MigrationStage
+     * Gets the current stage of the migration
      */
-    MigrationStage getMigrationStage();
+    MigrationStage getCurrentStage();
+
 
     /**
-     * Provisions a CloudFormation stack.
+     * Gets the Migration Object that can only be read. Setter invocation must to happen through the {@link MigrationService} interface
      *
-     * @param provisioningConfig contains information required to provision a stack
-     * @return a stack identifier of the created stack
+     * @return a read-only migration object.
      */
-    String provisionInfrastructure(ProvisioningConfig provisioningConfig) throws InvalidMigrationStageError, InfrastructureProvisioningError;
+    Migration getCurrentMigration();
 
-    Optional<String> getInfrastructureProvisioningStatus(String stackId);
+    /**
+     * Tries to transition the migration state from one to another
+     * @param from the state you are expected to be in currently when beginning the transition
+     * @param to the state you want to transition to
+     * @throws InvalidMigrationStageError when the transition is invalid
+     */
+    void transition(MigrationStage from, MigrationStage to) throws InvalidMigrationStageError;
 
-    boolean startFilesystemMigration();
+    /**
+     * Moves the migration into an error stage
+     * @see MigrationStage#ERROR
+     */
+    void error();
+
 }
