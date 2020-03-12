@@ -24,10 +24,10 @@ Parameters:
 Resources:
 
   #S3 Bucket for Database Transfer
-  DatabaseTransferBucket:
+  MigrationBucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub 'dbtransbucket-${AWS::StackName}'
+      BucketName: !Sub 'atl-migrationbucket-${AWS::StackName}'
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -114,7 +114,8 @@ Resources:
                     echo "beginning s3 sync with shared home"
                     aws s3 sync s3://${MigrationBucket}/shared-home /efs/jira/shared > /var/atlassian/dc-migration-assistant/sync-output.txt 2>/var/atlassian/dc-migration-assistant/sync-error.txt
                     echo "s3 sync with shared home complete"
-                  - { MigrationBucket: !Ref DatabaseTransferBucket }
+                  - { MigrationBucket: !Ref MigrationBucket
+             }
                 mode: "000755"
             commands:
               # Default UID from dc-deployments-automation (not set by quick start) https://bitbucket.org/atlassian/dc-deployments-automation/src/81c2bc9fe8bd3fd00f3538f8d5cc7c32d3e24898/group_vars/aws_node_local.yml#lines-18
@@ -191,12 +192,14 @@ Resources:
             Statement:
               - Action: 's3:*'
                 Effect: Allow
-                Resource: !Sub ['arn:aws:s3:::${MigrationBucket}/*', { MigrationBucket: !Ref DatabaseTransferBucket }]
+                Resource: !Sub ['arn:aws:s3:::${MigrationBucket}/*', { MigrationBucket: !Ref MigrationBucket
+           }]
               - Action:
                   - 's3:ListBucket'
                   - 's3:HeadBucket'
                 Effect: Allow
-                Resource: !Sub ['arn:aws:s3:::${MigrationBucket}', { MigrationBucket: !Ref DatabaseTransferBucket }]
+                Resource: !Sub ['arn:aws:s3:::${MigrationBucket}', { MigrationBucket: !Ref MigrationBucket
+           }]
 
       # TODO: Reduce this to minimum required perms
       #   - PolicyName: Administrator
@@ -339,3 +342,10 @@ Resources:
             workingDirectory: "/opt/atlassian/dc-migration-assistant/"
       DocumentType: "Command"
 
+Outputs:
+  DownloadSSMDocument:
+    Description: "The name of the SSM document to be invoked to copy all files in the migration bucket (under the prefix shared-home)"
+    Value: !Ref SharedHomeDownloadDocument
+  MigrationBucket:
+    Description: "The name of the s3 bucket to be used for facilitating this migration"
+    Value: !Ref MigrationBucket
