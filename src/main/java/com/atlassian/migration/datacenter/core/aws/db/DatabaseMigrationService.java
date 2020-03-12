@@ -5,6 +5,7 @@ import com.atlassian.migration.datacenter.core.aws.region.RegionService;
 import com.atlassian.migration.datacenter.core.db.DatabaseExtractor;
 import com.atlassian.migration.datacenter.core.db.DatabaseExtractorFactory;
 import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
+import com.atlassian.migration.datacenter.core.fs.S3Uploader;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 
@@ -40,33 +41,41 @@ public class DatabaseMigrationService
         this.awsCredentialsProvider = awsCredentialsProvider;
         this.regionService = regionService;
         this.tempDirectory = tempDirectory;
+        this.setStatus(MigrationStatus.NOT_STARTED);
     }
 
-    public File startMigration() throws DatabaseMigrationFailure
+    /**
+     * Start database dump and upload to S3 bucket. This is a blocking operation and should be started from ExecutorService
+     * or preferably from ScheduledJob. The status of the migration can be queried via
+     */
+    public void performMigration() throws DatabaseMigrationFailure
     {
         dbMigrationThread = Executors.newSingleThreadExecutor();
         DatabaseExtractor extractor = DatabaseExtractorFactory.getExtractor(applicationConfiguration);
         File target;
         try {
-            target = Files.createTempFile(tempDirectory, "dbdump", ".sql.gz").toFile();
+            target = Files.createTempFile(tempDirectory, "dbdump", ".dump").toFile();
         } catch (IOException e) {
             throw new DatabaseMigrationFailure("Failed to create temporary database file under: "+tempDirectory);
         }
 
         extractorProcess = extractor.startDatabaseDump(target);
+        setStatus(MigrationStatus.DUMP_IN_PROGRESS);
+        try {
+            extractorProcess.waitFor();
+        } catch (Exception e) {
+            String msg = "Error while waiting for DB extractor to finish";
+            setStatus(MigrationStatus.error(msg, e));
+            throw new DatabaseMigrationFailure(msg, e);
+        }
+        setStatus(MigrationStatus.DUMP_COMPLETE);
 
-        status.set(MigrationStatus.STARTED);
 
-        dbMigrationThread.submit(() -> {
-            try {
-                extractorProcess.waitFor();
-            } catch (Exception e) {
-                status.set(MigrationStatus.error("Error while waiting for DB extractor to finish", e));
-            }
-            status.set(MigrationStatus.FINISHED);
-        });
+        setStatus(MigrationStatus.FINISHED);
+    }
 
-        return target;
+    private void setStatus(MigrationStatus status) {
+        this.status.set(status);
     }
 
     public MigrationStatus getStatus() {
