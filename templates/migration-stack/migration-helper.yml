@@ -334,7 +334,7 @@ Resources:
           inputs:
             runCommand:
             - "#!/bin/bash"
-            - runuser -l jira -c 'at -f /opt/atlassian/dc-migration-assistant/copy-shared-home.sh' now
+            - runuser -l jira -c 'at -f /opt/atlassian/dc-migration-assistant/copy-shared-home.sh now'
             timeoutSeconds: "10"
             workingDirectory: "/opt/atlassian/dc-migration-assistant/"
       DocumentType: "Command"
