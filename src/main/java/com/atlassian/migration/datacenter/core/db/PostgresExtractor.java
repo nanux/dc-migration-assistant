@@ -37,6 +37,12 @@ public class PostgresExtractor implements DatabaseExtractor
         return Optional.empty();
     }
 
+    @Override
+    public Process startDatabaseDump(File target) throws DatabaseMigrationFailure
+    {
+        return startDatabaseDump(target, false);
+    }
+
     /**
      * Invoke `pg_dump` against the database details store in the supplied ApplicationConfiguration. Some important notes:
      *
@@ -46,14 +52,16 @@ public class PostgresExtractor implements DatabaseExtractor
      * </ul>
      *
      * @param target - The directory to dump the compressed database export to.
+     * @param parallel - Whether to use parallel dump strategy.
      * @return The underlying process object.
      * @throws DatabaseMigrationFailure on failure.
      */
     @Override
-    public Process startDatabaseDump(File target) throws DatabaseMigrationFailure
+    public Process startDatabaseDump(File target, Boolean parallel) throws DatabaseMigrationFailure
     {
         String pgdump = getPgdumpPath()
             .orElseThrow(() -> new DatabaseMigrationFailure("Failed to find appropriate pg_dump executable."));
+        Integer numJobs = parallel ? 4 : 1;  // Common-case for now, could be tunable or num-CPUs.
 
         DatabaseConfiguration config = applicationConfiguration.getDatabaseConfiguration();
 
@@ -62,6 +70,7 @@ public class PostgresExtractor implements DatabaseExtractor
                                                     "--no-acl",
                                                     "--compress=9",
                                                     "--format=directory",
+                                                    "--jobs", numJobs.toString(),
                                                     "--file", target.toString(),
                                                     "--dbname", config.getName(),
                                                     "--host", config.getHost(),
