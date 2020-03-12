@@ -18,12 +18,9 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder;
-import software.amazon.awssdk.services.s3.S3Client;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.URI;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -77,7 +74,7 @@ public class DatabaseMigrationService
 
     /**
      * Start database dump and upload to S3 bucket. This is a blocking operation and should be started from ExecutorService
-     * or preferably from ScheduledJob. The status of the migration can be queried via
+     * or preferably from ScheduledJob. The status of the migration can be queried via getStatus().
      */
     public FileSystemMigrationErrorReport performMigration() throws DatabaseMigrationFailure
     {
@@ -119,7 +116,9 @@ public class DatabaseMigrationService
         try {
             crawler.crawlDirectory(target, uploadQueue);
         } catch (IOException e) {
-
+            String msg = "Failed to read the database dump directory.";
+            setStatus(MigrationStatus.error(msg, e));
+            throw new DatabaseMigrationFailure(msg, e);
         }
         uploader.upload(uploadQueue, new AtomicBoolean(true));
         setStatus(MigrationStatus.UPLOAD_COMPLETE);
