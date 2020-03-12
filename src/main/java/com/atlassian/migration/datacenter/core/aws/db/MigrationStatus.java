@@ -9,8 +9,10 @@ public class MigrationStatus
 {
     public enum State {
         NOT_STARTED,
-        STARTED,
-        IN_PROGRESS,
+        DUMP_IN_PROGRESS,
+        DUMP_COMPLETE,
+        UPLOAD_IN_PROGRESS,
+        UPLOAD_COMPLETE,
         ERROR,
         FINISHED;
     }
@@ -34,9 +36,11 @@ public class MigrationStatus
     }
 
     public static final MigrationStatus NOT_STARTED = new MigrationStatus(State.NOT_STARTED, "Not started");
-    public static final MigrationStatus STARTED = new MigrationStatus(State.STARTED, "Started");
-    public static final MigrationStatus IN_PROGRESS = new MigrationStatus(State.IN_PROGRESS, "In Progress");
-    public static final MigrationStatus FINISHED = new MigrationStatus(State.FINISHED, "Started");
+    public static final MigrationStatus DUMP_IN_PROGRESS = new MigrationStatus(State.DUMP_IN_PROGRESS, "Database dump in progress.");
+    public static final MigrationStatus DUMP_COMPLETE = new MigrationStatus(State.DUMP_COMPLETE, "Database dump complete.");
+    public static final MigrationStatus UPLOAD_IN_PROGRESS = new MigrationStatus(State.UPLOAD_IN_PROGRESS, "Database upload in progress.");
+    public static final MigrationStatus UPLOAD_COMPLETE = new MigrationStatus(State.UPLOAD_COMPLETE, "Database upload complete.");
+    public static final MigrationStatus FINISHED = new MigrationStatus(State.FINISHED, "Finished");
 
     public static MigrationStatus error(String message, Throwable exception) {
         return new MigrationStatus(State.ERROR, message, exception);
