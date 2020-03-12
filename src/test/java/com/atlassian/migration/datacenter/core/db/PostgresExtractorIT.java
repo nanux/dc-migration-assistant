@@ -18,6 +18,8 @@ import org.testcontainers.utility.MountableFile;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -89,17 +91,20 @@ class PostgresExtractorIT
     void testDatabaseDump() throws InterruptedException, IOException
     {
         PostgresExtractor migration = new PostgresExtractor(configuration);
-        Path dumpFile = tempDir.resolve("dump.sql.gz");
+        Path target = tempDir.resolve("database.dump");
 
-        migration.dumpDatabase(dumpFile.toFile());
-        assertTrue(dumpFile.toFile().exists());
+        migration.dumpDatabase(target.toFile());
+        assertTrue(target.toFile().exists());
+        assertTrue(target.toFile().isDirectory());
 
-        InputStream stream = new GZIPInputStream(new FileInputStream(dumpFile.toFile()));
         boolean found = false;
-        for (String line: IOUtils.readLines(stream, "UTF-8")) {
-            if (line.contains("As an Agile team, I'd like to learn about Scrum")) {
-                found = true;
-                break;
+        for (Path p: Files.newDirectoryStream(target, "*.gz")) {
+            InputStream stream = new GZIPInputStream(new FileInputStream(p.toFile()));
+            for (String line : IOUtils.readLines(stream, "UTF-8")) {
+                if (line.contains("As an Agile team, I'd like to learn about Scrum")) {
+                    found = true;
+                    break;
+                }
             }
         }
         assertTrue(found);

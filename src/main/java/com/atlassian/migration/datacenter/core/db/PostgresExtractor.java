@@ -42,15 +42,15 @@ public class PostgresExtractor implements DatabaseExtractor
      *
      * <ul>
      * <li>It is the responsibility of the caller to ensure that the filesystems the target resides on has sufficient space.</li>
-     * <li>stderr is redirected to the stderr of the calling process.</li>
+     * <li>stdio & stderr are redirected to the stderr of the calling process.</li>
      * </ul>
      *
-     * @param to - The file to dump the compressed database export to.
+     * @param target - The directory to dump the compressed database export to.
      * @return The underlying process object.
      * @throws DatabaseMigrationFailure on failure.
      */
     @Override
-    public Process startDatabaseDump(File to) throws DatabaseMigrationFailure
+    public Process startDatabaseDump(File target) throws DatabaseMigrationFailure
     {
         String pgdump = getPgdumpPath()
             .orElseThrow(() -> new DatabaseMigrationFailure("Failed to find appropriate pg_dump executable."));
@@ -61,12 +61,13 @@ public class PostgresExtractor implements DatabaseExtractor
                                                     "--no-owner",
                                                     "--no-acl",
                                                     "--compress=9",
+                                                    "--format=directory",
+                                                    "--file", target.toString(),
                                                     "--dbname", config.getName(),
                                                     "--host", config.getHost(),
                                                     "--port", config.getPort().toString(),
                                                     "--username", config.getUsername())
-            .inheritIO()
-            .redirectOutput(Redirect.to(to));
+            .inheritIO();
         builder.environment().put("PGPASSWORD", config.getPassword());
 
         try {
