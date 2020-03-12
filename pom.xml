@@ -9,6 +9,10 @@
         <version>6.0.2</version>
     </parent>
 
+    <modules>
+        <module>filesystem-processor</module>
+    </modules>
+
     <repositories>
         <repository>
             <id>atlassian-public</id>
