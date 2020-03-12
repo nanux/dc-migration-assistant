@@ -43,7 +43,7 @@ Resources:
             full_efs_config: [create_efs_script,mount_efs,prepare_efs_sync_script]
           create_efs_script:
             files:
-              /tmp/mount-efs.sh:
+              /opt/atlassian/dc-migration-assistant/mount-efs.sh:
                 content: !Sub
                   - |
                     #!/bin/bash
@@ -104,7 +104,7 @@ Resources:
           mount_efs:
             commands:
               01_mount:
-                command: /tmp/mount-efs.sh
+                command: /opt/atlassian/dc-migration-assistant/mount-efs.sh
           prepare_efs_sync_script:
             files:
               /opt/atlassian/dc-migration-assistant/copy-shared-home.sh:
