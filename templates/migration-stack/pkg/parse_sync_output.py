@@ -3,17 +3,9 @@ import re
 import json
 import sys
 
-if len(sys.argv) != 2:
-    print("must provide output file as argument")
-    exit(1)
-
-last_line = subprocess.check_output(["tail", "-1", sys.argv[1]])
-last_line_decoded = last_line.decode("utf-8")
-
-calculating_match = re.search("calculating", last_line_decoded)
-match = re.search("([0-9]*) file\(s\) remaining", last_line_decoded)
-
-big_match = re.search("Completed ([0-9]*\.[0-9]*) (M|K|G)iB\/~?([0-9]*\.[0-9]*) (M|K|G)iB \([0-9]*\.[0-9]* [MKG]iB\/s\) with ~?([0-9]*) file\(s\) remaining( \(calculating...\))?", last_line_decoded)
+def getLastLineOfSyncOutput(syncFilePath: str) -> str:
+    last_line = subprocess.check_output(["tail", "-1", sys.argv[1]])
+    return last_line.decode("utf-8")
 
 def getMultiplierForDataUnit(unit: str):
     if unit == "K":
@@ -25,29 +17,46 @@ def getMultiplierForDataUnit(unit: str):
 
     raise ValueError('Must be K, M or G')
 
-if big_match is not None:
-    progress_bytes_prefix = float(big_match.group(1))
-    progress_bytes_multiplier = getMultiplierForDataUnit(big_match.group(2))
-    progress = progress_bytes_prefix * progress_bytes_multiplier
+def parseSyncOutput(output: str):
+    big_match = re.search("Completed ([0-9]*\.[0-9]*) (M|K|G)iB\/~?([0-9]*\.[0-9]*) (M|K|G)iB \([0-9]*\.[0-9]* [MKG]iB\/s\) with ~?([0-9]*) file\(s\) remaining( \(calculating...\))?", output)
 
-    total_bytes_prefix = float(big_match.group(3))
-    total_bytes_multiplier = getMultiplierForDataUnit(big_match.group(4))
-    total_bytes = total_bytes_prefix * total_bytes_multiplier
+    if big_match is not None:
+        progress_bytes_prefix = float(big_match.group(1))
+        progress_bytes_multiplier = getMultiplierForDataUnit(big_match.group(2))
+        progress = progress_bytes_prefix * progress_bytes_multiplier
 
-    files_remaining = int(big_match.group(5))
+        total_bytes_prefix = float(big_match.group(3))
+        total_bytes_multiplier = getMultiplierForDataUnit(big_match.group(4))
+        total_bytes = total_bytes_prefix * total_bytes_multiplier
 
-    calculating = big_match.group(6) is not None
+        files_remaining = int(big_match.group(5))
 
-    status = {
-        'progress': progress,
-        'files_remaining': files_remaining,
-        'total': total_bytes,
-        'isCalculating': calculating
-    }
+        calculating = big_match.group(6) is not None
 
-    print(json.dumps(status))
-    exit(0)
+        status = {
+            'progress': progress,
+            'files_remaining': files_remaining,
+            'total': total_bytes,
+            'isCalculating': calculating
+        }
 
-else:
-    print("could not find file progress", file=sys.stderr)
+        return json.dumps(status)
+
+    else:
+        raise ValueError('could not find sync progress in sync output {}'.format(output))
+
+if len(sys.argv) != 3:
+    print("Usage: {} <output file> <error file>".format(sys.argv[0]))
     exit(1)
+
+output_file_path = sys.argv[1]
+last_line = getLastLineOfSyncOutput(output_file_path)
+
+try:
+    status = parseSyncOutput(last_line)
+    print(status)
+except ValueError:
+    print("could not find file progress in last line of progress file {}".format(output_file_path), file=sys.stderr)
+    exit(1)
+
+
