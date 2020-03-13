@@ -114,7 +114,7 @@ Resources:
                     SYNC_LOG_FILE="/var/atlassian/dc-migration-assistant/sync-log.txt"
                     echo "beginning s3 sync with shared home" >> $SYNC_LOG_FILE
                     aws s3 sync s3://${MigrationBucket}/shared-home /efs/jira/shared >> $SYNC_LOG_FILE 2>/var/atlassian/dc-migration-assistant/sync-error.txt
-                    echo "s3 sync with shared home complete" >> $SYNC_LOG_FILE
+                    echo "s3 sync with shared home complete with exit code $?" >> $SYNC_LOG_FILE
                   - { MigrationBucket: !Ref MigrationBucket
              }
                 mode: "000755"
