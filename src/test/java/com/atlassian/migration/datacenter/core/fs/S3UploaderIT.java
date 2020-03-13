@@ -26,7 +26,10 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -39,7 +42,7 @@ import static org.mockito.Mockito.when;
 class S3UploaderIT {
     private static final String LOCALSTACK_S3_ENDPOINT = "http://localhost:4572";
     private static final String TREBUCHET_LOCALSTACK_BUCKET = "trebuchet-localstack-bucket";
-    private ConcurrentLinkedQueue<Path> queue = new ConcurrentLinkedQueue<>();
+    private BlockingQueue<Optional<Path>> queue;
     private S3Uploader uploader;
     private AtomicBoolean isCrawlDone;
     private FileSystemMigrationErrorReport errorReport;
@@ -75,19 +78,19 @@ class S3UploaderIT {
         errorReport = new DefaultFileSystemMigrationErrorReport();
         progress = new DefaultFilesystemMigrationProgress();
         isCrawlDone = new AtomicBoolean(false);
-        queue = new ConcurrentLinkedQueue<>();
+        queue = new LinkedBlockingQueue<>();
         uploader = new S3Uploader(config, errorReport, progress);
     }
 
     @Test
-    void uploadShouldUploadPathsFromQueueToS3() throws IOException {
+    void uploadShouldUploadPathsFromQueueToS3() throws IOException, InterruptedException {
         final Path file = addFileToQueue("file");
-        isCrawlDone.set(true);
+        queue.put(Optional.empty());
 
         AmazonS3 s3Client = TestUtils.getClientS3();
         s3Client.createBucket(TREBUCHET_LOCALSTACK_BUCKET);
 
-        uploader.upload(queue, isCrawlDone);
+        uploader.upload(queue);
 
         assertTrue(queue.isEmpty());
 
@@ -111,7 +114,7 @@ class S3UploaderIT {
     Path addFileToQueue(String fileName) throws IOException {
         final Path file = tempDir.resolve(fileName);
         Files.write(file, "".getBytes());
-        queue.add(file);
+        queue.add(Optional.of(file));
         return file;
     }
 }

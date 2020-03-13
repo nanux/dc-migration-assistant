@@ -26,12 +26,8 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.Optional;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 
@@ -54,7 +50,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
     private FileSystemMigrationReport report;
     private AtomicBoolean isDoneCrawling;
-    private ConcurrentLinkedQueue<Path> uploadQueue;
+    private LinkedBlockingQueue<Optional<Path>> uploadQueue;
     private S3UploadConfig s3UploadConfig;
 
     //TODO: Region Service and provider will be replaced by the S3 Client
@@ -136,7 +132,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private void initialiseMigration() throws InvalidMigrationStageError {
         report = new DefaultFileSystemMigrationReport(new DefaultFileSystemMigrationErrorReport(), new DefaultFilesystemMigrationProgress());
         isDoneCrawling = new AtomicBoolean(false);
-        uploadQueue = new ConcurrentLinkedQueue<>();
+        uploadQueue = new LinkedBlockingQueue<>();
 
         migrationService.transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
 
@@ -151,7 +147,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
         Runnable uploaderFunction = () -> {
             Uploader uploader = new S3Uploader(s3UploadConfig, report, report);
-            uploader.upload(uploadQueue, isDoneCrawling);
+            uploader.upload(uploadQueue);
         };
 
         IntStream.range(0, NUM_UPLOAD_THREADS).forEach(x -> completionService.submit(uploaderFunction, null));

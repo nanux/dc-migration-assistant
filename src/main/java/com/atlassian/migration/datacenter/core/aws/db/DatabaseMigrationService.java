@@ -18,7 +18,9 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -67,7 +69,7 @@ public class DatabaseMigrationService
         setStatus(MigrationStatus.DUMP_COMPLETE);
 
 
-        ConcurrentLinkedQueue<Path> uploadQueue = new ConcurrentLinkedQueue<>();
+        BlockingQueue<Optional<Path>> uploadQueue = new LinkedBlockingQueue<>();
         FileSystemMigrationProgress progress = new DefaultFilesystemMigrationProgress();
         FileSystemMigrationErrorReport report = new DefaultFileSystemMigrationErrorReport();
 
@@ -85,7 +87,7 @@ public class DatabaseMigrationService
             setStatus(MigrationStatus.error(msg, e));
             throw new DatabaseMigrationFailure(msg, e);
         }
-        uploader.upload(uploadQueue, new AtomicBoolean(true));
+        uploader.upload(uploadQueue);
         setStatus(MigrationStatus.UPLOAD_COMPLETE);
 
         setStatus(MigrationStatus.FINISHED);

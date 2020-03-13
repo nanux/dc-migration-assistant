@@ -1,9 +1,11 @@
 package com.atlassian.migration.datacenter.core.fs;
 
+import com.atlassian.migration.datacenter.core.exceptions.FileUploadException;
+
 import java.nio.file.Path;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.Optional;
+import java.util.concurrent.BlockingQueue;
 
 public interface Uploader {
-    void upload(ConcurrentLinkedQueue<Path> queue, AtomicBoolean isCrawlDone);
+    void upload(BlockingQueue<Optional<Path>> queue) throws FileUploadException;
 }

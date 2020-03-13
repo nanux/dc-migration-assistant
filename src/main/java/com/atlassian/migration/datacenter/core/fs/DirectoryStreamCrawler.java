@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class DirectoryStreamCrawler implements Crawler {
@@ -24,14 +26,18 @@ public class DirectoryStreamCrawler implements Crawler {
     }
 
     @Override
-    public void crawlDirectory(Path start, ConcurrentLinkedQueue<Path> queue) throws IOException {
-        final DirectoryStream<Path> paths;
-        paths = Files.newDirectoryStream(start);
-        listDirectories(queue, paths);
-        logger.info("Crawled and added {} files for upload.", progress.getNumberOfFilesFound());
+    public void crawlDirectory(Path start, BlockingQueue<Optional<Path>> queue) throws IOException {
+        try {
+            final DirectoryStream<Path> paths;
+            paths = Files.newDirectoryStream(start);
+            listDirectories(queue, paths);
+            logger.info("Crawled and added {} files for upload.", progress.getNumberOfFilesFound());
+        } finally {
+            queue.add(Optional.empty());
+        }
     }
 
-    private void listDirectories(ConcurrentLinkedQueue<Path> queue, DirectoryStream<Path> paths) {
+    private void listDirectories(BlockingQueue<Optional<Path>> queue, DirectoryStream<Path> paths) {
         paths.forEach(p -> {
             if (Files.isDirectory(p)) {
                 try (final DirectoryStream<Path> newPaths = Files.newDirectoryStream(p.toAbsolutePath())) {
@@ -41,7 +47,7 @@ public class DirectoryStreamCrawler implements Crawler {
                     report.reportFileNotMigrated(new FailedFileMigration(p, e.getMessage()));
                 }
             } else {
-                queue.add(p);
+                queue.add(Optional.of(p));
                 progress.reportFileFound();
             }
         });
