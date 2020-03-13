@@ -4,6 +4,7 @@ import cloud.localstack.docker.LocalstackDockerExtension;
 import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.aws.auth.AtlassianPluginAWSCredentialsProvider;
+import com.atlassian.migration.datacenter.core.aws.infrastructure.LocalStackEnvironmentVariables;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.MigrationService;
@@ -31,7 +32,7 @@ import static org.mockito.Mockito.when;
 
 @Tag("integration")
 @ExtendWith({LocalstackDockerExtension.class, MockitoExtension.class})
-@LocalstackDockerProperties(services = {"s3"})
+@LocalstackDockerProperties(environmentVariableProvider = LocalStackEnvironmentVariables.class, services = {"s3"})
 class S3FilesystemMigrationServiceIT {
     @TempDir
     Path dir;

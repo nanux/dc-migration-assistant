@@ -1,39 +1,57 @@
 package com.atlassian.migration.datacenter.fs.processor.configuration;
 
 import com.amazonaws.services.sqs.AmazonSQSAsync;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
+import org.springframework.cloud.aws.autoconfigure.cache.ElastiCacheAutoConfiguration;
+import org.springframework.cloud.aws.core.env.ResourceIdResolver;
 import org.springframework.cloud.aws.messaging.config.QueueMessageHandlerFactory;
-import org.springframework.cloud.aws.messaging.core.QueueMessagingTemplate;
+import org.springframework.cloud.aws.messaging.listener.QueueMessageHandler;
 import org.springframework.cloud.aws.messaging.listener.SimpleMessageListenerContainer;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
+import org.springframework.context.annotation.Primary;
+import org.springframework.messaging.converter.MappingJackson2MessageConverter;
+import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Configuration
+@EnableAutoConfiguration(exclude = ElastiCacheAutoConfiguration.class)
+@ComponentScan
 public class FileSystemProcessorConfiguration {
 
     @Bean
-    @Profile("test")
-    public QueueMessagingTemplate queueMessagingTemplate(
-            AmazonSQSAsync amazonSQSAsync) {
-        return new QueueMessagingTemplate(amazonSQSAsync);
-    }
-
-    @Bean
-    public SimpleMessageListenerContainer simpleMessageListenerContainer(AmazonSQSAsync amazonSQSAsync, QueueMessageHandlerFactory queueMessageHandler, ThreadPoolTaskExecutor threadPoolTaskExecutor) {
+    public SimpleMessageListenerContainer simpleMessageListenerContainer(ThreadPoolTaskExecutor threadPoolTaskExecutor, ResourceIdResolver resolver, AmazonSQSAsync amazonSQSAsync, QueueMessageHandler queueMessageHandler) {
         SimpleMessageListenerContainer simpleMessageListenerContainer = new SimpleMessageListenerContainer();
         simpleMessageListenerContainer.setAmazonSqs(amazonSQSAsync);
-        simpleMessageListenerContainer.setMessageHandler(queueMessageHandler.createQueueMessageHandler());
+        simpleMessageListenerContainer.setMessageHandler(queueMessageHandler);
         simpleMessageListenerContainer.setMaxNumberOfMessages(10);
+        simpleMessageListenerContainer.setResourceIdResolver(resolver);
         simpleMessageListenerContainer.setTaskExecutor(threadPoolTaskExecutor);
         return simpleMessageListenerContainer;
     }
 
     @Bean
-    public QueueMessageHandlerFactory queueMessageHandler(AmazonSQSAsync amazonSQSAsync) {
+    public QueueMessageHandler queueMessageHandler(AmazonSQSAsync amazonSQSAsync, List<MessageConverter> customMessageConverters) {
         QueueMessageHandlerFactory queueMessageHandlerFactory = new QueueMessageHandlerFactory();
         queueMessageHandlerFactory.setAmazonSqs(amazonSQSAsync);
-        return queueMessageHandlerFactory;
+        queueMessageHandlerFactory.setMessageConverters(customMessageConverters);
+        return queueMessageHandlerFactory.createQueueMessageHandler();
+    }
+
+    @Bean
+    @Primary
+    public List<MessageConverter> customMessageConverters() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        MappingJackson2MessageConverter messageConverter = new MappingJackson2MessageConverter();
+        messageConverter.setObjectMapper(objectMapper);
+        List<MessageConverter> converters = new ArrayList<>(1);
+        converters.add(messageConverter);
+        return converters;
     }
 
     @Bean
@@ -45,5 +63,6 @@ public class FileSystemProcessorConfiguration {
         executor.initialize();
         return executor;
     }
+
 
 }

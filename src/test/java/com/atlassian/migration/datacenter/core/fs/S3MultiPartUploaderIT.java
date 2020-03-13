@@ -5,6 +5,7 @@ import cloud.localstack.docker.LocalstackDockerExtension;
 import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
+import com.atlassian.migration.datacenter.core.aws.infrastructure.LocalStackEnvironmentVariables;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -30,7 +31,7 @@ import static org.mockito.Mockito.when;
 
 @Tag("integration")
 @ExtendWith({LocalstackDockerExtension.class, MockitoExtension.class})
-@LocalstackDockerProperties(services = {"s3"}, imageTag = "0.10.8")
+@LocalstackDockerProperties(environmentVariableProvider = LocalStackEnvironmentVariables.class, services = {"s3"}, imageTag = "0.10.8")
 class S3MultiPartUploaderIT {
     private static final String LOCALSTACK_S3_ENDPOINT = "http://localhost:4572";
     private static final String TREBUCHET_LOCALSTACK_BUCKET = "trebuchet-localstack-bucket";

@@ -1,0 +1,390 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Jira / Confluence Server to DC (AWS) Helper
+Parameters:
+  NetworkPrivateSubnet:
+    Description: "Private SubnetId where Migration helper will be placed - Must have connection to desitnation Storage"
+    Type: AWS::EC2::Subnet::Id
+  EFSFileSystemId:
+    Description: "The Elastic File System Id we will mount to the Migration Helper EC2 Instance"
+    Type: String
+  EFSSecurityGroup:
+    Description: "The Security Group attached to EFS, access to NFS port will be open from Migration Helper Security Group"
+    Type: AWS::EC2::SecurityGroup::Id
+  HelperInstanceType:
+    Description: "The Instance Type of Helper EC2 Instance"
+    Type: String
+    Default: 'm5a.xlarge'
+  HelperVpcId:
+    Description: "The VPC for Helper EC2 Instance"
+    Type: AWS::EC2::VPC::Id
+  LatestAmiId:
+    Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
+    Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+
+Resources:
+
+  #S3 Bucket for Database Transfer
+  MigrationBucket:
+    Type: AWS::S3::Bucket
+    DependsOn:
+      - QueuePolicy
+    Properties:
+      BucketName: !Sub 'atl-migrationbucket-${AWS::StackName}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      NotificationConfiguration:
+        QueueConfigurations:
+          - Queue: !GetAtt MigrationQueue.Arn
+            Event: s3:ObjectCreated:*
+    DeletionPolicy: Delete
+
+  QueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: '*'
+            Action:
+              - SQS:SendMessage
+            Resource: '*'
+            Condition:
+              ArnEquals:
+                aws:SourceArn: "arn:aws:s3:::*"
+      Queues:
+        - !Ref MigrationQueue
+
+  MigrationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      DelaySeconds: 0
+      MaximumMessageSize: 262144
+      MessageRetentionPeriod: 864000
+      QueueName: !Sub 'atl-migration-queue-${AWS::StackName}'
+      ReceiveMessageWaitTimeSeconds: 0
+      VisibilityTimeout: 90
+
+  #EC2 Migration Helper
+  HelperLaunchConfig:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          full_efs_config: [create_efs_script,mount_efs,prepare_efs_sync_script]
+        create_efs_script:
+          files:
+            /opt/atlassian/dc-migration-assistant/mount-efs.sh:
+              content: !Sub
+                - |
+                  #!/bin/bash
+
+                  EFS_REGION=${AWS::Region}
+                  EFS_MOUNT_DIR=/efs/
+                  EFS_FILE_SYSTEM_ID=${EFSID}
+
+                  echo "Mounting EFS filesystem $EFS_FILE_SYSTEM_ID to directory $EFS_MOUNT_DIR ..."
+
+                  echo 'Stopping NFS ID Mapper...'
+                  service rpcidmapd status &> /dev/null
+                  if [ $? -ne 0 ] ; then
+                      echo 'rpc.idmapd is already stopped!'
+                  else
+                      service rpcidmapd stop
+                      if [ $? -ne 0 ] ; then
+                          echo 'ERROR: Failed to stop NFS ID Mapper!'
+                          exit 1
+                      fi
+                  fi
+
+                  echo 'Checking if EFS mount directory exists...'
+                  if [ ! -d $EFS_MOUNT_DIR ]; then
+                      echo "Creating directory $EFS_MOUNT_DIR ..."
+                      mkdir -p $EFS_MOUNT_DIR
+                      if [ $? -ne 0 ]; then
+                          echo 'ERROR: Directory creation failed!'
+                          exit 1
+                      fi
+                  else
+                      echo "Directory $EFS_MOUNT_DIR already exists!"
+                  fi
+
+                  mountpoint -q $EFS_MOUNT_DIR
+                  if [ $? -ne 0 ]; then
+                      echo "mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $EFS_FILE_SYSTEM_ID.efs.$EFS_REGION.amazonaws.com:/ $EFS_MOUNT_DIR"
+                      mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $EFS_FILE_SYSTEM_ID.efs.$EFS_REGION.amazonaws.com:/ $EFS_MOUNT_DIR
+                      if [ $? -ne 0 ] ; then
+                          echo 'ERROR: Mount command failed!'
+                          exit 1
+                      fi
+                      chmod 777 $EFS_MOUNT_DIR
+                      runuser -l  ec2-user -c "touch $EFS_MOUNT_DIR/mount_worked"
+                      if [[ $? -ne 0 ]]; then
+                          echo 'ERROR: Permission Error!'
+                          exit 1
+                      else
+                          runuser -l  ec2-user -c "rm -f $EFS_MOUNT_DIR/mount_worked"
+                      fi
+                  else
+                      echo "Directory $EFS_MOUNT_DIR is already a valid mountpoint!"
+                  fi
+
+                  echo 'EFS mount complete.'
+                - { EFSID: !Ref EFSFileSystemId }
+              mode: "000755"
+          mount_efs:
+            commands:
+              01_mount:
+                command: /opt/atlassian/dc-migration-assistant/mount-efs.sh
+          prepare_efs_sync_script:
+            files:
+              /opt/atlassian/dc-migration-assistant/copy-shared-home.sh:
+                content: !Sub
+                  - |
+                    #!/bin/bash
+                    SYNC_LOG_FILE="/var/atlassian/dc-migration-assistant/sync-log.txt"
+                    echo "beginning s3 sync with shared home" >> $SYNC_LOG_FILE
+                    aws s3 sync s3://${MigrationBucket}/shared-home /efs/jira/shared >> $SYNC_LOG_FILE 2>/var/atlassian/dc-migration-assistant/sync-error.txt
+                    echo "s3 sync with shared home complete" >> $SYNC_LOG_FILE
+                  - { MigrationBucket: !Ref MigrationBucket
+                  }
+                mode: "000755"
+            commands:
+              # Default UID from dc-deployments-automation (not set by quick start) https://bitbucket.org/atlassian/dc-deployments-automation/src/81c2bc9fe8bd3fd00f3538f8d5cc7c32d3e24898/group_vars/aws_node_local.yml#lines-18
+              # We need to use useradd because using a cfn-init user gives us a non-interactive user
+              01_create_jira_user:
+                test: "grep -qv jira /etc/passwd"
+                command: "useradd -u 2001 jira"
+                ignoreErrors: false
+              02_create_migration_dirs:
+                test: "test ! -d /var/atlassian/dc-migration-assistant"
+                command: mkdir -p /var/atlassian/dc-migration-assistant
+                ignoreErrors: false
+              03_set_migration_dir_perms:
+                command: chown jira:jira /var/atlassian/dc-migration-assistant
+                ignoreErrors: false
+
+    Properties:
+      ImageId: !Ref LatestAmiId
+      InstanceType: !Ref "HelperInstanceType"
+      IamInstanceProfile: !Ref "HelperInstanceProfile"
+      SecurityGroups:
+        - !Ref HelperSecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          yum install -y aws-cfn-bootstrap
+          /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource HelperLaunchConfig --configsets full_efs_config --region ${AWS::Region}
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource HelperServerGroup --region ${AWS::Region}
+  HelperServerGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+        Count: '1'
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MaxBatchSize: 2
+        MinInstancesInService: 1
+        PauseTime: PT15M
+        WaitOnResourceSignals: true
+    Properties:
+      VPCZoneIdentifier:
+        - !Ref 'NetworkPrivateSubnet'
+      LaunchConfigurationName: !Ref 'HelperLaunchConfig'
+      MinSize: '1'
+      MaxSize: '1'
+      Tags:
+        - Key: Name
+          PropagateAtLaunch: true
+          Value: !Ref 'AWS::StackName'
+
+  HelperInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+        - !Ref HelperInstanceProfileRole
+  HelperInstanceProfileRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - 'ec2.amazonaws.com'
+            Action:
+              - 'sts:AssumeRole'
+      Policies:
+        - PolicyName: MigrationBucketFullAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action: 's3:*'
+                Effect: Allow
+                Resource: !Sub ['arn:aws:s3:::${MigrationBucket}/*', { MigrationBucket: !Ref MigrationBucket
+                }]
+              - Action:
+                  - 's3:ListBucket'
+                  - 's3:HeadBucket'
+                Effect: Allow
+                Resource: !Sub ['arn:aws:s3:::${MigrationBucket}', { MigrationBucket: !Ref MigrationBucket
+                }]
+
+      # TODO: Reduce this to minimum required perms
+      #   - PolicyName: Administrator
+      #     PolicyDocument:
+      #       Version: 2012-10-17
+      #       Statement:
+      #         - Sid: Administrator
+      #           Action: '*'
+      #           Effect: Allow
+      #           Resource: '*'
+      ManagedPolicyArns:
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
+        - !Sub 'arn:${AWS::Partition}:iam::aws:policy/CloudWatchAgentServerPolicy'
+  HelperSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow SSH Port from Trusted
+      VpcId: !Ref HelperVpcId
+
+  # OpenEFS to Helper security group
+  ExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+                - Fn::Join:
+                    - ""
+                    - - "states."
+                      - Ref: "AWS::Region"
+                      - ".amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: "Policies"
+          PolicyDocument:
+            Statement:
+              - Effect: "Allow"
+                Action: "*"
+                Resource: "*"
+  OpenEFSAccessCustom:
+    Type: Custom::OpenEFSAccessCustom
+    Version: 1.0
+    Properties:
+      ServiceToken: !GetAtt OpenEFSAccess.Arn
+      HelperSG: !Ref HelperSecurityGroup
+      EFSSG: !Ref EFSSecurityGroup
+  OpenEFSAccess:
+    Type: "AWS::Lambda::Function"
+    Properties:
+      Handler: index.lambda_handler
+      Role: !GetAtt ExecutionRole.Arn
+      Runtime: python3.7
+      Timeout: 120
+      Code:
+        ZipFile: |
+          import json
+          import boto3
+          import cfnresponse
+          ec2client = boto3.client('ec2')
+          def lambda_handler(event, context):
+            try:
+                  efssg =  event['ResourceProperties']['EFSSG']
+                  evsg = event['ResourceProperties']['HelperSG']
+                  if event['RequestType'] == 'Delete':
+                      response = ec2client.revoke_security_group_ingress(
+                          GroupId=efssg,
+                          IpPermissions=[
+                              {'IpProtocol': 'tcp',
+                              'FromPort': 2049,
+                              'ToPort': 2049,
+                              'UserIdGroupPairs': [{'GroupId': evsg}]}
+                          ]
+                      )
+                      print(response)
+                      responseData = {'Delete': 'SUCCESS'}
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+                  if event['RequestType'] == 'Create':
+                      response = ec2client.authorize_security_group_ingress(
+                          GroupId=efssg,
+                          IpPermissions=[
+                              {'IpProtocol': 'tcp',
+                              'FromPort': 2049,
+                              'ToPort': 2049,
+                              'UserIdGroupPairs': [{'GroupId': evsg}]}
+                          ]
+                      )
+                      responseData = {'Create': 'SUCCESS'}
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+                  if event['RequestType'] == 'Update':
+                      responseData = {'Update': 'SUCCESS'}
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
+            except Exception as e:
+                responseData = {'Error': str(e)}
+                cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
+
+  OpenEFSAccessExecutionRole:
+    Type: "AWS::IAM::Role"
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+                - Fn::Join:
+                    - ""
+                    - - "states."
+                      - Ref: "AWS::Region"
+                      - ".amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      Policies:
+        - PolicyName: "Policies"
+          PolicyDocument:
+            Statement:
+              - Effect: "Allow"
+                Action: "*"
+                Resource: "*"
+
+  # Shared Home Download SSM Document
+  SharedHomeDownloadDocument:
+    Type: "AWS::SSM::Document"
+    Properties:
+      Content:
+        schemaVersion: "2.2"
+        description: "This document is used by the Atlassian DC Migration Assistant to copy down your Jira shared home from S3 to the new stack EFS"
+        mainSteps:
+          - action: "aws:runShellScript"
+            name: "copySharedHomeFromS3ToEFS"
+            inputs:
+              runCommand:
+                - "#!/bin/bash"
+                - runuser -l jira -c 'at -f /opt/atlassian/dc-migration-assistant/copy-shared-home.sh now'
+              timeoutSeconds: "10"
+              workingDirectory: "/opt/atlassian/dc-migration-assistant/"
+      DocumentType: "Command"
+
+Outputs:
+  DownloadSSMDocument:
+    Description: "The name of the SSM document to be invoked to copy all files in the migration bucket (under the prefix shared-home)"
+    Value: !Ref SharedHomeDownloadDocument
+  MigrationBucket:
+    Description: "The name of the s3 bucket to be used for facilitating this migration"
+    Value: !Ref MigrationBucket
+  QueueARN:
+    Description: The queue events are sent to
+    Value: !GetAtt MigrationQueue.Arn
