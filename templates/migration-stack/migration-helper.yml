@@ -20,6 +20,9 @@ Parameters:
   LatestAmiId:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+  MigrationFilePath:
+    Type: String
+    Description: 'The directory on the migration helper server to write the files to from S3'
 
 Resources:
 
@@ -57,6 +60,22 @@ Resources:
                 aws:SourceArn: "arn:aws:s3:::*"
       Queues:
         - !Ref MigrationQueue
+
+  StackNameParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /config/migration-helper/cloud.aws.stack.name
+      Type: String
+      Value: !Ref AWS::StackName
+      Description: CloudFormation Stack Name
+
+  JiraFilePathParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /config/migration-helper/app.jira.file.path
+      Type: String
+      Value: !Ref MigrationFilePath
+      Description: File Path
 
   MigrationQueue:
     Type: AWS::SQS::Queue
