@@ -15,8 +15,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -27,14 +30,14 @@ class DirectoryStreamCrawlerTest {
     Path tempDir;
 
     private Crawler directoryStreamCrawler;
-    private ConcurrentLinkedQueue<Path> queue;
+    private BlockingQueue<Optional<Path>> queue;
     private Set<Path> expectedPaths;
     private FileSystemMigrationErrorReport errorReport;
     private FileSystemMigrationProgress progress;
 
     @BeforeEach
     void createFiles() throws Exception {
-        queue = new ConcurrentLinkedQueue<>();
+        queue = new LinkedBlockingQueue<>();
         expectedPaths = new HashSet<>();
         errorReport = new DefaultFileSystemMigrationErrorReport();
         progress = new DefaultFilesystemMigrationProgress();
@@ -50,7 +53,7 @@ class DirectoryStreamCrawlerTest {
         directoryStreamCrawler = new DirectoryStreamCrawler(errorReport, progress);
         directoryStreamCrawler.crawlDirectory(tempDir, queue);
 
-        expectedPaths.forEach(path -> assertTrue(queue.contains(path), String.format("Expected %s is absent from crawler queue", path)));
+        expectedPaths.forEach(path -> assertTrue(queue.contains(Optional.of(path)), String.format("Expected %s is absent from crawler queue", path)));
     }
 
     @Test
