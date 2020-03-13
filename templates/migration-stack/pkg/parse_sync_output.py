@@ -76,8 +76,7 @@ if finished:
 try:
     progress = parseSyncOutput(last_line)
 except ValueError:
-    print("could not find file progress in last line of progress file {}".format(output_file_path), file=sys.stderr)
-    exit(1)
+    progress = {}
 
 try:
     errors = parseError(error_file_path)
