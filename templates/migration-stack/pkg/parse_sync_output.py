@@ -3,7 +3,11 @@ import re
 import json
 import sys
 
-last_line = subprocess.check_output(["tail", "-1", "big-sync/output.txt"])
+if len(sys.argv) != 2:
+    print("must provide output file as argument")
+    exit(1)
+
+last_line = subprocess.check_output(["tail", "-1", sys.argv[1]])
 last_line_decoded = last_line.decode("utf-8")
 
 calculating_match = re.search("calculating", last_line_decoded)
