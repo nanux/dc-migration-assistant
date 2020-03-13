@@ -1,6 +1,13 @@
 STACK_NAME := $(shell whoami)-$(shell date +"%d-%mt%H-%M-%S")-migration-helper
 INSTANCE_TYPE ?= c5.large
 
+define SED_COMMAND
+'/%{HOME_COPY_SCRIPT}%/{
+  s/%{HOME_COPY_SCRIPT}%//g
+  r render/tab_sync.py
+}'
+endef
+
 # Params for create-stack
 # VPC_ID: the VPC to deploy the elastic beanstalk environment in
 # SUBNET_IDS: the IDs of the subnets to distribute the elastic beanstalk EC2 instance between (There is only 1 instance so should just be a single subnet)
@@ -9,6 +16,12 @@ INSTANCE_TYPE ?= c5.large
 
 PARAMS := ParameterKey=HelperVpcId,ParameterValue=$(VPC_ID) ParameterKey=NetworkPrivateSubnet,ParameterValue=$(SUBNET_IDS) ParameterKey=EFSFileSystemId,ParameterValue=$(EFS_ID) ParameterKey=EFSSecurityGroup,ParameterValue=$(SG_ID) ParameterKey=HelperInstanceType,ParameterValue=$(INSTANCE_TYPE)
 
+rendertemplate:
+	mkdir render;
+	echo "/%{HOME_COPY_SCRIPT}%/{\n\ts/%{HOME_COPY_SCRIPT}%//g\n\tr render/tab_sync.py\n}" > render/sed
+	sed -E "s/^/                    /g" pkg/parse_sync_output.py > render/tab_sync.py;
+	sed -f render/sed pkg/migration-helper.yml.src > migration-helper.yml
+	rm -rf render
 createstack:
 	aws cloudformation create-stack --stack-name $(STACK_NAME) --template-body file://migration-helper.yml --parameters $(PARAMS) --capabilities CAPABILITY_IAM --disable-rollback
 deletestack:

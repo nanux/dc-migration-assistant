@@ -1,12 +1,16 @@
+#!/usr/bin/python3
+
 import subprocess
 import re
 import json
 import sys
 
+# Uses the UNIX tail command to get the last line of the s3 sync output file
 def getLastLineOfSyncOutput(syncFilePath: str) -> str:
-    last_line = subprocess.check_output(["tail", "-1", sys.argv[1]])
+    last_line = subprocess.check_output(["tail", "-1", syncFilePath])
     return last_line.decode("utf-8")
 
+# Looks for the final log line left behind by the s3 sync SSM document to indicate if the sync completed successfully
 def checkIfSyncCompleted(last_line_of_output: str) -> (bool, int):
     match = re.search("s3 sync with shared home complete with exit code ([0-9]*)", last_line_of_output)
     if match is None:
