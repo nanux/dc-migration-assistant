@@ -1,6 +1,7 @@
 import subprocess
 import re
 import json
+import sys
 
 last_line = subprocess.check_output(["tail", "-1", "big-sync/output.txt"])
 last_line_decoded = last_line.decode("utf-8")
@@ -41,6 +42,8 @@ if big_match is not None:
     }
 
     print(json.dumps(status))
+    exit(0)
 
 else:
-    print("could not find file progress")
+    print("could not find file progress", file=sys.stderr)
+    exit(1)
