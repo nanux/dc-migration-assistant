@@ -17,7 +17,7 @@ public class S3SyncFileSystemDownloader {
     private static final String SSM_PLAYBOOK = System.getProperty("com.atlassian.migration.s3sync.documentName", "bpartridge-12-03t15-42-39-migration-helper-SharedHomeDownloadDocument-1C56C88F671YL");
     // FIXME: Should be loaded from migration stack. Defaults to an instance deployed by a migration stack in us-east-1
     private static final String MIGRATION_STACK_INSTANCE = System.getProperty("com.atlassian.migration.instanceId", "i-0353cc9a8ad7dafc2");
-    private static final int MAX_COMMAND_STATUS_CHECK_RETRIES = 3;
+    private static final int MAX_COMMAND_STATUS_CHECK_RETRIES = 10;
 
     private final SSMApi ssmApi;
 
@@ -36,7 +36,7 @@ public class S3SyncFileSystemDownloader {
 
             logger.debug("Checking delivery of s3 sync ssm command. Attempt {}. Status is: {}", i, status.toString());
 
-            if (status.equals(CommandInvocationStatus.IN_PROGRESS) || status.equals(CommandInvocationStatus.SUCCESS)) {
+            if (status.equals(CommandInvocationStatus.SUCCESS)) {
                 return;
             }
 
