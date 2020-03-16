@@ -4,6 +4,7 @@ import com.atlassian.migration.datacenter.core.application.ApplicationConfigurat
 import com.atlassian.migration.datacenter.core.application.DatabaseConfiguration;
 import com.atlassian.migration.datacenter.util.AwsCredentialsProviderShim;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
@@ -32,6 +33,7 @@ import static org.testcontainers.containers.localstack.LocalStackContainer.Servi
 /**
  * Copyright Atlassian: 12/03/2020
  */
+@Tag("integration")
 @Testcontainers
 @ExtendWith(MockitoExtension.class)
 class DatabaseMigrationServiceIT
@@ -81,8 +83,7 @@ class DatabaseMigrationServiceIT
 
     @Test
     void testDatabaseMigration() throws ExecutionException, InterruptedException {
-        URI localStackS3Endpoint = URI.create(s3.getEndpointConfiguration(S3).getServiceEndpoint());
-        DatabaseMigrationService service = new DatabaseMigrationService(configuration, tempDir,s3client, localStackS3Endpoint);
+        DatabaseMigrationService service = new DatabaseMigrationService(configuration, tempDir, s3client);
         service.performMigration();
 
         HeadObjectRequest req = HeadObjectRequest.builder()
