@@ -1,7 +1,9 @@
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
+import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus;
 import com.atlassian.scheduler.JobRunnerRequest;
@@ -48,7 +50,8 @@ class S3UploadJobRunnerTest {
 
     @Test
     void shouldCompleteJobRunSuccessfully() throws Exception {
-        DefaultFileSystemMigrationReport report = new DefaultFileSystemMigrationReport(null,null);
+        DefaultFileSystemMigrationReport report = new DefaultFileSystemMigrationReport(
+                new DefaultFileSystemMigrationErrorReport(), new DefaultFilesystemMigrationProgress());
         report.setStatus(FilesystemMigrationStatus.DONE);
 
         when(filesystemMigrationService.isRunning()).thenReturn(false);
