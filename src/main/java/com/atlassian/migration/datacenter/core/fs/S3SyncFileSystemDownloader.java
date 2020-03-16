@@ -7,7 +7,6 @@ import software.amazon.awssdk.services.ssm.model.CommandInvocationStatus;
 import software.amazon.awssdk.services.ssm.model.GetCommandInvocationResponse;
 
 import java.util.Collections;
-import java.util.HashMap;
 
 public class S3SyncFileSystemDownloader {
 
@@ -17,12 +16,18 @@ public class S3SyncFileSystemDownloader {
     private static final String SSM_PLAYBOOK = System.getProperty("com.atlassian.migration.s3sync.documentName", "bpartridge-12-03t15-42-39-migration-helper-SharedHomeDownloadDocument-1C56C88F671YL");
     // FIXME: Should be loaded from migration stack. Defaults to an instance deployed by a migration stack in us-east-1
     private static final String MIGRATION_STACK_INSTANCE = System.getProperty("com.atlassian.migration.instanceId", "i-0353cc9a8ad7dafc2");
-    private static final int MAX_COMMAND_STATUS_CHECK_RETRIES = 10;
+
+    private int maxCommandStatusRetries;
 
     private final SSMApi ssmApi;
 
     public S3SyncFileSystemDownloader(SSMApi ssmApi) {
+        this(ssmApi, 10);
+    }
+
+    S3SyncFileSystemDownloader(SSMApi ssmApi, int maxCommandStatusRetries) {
         this.ssmApi = ssmApi;
+        this.maxCommandStatusRetries = maxCommandStatusRetries;
     }
 
     public void initiateFileSystemDownload() throws CannotLaunchCommandException {
@@ -30,7 +35,7 @@ public class S3SyncFileSystemDownloader {
         String commandID = ssmApi.runSSMDocument(SSM_PLAYBOOK, MIGRATION_STACK_INSTANCE, Collections.emptyMap());
 
         GetCommandInvocationResponse command = null;
-        for (int i = 0; i < MAX_COMMAND_STATUS_CHECK_RETRIES; i++) {
+        for (int i = 0; i < maxCommandStatusRetries; i++) {
             command = ssmApi.getSSMCommand(commandID, MIGRATION_STACK_INSTANCE);
             final CommandInvocationStatus status = command.status();
 

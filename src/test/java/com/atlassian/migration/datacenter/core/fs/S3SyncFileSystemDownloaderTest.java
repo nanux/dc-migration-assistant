@@ -1,6 +1,7 @@
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.migration.datacenter.core.aws.SSMApi;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,15 +19,18 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@Tag("integration")
 @ExtendWith(MockitoExtension.class)
-class S3SyncFileSystemDownloaderIT {
+class S3SyncFileSystemDownloaderTest {
 
     @Mock
     SSMApi mockSsmApi;
 
-    @InjectMocks
     S3SyncFileSystemDownloader sut;
+
+    @BeforeEach
+    void setUp() {
+        sut = new S3SyncFileSystemDownloader(mockSsmApi, 1);
+    }
 
     @Test
     void shouldIssueCommandToInstance() throws S3SyncFileSystemDownloader.CannotLaunchCommandException {
@@ -54,9 +58,6 @@ class S3SyncFileSystemDownloaderIT {
         }
     }
 
-    /**
-     * This test takes 10 seconds hence integration test
-     */
     @Test
     void shouldThrowWhenCommandDoesNotSucceedWithinTimeout() {
         when(mockSsmApi.getSSMCommand(any(), anyString())).thenReturn(
