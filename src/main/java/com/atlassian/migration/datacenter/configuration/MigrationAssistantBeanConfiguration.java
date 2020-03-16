@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Import;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.ssm.SsmClient;
 
 import java.nio.file.Paths;
 
@@ -30,6 +31,14 @@ public class MigrationAssistantBeanConfiguration {
     @Bean
     public S3AsyncClient s3AsyncClient(AwsCredentialsProvider credentialsProvider, RegionService regionService) {
         return S3AsyncClient.builder()
+                .credentialsProvider(credentialsProvider)
+                .region(Region.of(regionService.getRegion()))
+                .build();
+    }
+
+    @Bean
+    public SsmClient ssmClient(AwsCredentialsProvider credentialsProvider, RegionService regionService) {
+        return SsmClient.builder()
                 .credentialsProvider(credentialsProvider)
                 .region(Region.of(regionService.getRegion()))
                 .build();
@@ -72,8 +81,8 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public SSMApi ssmApi(AwsCredentialsProvider credentialsProvider, RegionService regionService) {
-        return new SSMApi(credentialsProvider, regionService);
+    public SSMApi ssmApi(SsmClient client) {
+        return new SSMApi(client);
     }
 
     @Bean
