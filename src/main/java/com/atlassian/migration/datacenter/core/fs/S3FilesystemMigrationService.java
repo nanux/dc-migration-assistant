@@ -60,7 +60,9 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     //TODO: Region Service and provider will be replaced by the S3 Client
     public S3FilesystemMigrationService(S3AsyncClient s3AsyncClient,
                                         JiraHome jiraHome,
-                                        MigrationService migrationService, SchedulerService schedulerService) {
+                                        MigrationService migrationService,
+                                        SchedulerService schedulerService)
+    {
         this.s3AsyncClient = s3AsyncClient;
         this.jiraHome = jiraHome;
         this.migrationService = migrationService;
