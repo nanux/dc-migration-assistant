@@ -2,6 +2,7 @@ package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
+import com.atlassian.migration.datacenter.core.util.UploadQueue;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,7 +42,7 @@ class S3UploaderTest {
     private SdkHttpResponse sdkHttpResponse;
 
 
-    private BlockingQueue<Optional<Path>> queue;
+    private UploadQueue<Path> queue;
     private S3Uploader uploader;
     private FileSystemMigrationErrorReport errorReport;
     private FileSystemMigrationProgress progress;
@@ -52,7 +53,7 @@ class S3UploaderTest {
     @BeforeEach
     void setup() {
         S3UploadConfig config = new S3UploadConfig("bucket-name", s3AsyncClient, tempDir);
-        queue = new LinkedBlockingQueue<>();
+        queue = new UploadQueue<>(20);
         progress = new DefaultFilesystemMigrationProgress();
         errorReport = new DefaultFileSystemMigrationErrorReport();
         uploader = new S3Uploader(config, errorReport, progress);
@@ -80,7 +81,7 @@ class S3UploaderTest {
         addFileToQueue("file2");
 
         // finish crawling
-        queueEnd();
+        queue.finish();
         submit.get();
 
         // upload should finish and there shouldn't be more paths to process
@@ -97,7 +98,7 @@ class S3UploaderTest {
         when(s3AsyncClient.putObject(any(PutObjectRequest.class), any(Path.class))).thenReturn(s3response);
 
         Path testPath = addFileToQueue("file1");
-        queueEnd();
+        queue.finish();
 
         final Future<?> submit = Executors.newFixedThreadPool(1).submit(() -> {
             uploader.upload(queue);
@@ -110,8 +111,8 @@ class S3UploaderTest {
     @Test
     void uploadNonExistentDirectoryShouldReturnFailedCollection() throws InterruptedException {
         final Path nonExistentFile = tempDir.resolve("non-existent");
-        queue.add(Optional.of(nonExistentFile));
-        queueEnd();
+        queue.put(nonExistentFile);
+        queue.finish();
 
         uploader.upload(queue);
 
@@ -135,19 +136,16 @@ class S3UploaderTest {
 
         assertEquals(1, progress.getNumberOfCommencedFileUploads());
 
-        queueEnd();
+        queue.finish();
 
         submit.get();
     }
 
-    Path addFileToQueue(String fileName) throws IOException {
+    Path addFileToQueue(String fileName) throws IOException, InterruptedException {
         final Path file = tempDir.resolve(fileName);
         Files.write(file, "".getBytes());
-        queue.add(Optional.of(file));
+        queue.put(file);
         return file;
     }
 
-    void queueEnd() throws InterruptedException {
-        queue.put(Optional.empty());
-    }
 }

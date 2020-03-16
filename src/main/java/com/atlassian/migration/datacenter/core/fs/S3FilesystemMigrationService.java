@@ -6,6 +6,7 @@ import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageE
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
+import com.atlassian.migration.datacenter.core.util.UploadQueue;
 import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
@@ -26,7 +27,6 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
@@ -40,7 +40,6 @@ import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigr
 public class S3FilesystemMigrationService implements FilesystemMigrationService {
     private static final Logger logger = LoggerFactory.getLogger(S3FilesystemMigrationService.class);
 
-    private static final int NUM_UPLOAD_THREADS = Integer.getInteger("NUM_UPLOAD_THREADS", 1);
     private static final String BUCKET_NAME = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
 
     private final S3AsyncClient s3AsyncClient;
@@ -49,9 +48,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private final SchedulerService schedulerService;
 
     private FileSystemMigrationReport report;
-    private AtomicBoolean isDoneCrawling;
-    private LinkedBlockingQueue<Optional<Path>> uploadQueue;
-    private S3UploadConfig s3UploadConfig;
+
 
     //TODO: Region Service and provider will be replaced by the S3 Client
     public S3FilesystemMigrationService(S3AsyncClient s3AsyncClient,
@@ -118,70 +115,21 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
             logger.warn("Filesystem migration is currently in progress, aborting new execution.");
             return;
         }
-        initialiseMigration();
-
-        CompletionService<Void> uploadResults = startUploadingFromQueue();
-
-        populateUploadQueue();
-
-        waitForUploadsToComplete(uploadResults);
-
-        finaliseMigration();
-    }
-
-    private void initialiseMigration() throws InvalidMigrationStageError {
-        report = new DefaultFileSystemMigrationReport(new DefaultFileSystemMigrationErrorReport(), new DefaultFilesystemMigrationProgress());
-        isDoneCrawling = new AtomicBoolean(false);
-        uploadQueue = new LinkedBlockingQueue<>();
 
         migrationService.transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
 
+        report = new DefaultFileSystemMigrationReport(new DefaultFileSystemMigrationErrorReport(), new DefaultFilesystemMigrationProgress());
         report.setStatus(RUNNING);
 
-        s3UploadConfig = new S3UploadConfig(getS3Bucket(), s3AsyncClient, getSharedHomeDir());
-    }
-
-    private CompletionService<Void> startUploadingFromQueue() {
-        ExecutorService uploadExecutorService = Executors.newFixedThreadPool(NUM_UPLOAD_THREADS);
-        CompletionService<Void> completionService = new ExecutorCompletionService<>(uploadExecutorService);
-
-        Runnable uploaderFunction = () -> {
-            Uploader uploader = new S3Uploader(s3UploadConfig, report, report);
-            uploader.upload(uploadQueue);
-        };
-
-        IntStream.range(0, NUM_UPLOAD_THREADS).forEach(x -> completionService.submit(uploaderFunction, null));
-
-        return completionService;
-    }
-
-    private void populateUploadQueue() {
         Crawler homeCrawler = new DirectoryStreamCrawler(report, report);
-        try {
-            homeCrawler.crawlDirectory(getSharedHomeDir(), uploadQueue);
-        } catch (IOException e) {
-            logger.error("Failed to traverse home directory for S3 transfer", e);
-            report.setStatus(FAILED);
-        } finally {
-            // FIXME: the uploader will continue uploading until the queue is empty even though we probably need to abort in this scenario as it's indeterminate whether all files have been uploaded or not (should we try fix this now or create a bug and follow up?)
-            isDoneCrawling.set(true);
-            logger.info("Finished traversing directory [{}], {} files are remaining to upload", s3UploadConfig.getSharedHome(), uploadQueue.size());
-        }
-    }
 
-    private void waitForUploadsToComplete(CompletionService<Void> uploadResults) {
-        IntStream.range(0, NUM_UPLOAD_THREADS)
-                .forEach(i -> {
-                    try {
-                        uploadResults.take().get();
-                    } catch (InterruptedException | ExecutionException e) {
-                        logger.error("Failed to upload home directory to S3", e);
-                        report.setStatus(FAILED);
-                    }
-                });
-    }
+        S3UploadConfig s3UploadConfig = new S3UploadConfig(getS3Bucket(), s3AsyncClient, getSharedHomeDir());
+        Uploader s3Uploader = new S3Uploader(s3UploadConfig, report, report);
 
-    private void finaliseMigration() throws InvalidMigrationStageError {
+        FilesystemUploader fsUploader = new FilesystemUploader(homeCrawler, s3Uploader);
+        fsUploader.uploadDirectory(getSharedHomeDir());
+
+
         if (report.getStatus().equals(DONE)) {
             this.migrationService.transition(MigrationStage.WAIT_FS_MIGRATION_COPY, MigrationStage.OFFLINE_WARNING);
         } else if (!report.getStatus().equals(FAILED)) {
@@ -189,7 +137,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
             report.setStatus(DONE);
         }
     }
-
+    
     private String getS3Bucket() {
         return BUCKET_NAME;
     }

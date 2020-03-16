@@ -1,5 +1,6 @@
 package com.atlassian.migration.datacenter.core.fs;
 
+import com.atlassian.migration.datacenter.core.util.UploadQueue;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FailedFileMigration;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
@@ -26,28 +27,37 @@ public class DirectoryStreamCrawler implements Crawler {
     }
 
     @Override
-    public void crawlDirectory(Path start, BlockingQueue<Optional<Path>> queue) throws IOException {
+    public void crawlDirectory(Path start, UploadQueue<Path> queue) throws IOException {
         try {
             final DirectoryStream<Path> paths;
             paths = Files.newDirectoryStream(start);
             listDirectories(queue, paths);
             logger.info("Crawled and added {} files for upload.", progress.getNumberOfFilesFound());
         } finally {
-            queue.add(Optional.empty());
+            try {
+                queue.finish();
+            } catch (InterruptedException e) {
+                logger.error("Failed to finalise upload queue.", e);
+            }
         }
     }
 
-    private void listDirectories(BlockingQueue<Optional<Path>> queue, DirectoryStream<Path> paths) {
+    private void listDirectories(UploadQueue<Path> queue, DirectoryStream<Path> paths) {
         paths.forEach(p -> {
             if (Files.isDirectory(p)) {
                 try (final DirectoryStream<Path> newPaths = Files.newDirectoryStream(p.toAbsolutePath())) {
                     listDirectories(queue, newPaths);
-                } catch (IOException e) {
+                } catch (Exception e) {
                     logger.error("Error when traversing directory {}, with exception {}", p, e);
                     report.reportFileNotMigrated(new FailedFileMigration(p, e.getMessage()));
                 }
             } else {
-                queue.add(Optional.of(p));
+                try {
+                    queue.put(p);
+                } catch (InterruptedException e) {
+                    logger.error("Error when queuing {}, with exception {}", p, e);
+                    report.reportFileNotMigrated(new FailedFileMigration(p, e.getMessage()));
+                }
                 progress.reportFileFound();
             }
         });

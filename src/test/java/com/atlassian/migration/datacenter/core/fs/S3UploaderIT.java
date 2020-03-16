@@ -7,6 +7,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
+import com.atlassian.migration.datacenter.core.util.UploadQueue;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,13 +28,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 @Tag("integration")
@@ -42,7 +40,7 @@ import static org.mockito.Mockito.when;
 class S3UploaderIT {
     private static final String LOCALSTACK_S3_ENDPOINT = "http://localhost:4572";
     private static final String TREBUCHET_LOCALSTACK_BUCKET = "trebuchet-localstack-bucket";
-    private BlockingQueue<Optional<Path>> queue;
+    private UploadQueue<Path> queue;
     private S3Uploader uploader;
     private AtomicBoolean isCrawlDone;
     private FileSystemMigrationErrorReport errorReport;
@@ -78,14 +76,14 @@ class S3UploaderIT {
         errorReport = new DefaultFileSystemMigrationErrorReport();
         progress = new DefaultFilesystemMigrationProgress();
         isCrawlDone = new AtomicBoolean(false);
-        queue = new LinkedBlockingQueue<>();
+        queue = new UploadQueue<>(10);
         uploader = new S3Uploader(config, errorReport, progress);
     }
 
     @Test
     void uploadShouldUploadPathsFromQueueToS3() throws IOException, InterruptedException {
         final Path file = addFileToQueue("file");
-        queue.put(Optional.empty());
+        queue.finish();
 
         AmazonS3 s3Client = TestUtils.getClientS3();
         s3Client.createBucket(TREBUCHET_LOCALSTACK_BUCKET);
@@ -111,10 +109,10 @@ class S3UploaderIT {
         assertEquals(1, progress.getCountOfMigratedFiles());
     }
 
-    Path addFileToQueue(String fileName) throws IOException {
+    Path addFileToQueue(String fileName) throws IOException, InterruptedException{
         final Path file = tempDir.resolve(fileName);
         Files.write(file, "".getBytes());
-        queue.add(Optional.of(file));
+        queue.put(file);
         return file;
     }
 }

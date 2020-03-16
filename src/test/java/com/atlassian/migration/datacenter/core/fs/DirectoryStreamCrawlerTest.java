@@ -2,6 +2,7 @@ package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
+import com.atlassian.migration.datacenter.core.util.UploadQueue;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,14 +31,14 @@ class DirectoryStreamCrawlerTest {
     Path tempDir;
 
     private Crawler directoryStreamCrawler;
-    private BlockingQueue<Optional<Path>> queue;
+    private UploadQueue<Path> queue;
     private Set<Path> expectedPaths;
     private FileSystemMigrationErrorReport errorReport;
     private FileSystemMigrationProgress progress;
 
     @BeforeEach
     void createFiles() throws Exception {
-        queue = new LinkedBlockingQueue<>();
+        queue = new UploadQueue<>(10);
         expectedPaths = new HashSet<>();
         errorReport = new DefaultFileSystemMigrationErrorReport();
         progress = new DefaultFilesystemMigrationProgress();
@@ -53,7 +54,7 @@ class DirectoryStreamCrawlerTest {
         directoryStreamCrawler = new DirectoryStreamCrawler(errorReport, progress);
         directoryStreamCrawler.crawlDirectory(tempDir, queue);
 
-        expectedPaths.forEach(path -> assertTrue(queue.contains(Optional.of(path)), String.format("Expected %s is absent from crawler queue", path)));
+        expectedPaths.forEach(path -> assertTrue(queue.contains(path), String.format("Expected %s is absent from crawler queue", path)));
     }
 
     @Test
