@@ -47,8 +47,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private static final int NUM_UPLOAD_THREADS = Integer.getInteger("NUM_UPLOAD_THREADS", 1);
     private static final String BUCKET_NAME = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
 
-    private final AwsCredentialsProvider credentialsProvider;
-    private final RegionService regionService;
+    private final S3AsyncClient s3AsyncClient;
     private final JiraHome jiraHome;
     private final MigrationService migrationService;
     private final SchedulerService schedulerService;
@@ -59,12 +58,12 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private S3UploadConfig s3UploadConfig;
 
     //TODO: Region Service and provider will be replaced by the S3 Client
-    public S3FilesystemMigrationService(RegionService regionService,
-                                        AwsCredentialsProvider credentialsProvider,
+    public S3FilesystemMigrationService(S3AsyncClient s3AsyncClient,
                                         JiraHome jiraHome,
-                                        MigrationService migrationService, SchedulerService schedulerService) {
-        this.regionService = regionService;
-        this.credentialsProvider = credentialsProvider;
+                                        MigrationService migrationService,
+                                        SchedulerService schedulerService)
+    {
+        this.s3AsyncClient = s3AsyncClient;
         this.jiraHome = jiraHome;
         this.migrationService = migrationService;
         this.schedulerService = schedulerService;
@@ -143,15 +142,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
         report.setStatus(RUNNING);
 
-        S3AsyncClient s3AsyncClient = buildS3Client();
         s3UploadConfig = new S3UploadConfig(getS3Bucket(), s3AsyncClient, getSharedHomeDir());
-    }
-
-    private S3AsyncClient buildS3Client() {
-        return S3AsyncClient.builder()
-                .credentialsProvider(credentialsProvider)
-                .region(Region.of(regionService.getRegion()))
-                .build();
     }
 
     private CompletionService<Void> startUploadingFromQueue() {
