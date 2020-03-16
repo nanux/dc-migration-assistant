@@ -4,6 +4,7 @@ import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.application.ApplicationConfiguration;
 import com.atlassian.migration.datacenter.core.application.JiraConfiguration;
 import com.atlassian.migration.datacenter.core.aws.GlobalInfrastructure;
+import com.atlassian.migration.datacenter.core.aws.SSMApi;
 import com.atlassian.migration.datacenter.core.aws.auth.AtlassianPluginAWSCredentialsProvider;
 import com.atlassian.migration.datacenter.core.aws.auth.EncryptedCredentialsStorage;
 import com.atlassian.migration.datacenter.core.aws.auth.ProbeAWSAuth;
@@ -11,6 +12,7 @@ import com.atlassian.migration.datacenter.core.aws.auth.ReadCredentialsService;
 import com.atlassian.migration.datacenter.core.aws.db.DatabaseMigrationService;
 import com.atlassian.migration.datacenter.core.aws.region.PluginSettingsRegionManager;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
+import com.atlassian.migration.datacenter.core.fs.S3SyncFileSystemDownloader;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -67,5 +69,15 @@ public class MigrationAssistantBeanConfiguration {
     public DatabaseMigrationService databaseMigrationService(ApplicationConfiguration jiraConfiguration, S3AsyncClient s3AsyncClient) {
         String tempDirectoryPath = System.getProperty("java.io.tmpdir");
         return new DatabaseMigrationService(jiraConfiguration, Paths.get(tempDirectoryPath), s3AsyncClient);
+    }
+
+    @Bean
+    public SSMApi ssmApi(AwsCredentialsProvider credentialsProvider, RegionService regionService) {
+        return new SSMApi(credentialsProvider, regionService);
+    }
+
+    @Bean
+    public S3SyncFileSystemDownloader s3SyncFileSystemDownloader(SSMApi ssmApi) {
+        return new S3SyncFileSystemDownloader(ssmApi);
     }
 }
