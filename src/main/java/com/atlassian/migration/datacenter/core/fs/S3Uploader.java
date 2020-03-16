@@ -1,29 +1,27 @@
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.migration.datacenter.core.exceptions.FileUploadException;
+import com.atlassian.migration.datacenter.core.util.UploadQueue;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FailedFileMigration;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
 import org.apache.commons.io.FileUtils;
-import org.checkerframework.checker.nullness.Opt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 
-import javax.swing.text.html.Option;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.LinkedList;
 import java.util.Optional;
 import java.util.Queue;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class S3Uploader implements Uploader {
     private static final Logger logger = LoggerFactory.getLogger(S3Uploader.class);
-    private static final int MS_TO_WAIT_FOR_CRAWLER = 500;
-    private static final int MAX_OPEN_CONNECTIONS = 50;
+    public static final int MAX_OPEN_CONNECTIONS = 50;
     private static final long MAXIMUM_FILE_SIZE_TO_UPLOAD = 5 * 1024 * 1024 * 1024L; // 5GB  https://docs.aws.amazon.com/AmazonS3/latest/dev/UploadingObjects.html
 
     private final FileSystemMigrationErrorReport report;
@@ -38,7 +36,13 @@ public class S3Uploader implements Uploader {
     }
 
     @Override
-    public void upload(BlockingQueue<Optional<Path>> queue) throws FileUploadException
+    public Integer maxConcurrent()
+    {
+        return MAX_OPEN_CONNECTIONS;
+    }
+
+    @Override
+    public void upload(UploadQueue<Path> queue) throws FileUploadException
     {
         try {
             for (Optional<Path> opt = queue.take(); opt.isPresent(); opt = queue.take()) {
