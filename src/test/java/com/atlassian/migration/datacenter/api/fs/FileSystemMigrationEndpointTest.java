@@ -1,6 +1,5 @@
 package com.atlassian.migration.datacenter.api.fs;
 
-import com.atlassian.migration.datacenter.core.exceptions.FilesystemMigrationException;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,14 +39,5 @@ class FileSystemMigrationEndpointTest {
         final Response response = endpoint.abortFilesystemMigration();
 
         assertEquals(response.getStatus(), Response.Status.CONFLICT.getStatusCode());
-    }
-
-    @Test
-    void returnBadResultIfThereIsFsMigrationError() throws Exception {
-        doThrow(new FilesystemMigrationException("")).when(fsMigrationService).abortMigration();
-
-        final Response response = endpoint.abortFilesystemMigration();
-
-        assertEquals(response.getStatus(), Response.Status.BAD_REQUEST.getStatusCode());
     }
 }

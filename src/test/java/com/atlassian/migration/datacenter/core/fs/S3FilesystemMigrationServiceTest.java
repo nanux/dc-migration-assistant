@@ -1,8 +1,6 @@
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.jira.config.util.JiraHome;
-import com.atlassian.migration.datacenter.core.aws.auth.AtlassianPluginAWSCredentialsProvider;
-import com.atlassian.migration.datacenter.core.aws.region.RegionService;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.spi.MigrationService;
@@ -18,9 +16,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.internal.util.reflection.FieldSetter;
 import org.mockito.junit.jupiter.MockitoExtension;
-import software.amazon.awssdk.regions.Region;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -30,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -129,6 +127,26 @@ class S3FilesystemMigrationServiceTest {
         verify(schedulerService, never()).scheduleJob(any(), any());
         verify(schedulerService).unscheduleJob(argThat(jobId -> jobId.compareTo(JobId.of(S3UploadJobRunner.KEY + 42)) == 0));
         verify(migrationService).error();
+    }
+
+    @Test
+    void shouldAbortRunningMigration() throws Exception {
+        final Crawler crawler = mock(Crawler.class);
+        when(migrationService.getCurrentStage()).thenReturn(MigrationStage.WAIT_FS_MIGRATION_COPY);
+        FieldSetter.setField(fsService, fsService.getClass().getDeclaredField("crawler"), crawler);
+
+        fsService.abortMigration();
+
+        verify(crawler).stop();
+        verify(migrationService).error();
+        assertEquals(fsService.getReport().getStatus(), FilesystemMigrationStatus.FAILED);
+    }
+
+    @Test
+    void throwExceptionWhenTryToAbortNonRunningMigration() {
+        when(migrationService.getCurrentStage()).thenReturn(MigrationStage.AUTHENTICATION);
+
+        assertThrows(InvalidMigrationStageError.class, () -> fsService.abortMigration());
     }
 
     private Migration createStubMigration(MigrationStage migrationStage) {

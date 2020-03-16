@@ -1,8 +1,6 @@
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.jira.config.util.JiraHome;
-import com.atlassian.migration.datacenter.core.aws.region.RegionService;
-import com.atlassian.migration.datacenter.core.exceptions.FilesystemMigrationException;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
@@ -21,8 +19,6 @@ import com.atlassian.scheduler.config.RunMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
@@ -57,17 +53,20 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private AtomicBoolean isDoneCrawling;
     private ConcurrentLinkedQueue<Path> uploadQueue;
     private S3UploadConfig s3UploadConfig;
+    private Crawler crawler;
 
-    //TODO: Region Service and provider will be replaced by the S3 Client
     public S3FilesystemMigrationService(S3AsyncClient s3AsyncClient,
                                         JiraHome jiraHome,
                                         MigrationService migrationService,
-                                        SchedulerService schedulerService)
-    {
+                                        SchedulerService schedulerService) {
         this.s3AsyncClient = s3AsyncClient;
         this.jiraHome = jiraHome;
         this.migrationService = migrationService;
         this.schedulerService = schedulerService;
+
+        report = new DefaultFileSystemMigrationReport(new DefaultFileSystemMigrationErrorReport(), new DefaultFilesystemMigrationProgress());
+        isDoneCrawling = new AtomicBoolean(false);
+        uploadQueue = new ConcurrentLinkedQueue<>();
     }
 
     @Override
@@ -76,13 +75,16 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     }
 
     @Override
-    public void abortMigration() throws InvalidMigrationStageError, FilesystemMigrationException {
+    public void abortMigration() throws InvalidMigrationStageError {
         if (!isRunning()) {
             throw new InvalidMigrationStageError(String.format("Invalid migration stage when cancelling filesystem migration: %s", migrationService.getCurrentStage()));
         }
-        migrationService.transition(MigrationStage.WAIT_FS_MIGRATION_COPY, MigrationStage.ERROR);
 
-        // TODO should this be a new state - CANCELLED?
+        isDoneCrawling.set(true);
+        crawler.stop();
+        uploadQueue.clear();
+
+        migrationService.error();
         report.setStatus(FAILED);
     }
 
@@ -146,10 +148,6 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     }
 
     private void initialiseMigration() throws InvalidMigrationStageError {
-        report = new DefaultFileSystemMigrationReport(new DefaultFileSystemMigrationErrorReport(), new DefaultFilesystemMigrationProgress());
-        isDoneCrawling = new AtomicBoolean(false);
-        uploadQueue = new ConcurrentLinkedQueue<>();
-
         migrationService.transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
 
         report.setStatus(RUNNING);
@@ -172,9 +170,9 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     }
 
     private void populateUploadQueue() {
-        Crawler homeCrawler = new DirectoryStreamCrawler(report, report);
+        crawler = new DirectoryStreamCrawler(report, report);
         try {
-            homeCrawler.crawlDirectory(getSharedHomeDir(), uploadQueue);
+            crawler.crawlDirectory(getSharedHomeDir(), uploadQueue);
         } catch (IOException e) {
             logger.error("Failed to traverse home directory for S3 transfer", e);
             report.setStatus(FAILED);

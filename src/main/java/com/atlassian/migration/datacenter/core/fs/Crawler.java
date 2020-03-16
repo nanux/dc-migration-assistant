@@ -6,4 +6,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 public interface Crawler {
     void crawlDirectory(Path start, ConcurrentLinkedQueue<Path> queue) throws IOException;
+
+    void stop();
 }

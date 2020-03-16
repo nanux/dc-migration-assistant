@@ -1,6 +1,5 @@
 package com.atlassian.migration.datacenter.api.fs;
 
-import com.atlassian.migration.datacenter.core.exceptions.FilesystemMigrationException;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
@@ -82,22 +81,15 @@ public class FileSystemMigrationEndpoint {
     @Produces(APPLICATION_JSON)
     @Path("/abort")
     public Response abortFilesystemMigration() {
-        Response response;
         try {
             fsMigrationService.abortMigration();
-            response = Response
+            return Response
                     .ok(ImmutableMap.of("cancelled", true))
                     .build();
-        } catch (FilesystemMigrationException e) {
-            response = Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(ImmutableMap.of("error", String.format("error while cancelling migration: %s", e.getMessage())))
-                    .build();
         } catch (InvalidMigrationStageError e) {
-            response = Response.status(Response.Status.CONFLICT)
+            return Response.status(Response.Status.CONFLICT)
                     .entity(ImmutableMap.of("error", "filesystem migration is not in progress"))
                     .build();
         }
-        return response;
     }
 }

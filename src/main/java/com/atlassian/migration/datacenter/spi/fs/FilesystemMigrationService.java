@@ -1,6 +1,5 @@
 package com.atlassian.migration.datacenter.spi.fs;
 
-import com.atlassian.migration.datacenter.core.exceptions.FilesystemMigrationException;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
 
@@ -39,8 +38,7 @@ public interface FilesystemMigrationService {
     /**
      * Cancel filesystem migration that is currently in progress
      *
-     * @throws InvalidMigrationStageError   if the migration is not running
-     * @throws FilesystemMigrationException if there was a problem when aborting migration
+     * @throws InvalidMigrationStageError if the migration is not running
      */
-    void abortMigration() throws InvalidMigrationStageError, FilesystemMigrationException;
+    void abortMigration() throws InvalidMigrationStageError;
 }
