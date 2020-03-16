@@ -1,9 +1,8 @@
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.jira.config.util.JiraHome;
-import com.atlassian.migration.datacenter.core.aws.auth.AtlassianPluginAWSCredentialsProvider;
-import com.atlassian.migration.datacenter.core.aws.region.RegionService;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloader;
 import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
@@ -19,7 +18,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import software.amazon.awssdk.regions.Region;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,11 +33,6 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class S3FilesystemMigrationServiceTest {
-    @Mock
-    RegionService regionService;
-
-    @Mock
-    AtlassianPluginAWSCredentialsProvider credentialsProvider;
 
     @Mock
     JiraHome jiraHome;
@@ -47,9 +40,11 @@ class S3FilesystemMigrationServiceTest {
     @Mock
     MigrationService migrationService;
 
-
     @Mock
     SchedulerService schedulerService;
+
+    @Mock
+    S3SyncFileSystemDownloader fileSystemDownloader;
 
     @InjectMocks
     S3FilesystemMigrationService fsService;
@@ -59,7 +54,6 @@ class S3FilesystemMigrationServiceTest {
         Path nonexistentDir = Paths.get(UUID.randomUUID().toString());
         when(this.migrationService.getCurrentStage()).thenReturn(MigrationStage.FS_MIGRATION_COPY);
         when(jiraHome.getHome()).thenReturn(nonexistentDir.toFile());
-        when(regionService.getRegion()).thenReturn(Region.US_EAST_1.toString());
 
         fsService.startMigration();
 

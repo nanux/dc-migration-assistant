@@ -4,6 +4,7 @@ import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.application.ApplicationConfiguration;
 import com.atlassian.migration.datacenter.core.application.JiraConfiguration;
 import com.atlassian.migration.datacenter.core.aws.GlobalInfrastructure;
+import com.atlassian.migration.datacenter.core.aws.SSMApi;
 import com.atlassian.migration.datacenter.core.aws.auth.AtlassianPluginAWSCredentialsProvider;
 import com.atlassian.migration.datacenter.core.aws.auth.EncryptedCredentialsStorage;
 import com.atlassian.migration.datacenter.core.aws.auth.ProbeAWSAuth;
@@ -11,6 +12,7 @@ import com.atlassian.migration.datacenter.core.aws.auth.ReadCredentialsService;
 import com.atlassian.migration.datacenter.core.aws.db.DatabaseMigrationService;
 import com.atlassian.migration.datacenter.core.aws.region.PluginSettingsRegionManager;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
+import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloader;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +20,7 @@ import org.springframework.context.annotation.Import;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
+import software.amazon.awssdk.services.ssm.SsmClient;
 
 import java.nio.file.Paths;
 
@@ -28,6 +31,14 @@ public class MigrationAssistantBeanConfiguration {
     @Bean
     public S3AsyncClient s3AsyncClient(AwsCredentialsProvider credentialsProvider, RegionService regionService) {
         return S3AsyncClient.builder()
+                .credentialsProvider(credentialsProvider)
+                .region(Region.of(regionService.getRegion()))
+                .build();
+    }
+
+    @Bean
+    public SsmClient ssmClient(AwsCredentialsProvider credentialsProvider, RegionService regionService) {
+        return SsmClient.builder()
                 .credentialsProvider(credentialsProvider)
                 .region(Region.of(regionService.getRegion()))
                 .build();
@@ -67,5 +78,15 @@ public class MigrationAssistantBeanConfiguration {
     public DatabaseMigrationService databaseMigrationService(ApplicationConfiguration jiraConfiguration, S3AsyncClient s3AsyncClient) {
         String tempDirectoryPath = System.getProperty("java.io.tmpdir");
         return new DatabaseMigrationService(jiraConfiguration, Paths.get(tempDirectoryPath), s3AsyncClient);
+    }
+
+    @Bean
+    public SSMApi ssmApi(SsmClient client) {
+        return new SSMApi(client);
+    }
+
+    @Bean
+    public S3SyncFileSystemDownloader s3SyncFileSystemDownloader(SSMApi ssmApi) {
+        return new S3SyncFileSystemDownloader(ssmApi);
     }
 }

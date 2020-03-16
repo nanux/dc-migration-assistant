@@ -1,8 +1,8 @@
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.jira.config.util.JiraHome;
-import com.atlassian.migration.datacenter.core.aws.region.RegionService;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloader;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
@@ -20,8 +20,6 @@ import com.atlassian.scheduler.config.RunMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
@@ -47,11 +45,11 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private static final int NUM_UPLOAD_THREADS = Integer.getInteger("NUM_UPLOAD_THREADS", 1);
     private static final String BUCKET_NAME = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
 
-    private final AwsCredentialsProvider credentialsProvider;
-    private final RegionService regionService;
+    private final S3AsyncClient s3AsyncClient;
     private final JiraHome jiraHome;
     private final MigrationService migrationService;
     private final SchedulerService schedulerService;
+    private final S3SyncFileSystemDownloader fileSystemDownloader;
 
     private FileSystemMigrationReport report;
     private AtomicBoolean isDoneCrawling;
@@ -59,15 +57,17 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private S3UploadConfig s3UploadConfig;
 
     //TODO: Region Service and provider will be replaced by the S3 Client
-    public S3FilesystemMigrationService(RegionService regionService,
-                                        AwsCredentialsProvider credentialsProvider,
+    public S3FilesystemMigrationService(S3AsyncClient s3AsyncClient,
                                         JiraHome jiraHome,
-                                        MigrationService migrationService, SchedulerService schedulerService) {
-        this.regionService = regionService;
-        this.credentialsProvider = credentialsProvider;
+                                        S3SyncFileSystemDownloader fileSystemDownloader,
+                                        MigrationService migrationService,
+                                        SchedulerService schedulerService)
+    {
+        this.s3AsyncClient = s3AsyncClient;
         this.jiraHome = jiraHome;
         this.migrationService = migrationService;
         this.schedulerService = schedulerService;
+        this.fileSystemDownloader = fileSystemDownloader;
     }
 
     @Override
@@ -131,6 +131,8 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
         waitForUploadsToComplete(uploadResults);
 
+        startDownloadingFilesInTarget();
+
         finaliseMigration();
     }
 
@@ -143,15 +145,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
         report.setStatus(RUNNING);
 
-        S3AsyncClient s3AsyncClient = buildS3Client();
         s3UploadConfig = new S3UploadConfig(getS3Bucket(), s3AsyncClient, getSharedHomeDir());
-    }
-
-    private S3AsyncClient buildS3Client() {
-        return S3AsyncClient.builder()
-                .credentialsProvider(credentialsProvider)
-                .region(Region.of(regionService.getRegion()))
-                .build();
     }
 
     private CompletionService<Void> startUploadingFromQueue() {
@@ -192,6 +186,15 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
                         report.setStatus(FAILED);
                     }
                 });
+    }
+
+    private void startDownloadingFilesInTarget() {
+        try {
+            fileSystemDownloader.initiateFileSystemDownload();
+        } catch (S3SyncFileSystemDownloader.CannotLaunchCommandException e) {
+            report.setStatus(FAILED);
+            logger.error("unable to initiate file system download", e);
+        }
     }
 
     private void finaliseMigration() throws InvalidMigrationStageError {
