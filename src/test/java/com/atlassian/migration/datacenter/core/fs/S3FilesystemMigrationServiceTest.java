@@ -21,6 +21,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jmx.export.annotation.ManagedOperation;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -36,18 +37,12 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class S3FilesystemMigrationServiceTest {
-    @Mock
-    RegionService regionService;
-
-    @Mock
-    AtlassianPluginAWSCredentialsProvider credentialsProvider;
 
     @Mock
     JiraHome jiraHome;
 
     @Mock
     MigrationService migrationService;
-
 
     @Mock
     SchedulerService schedulerService;
@@ -63,7 +58,6 @@ class S3FilesystemMigrationServiceTest {
         Path nonexistentDir = Paths.get(UUID.randomUUID().toString());
         when(this.migrationService.getCurrentStage()).thenReturn(MigrationStage.FS_MIGRATION_COPY);
         when(jiraHome.getHome()).thenReturn(nonexistentDir.toFile());
-        when(regionService.getRegion()).thenReturn(Region.US_EAST_1.toString());
 
         fsService.startMigration();
 
