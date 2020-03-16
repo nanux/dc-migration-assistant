@@ -1,11 +1,9 @@
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.jira.config.util.JiraHome;
+import com.atlassian.migration.datacenter.core.exceptions.FileUploadException;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
-import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
-import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
-import com.atlassian.migration.datacenter.core.util.UploadQueue;
 import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
@@ -22,16 +20,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
-import java.io.IOException;
 import java.nio.file.Path;
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.IntStream;
 
 import static com.atlassian.migration.datacenter.spi.MigrationStage.FS_MIGRATION_COPY;
-import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.DONE;
-import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.FAILED;
-import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.RUNNING;
+import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.*;
 
 @Component
 public class S3FilesystemMigrationService implements FilesystemMigrationService {
@@ -115,20 +107,25 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
             logger.warn("Filesystem migration is currently in progress, aborting new execution.");
             return;
         }
+        report = new DefaultFileSystemMigrationReport();
 
         migrationService.transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
-
-        report = new DefaultFileSystemMigrationReport(new DefaultFileSystemMigrationErrorReport(), new DefaultFilesystemMigrationProgress());
         report.setStatus(RUNNING);
 
-        Crawler homeCrawler = new DirectoryStreamCrawler(report, report);
+        Crawler homeCrawler = new DirectoryStreamCrawler(report);
 
         S3UploadConfig s3UploadConfig = new S3UploadConfig(getS3Bucket(), s3AsyncClient, getSharedHomeDir());
-        Uploader s3Uploader = new S3Uploader(s3UploadConfig, report, report);
+        Uploader s3Uploader = new S3Uploader(s3UploadConfig, report);
 
         FilesystemUploader fsUploader = new FilesystemUploader(homeCrawler, s3Uploader);
         fsUploader.uploadDirectory(getSharedHomeDir());
-        
+
+        try {
+            fsUploader.uploadDirectory(getSharedHomeDir());
+        } catch (FileUploadException e) {
+            logger.error("Caught exception during upload; check report for details.", e);
+        }
+
         if (report.getStatus().equals(DONE)) {
             this.migrationService.transition(MigrationStage.WAIT_FS_MIGRATION_COPY, MigrationStage.OFFLINE_WARNING);
         } else if (!report.getStatus().equals(FAILED)) {
@@ -136,7 +133,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
             report.setStatus(DONE);
         }
     }
-    
+
     private String getS3Bucket() {
         return BUCKET_NAME;
     }

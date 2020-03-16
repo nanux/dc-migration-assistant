@@ -1,10 +1,11 @@
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
+import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
 import com.atlassian.migration.datacenter.core.util.UploadQueue;
-import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
+import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,9 +20,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,8 +43,7 @@ class S3UploaderTest {
 
     private UploadQueue<Path> queue;
     private S3Uploader uploader;
-    private FileSystemMigrationErrorReport errorReport;
-    private FileSystemMigrationProgress progress;
+    private FileSystemMigrationReport report;
 
     @TempDir
     Path tempDir;
@@ -54,9 +52,8 @@ class S3UploaderTest {
     void setup() {
         S3UploadConfig config = new S3UploadConfig("bucket-name", s3AsyncClient, tempDir);
         queue = new UploadQueue<>(20);
-        progress = new DefaultFilesystemMigrationProgress();
-        errorReport = new DefaultFileSystemMigrationErrorReport();
-        uploader = new S3Uploader(config, errorReport, progress);
+        report = new DefaultFileSystemMigrationReport();
+        uploader = new S3Uploader(config, report);
     }
 
     @Test
@@ -87,7 +84,7 @@ class S3UploaderTest {
         // upload should finish and there shouldn't be more paths to process
         assertTrue(submit.isDone());
         assertTrue(queue.isEmpty());
-        assertTrue(errorReport.getFailedFiles().isEmpty());
+        assertTrue(report.getFailedFiles().isEmpty());
     }
 
     @Test
@@ -105,7 +102,7 @@ class S3UploaderTest {
         });
 
         submit.get();
-        assertEquals(1, progress.getCountOfMigratedFiles());
+        assertEquals(1, report.getCountOfMigratedFiles());
     }
 
     @Test
@@ -116,7 +113,7 @@ class S3UploaderTest {
 
         uploader.upload(queue);
 
-        assertEquals(errorReport.getFailedFiles().size(), 1);
+        assertEquals(report.getFailedFiles().size(), 1);
     }
 
     @Test
@@ -134,7 +131,7 @@ class S3UploaderTest {
 
         Thread.sleep(100);
 
-        assertEquals(1, progress.getNumberOfCommencedFileUploads());
+        assertEquals(1, report.getNumberOfCommencedFileUploads());
 
         queue.finish();
 

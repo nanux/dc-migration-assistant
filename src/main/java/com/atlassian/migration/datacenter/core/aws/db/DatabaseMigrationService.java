@@ -6,10 +6,12 @@ import com.atlassian.migration.datacenter.core.db.DatabaseExtractorFactory;
 import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
 import com.atlassian.migration.datacenter.core.fs.*;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
+import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
 import com.atlassian.migration.datacenter.core.util.UploadQueue;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
+import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
@@ -63,15 +65,14 @@ public class DatabaseMigrationService
         setStatus(MigrationStatus.DUMP_COMPLETE);
 
 
-        FileSystemMigrationProgress progress = new DefaultFilesystemMigrationProgress();
-        FileSystemMigrationErrorReport report = new DefaultFileSystemMigrationErrorReport();
+        FileSystemMigrationReport report = new DefaultFileSystemMigrationReport();
 
         String bucket = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
         S3UploadConfig config = new S3UploadConfig(bucket, this.s3AsyncClient, target.getParent());
 
 
-        S3Uploader uploader = new S3Uploader(config, report, progress);
-        Crawler crawler = new DirectoryStreamCrawler(report, progress);
+        S3Uploader uploader = new S3Uploader(config, report);
+        Crawler crawler = new DirectoryStreamCrawler(report);
 
 
         FilesystemUploader filesystemUploader = new FilesystemUploader(crawler, uploader);
