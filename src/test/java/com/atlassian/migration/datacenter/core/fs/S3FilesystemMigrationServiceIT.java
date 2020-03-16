@@ -50,6 +50,9 @@ class S3FilesystemMigrationServiceIT {
     @Mock
     private SchedulerService schedulerService;
 
+    @Mock
+    S3SyncFileSystemDownloader fileSystemDownloader;
+
     @BeforeEach
     void setup() throws Exception {
         Path file = dir.resolve(UUID.randomUUID().toString());
@@ -63,7 +66,7 @@ class S3FilesystemMigrationServiceIT {
         when(jiraHome.getHome()).thenReturn(dir.toFile());
         when(migrationService.getCurrentStage()).thenReturn(MigrationStage.FS_MIGRATION_COPY);
 
-        FilesystemMigrationService fsService = new S3FilesystemMigrationService(regionService, credentialsProvider, jiraHome, migrationService, schedulerService);
+        FilesystemMigrationService fsService = new S3FilesystemMigrationService(regionService, credentialsProvider, jiraHome, migrationService, schedulerService, fileSystemDownloader);
 
         fsService.startMigration();
 

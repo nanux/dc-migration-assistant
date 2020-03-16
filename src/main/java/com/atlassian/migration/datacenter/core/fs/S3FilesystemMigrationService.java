@@ -52,6 +52,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private final JiraHome jiraHome;
     private final MigrationService migrationService;
     private final SchedulerService schedulerService;
+    private final S3SyncFileSystemDownloader fileSystemDownloader;
 
     private FileSystemMigrationReport report;
     private AtomicBoolean isDoneCrawling;
@@ -62,12 +63,13 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     public S3FilesystemMigrationService(RegionService regionService,
                                         AwsCredentialsProvider credentialsProvider,
                                         JiraHome jiraHome,
-                                        MigrationService migrationService, SchedulerService schedulerService) {
+                                        MigrationService migrationService, SchedulerService schedulerService, S3SyncFileSystemDownloader fileSystemDownloader) {
         this.regionService = regionService;
         this.credentialsProvider = credentialsProvider;
         this.jiraHome = jiraHome;
         this.migrationService = migrationService;
         this.schedulerService = schedulerService;
+        this.fileSystemDownloader = fileSystemDownloader;
     }
 
     @Override
@@ -131,6 +133,8 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
         waitForUploadsToComplete(uploadResults);
 
+        startDownloadingFilesInTarget();
+
         finaliseMigration();
     }
 
@@ -192,6 +196,15 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
                         report.setStatus(FAILED);
                     }
                 });
+    }
+
+    private void startDownloadingFilesInTarget() {
+        try {
+            fileSystemDownloader.initiateFileSystemDownload();
+        } catch (S3SyncFileSystemDownloader.CannotLaunchCommandException e) {
+            report.setStatus(FAILED);
+            logger.error("unable to initiate file system download", e);
+        }
     }
 
     private void finaliseMigration() throws InvalidMigrationStageError {
