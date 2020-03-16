@@ -3,19 +3,15 @@ package com.atlassian.migration.datacenter.core.aws;
 import cloud.localstack.TestUtils;
 import cloud.localstack.docker.LocalstackDockerExtension;
 import cloud.localstack.docker.annotation.LocalstackDockerProperties;
-import com.atlassian.migration.datacenter.core.aws.region.InvalidAWSRegionException;
-import com.atlassian.migration.datacenter.core.aws.region.RegionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
-import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ssm.SsmClient;
 import software.amazon.awssdk.services.ssm.model.CommandInvocationStatus;
-import software.amazon.awssdk.services.ssm.model.CommandStatus;
 import software.amazon.awssdk.services.ssm.model.GetCommandInvocationRequest;
 import software.amazon.awssdk.services.ssm.model.GetCommandInvocationResponse;
 import software.amazon.awssdk.services.ssm.model.SendCommandRequest;
@@ -29,8 +25,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @Tag("integration")
-//@ExtendWith({LocalstackDockerExtension.class})
-//@LocalstackDockerProperties(services = {"cloudformation", "s3", "ssm"}, imageTag = "0.10.8")
+@ExtendWith({LocalstackDockerExtension.class})
+@LocalstackDockerProperties(services = {"cloudformation", "s3", "ssm"}, imageTag = "0.10.8")
 public class SSMApiIT {
 
     private static final String LOCALSTACK_SSM_ENDPOINT = "http://localhost:4583";
@@ -39,17 +35,7 @@ public class SSMApiIT {
 
     @BeforeEach
     void setUp() {
-        sut = new SSMApi(DefaultCredentialsProvider.create(), new RegionService() {
-            @Override
-            public String getRegion() {
-                return "us-east-1";
-            }
-
-            @Override
-            public void storeRegion(String string) throws InvalidAWSRegionException {
-
-            }
-        });
+        sut = new SSMApi(SsmClient.builder().build());
     }
 
     @Test

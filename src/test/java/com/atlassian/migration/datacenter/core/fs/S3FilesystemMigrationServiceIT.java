@@ -47,6 +47,7 @@ class S3FilesystemMigrationServiceIT {
     @Mock MigrationService migrationService;
     @Mock JiraHome jiraHome;
     @Mock SchedulerService schedulerService;
+    @Mock S3SyncFileSystemDownloader fileSystemDownloader;
 
     private S3AsyncClient s3AsyncClient;
     private String bucket = "trebuchet-testing";
@@ -90,7 +91,7 @@ class S3FilesystemMigrationServiceIT {
 
         Path file = genRandFile();
 
-        FilesystemMigrationService fsService = new S3FilesystemMigrationService(s3AsyncClient, jiraHome, migrationService, schedulerService);
+         FilesystemMigrationService fsService = new S3FilesystemMigrationService(s3AsyncClient, jiraHome, fileSystemDownloader, migrationService, schedulerService);
 
         fsService.startMigration();
 
