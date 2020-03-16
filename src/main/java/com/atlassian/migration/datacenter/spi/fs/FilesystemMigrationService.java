@@ -1,5 +1,6 @@
 package com.atlassian.migration.datacenter.spi.fs;
 
+import com.atlassian.migration.datacenter.core.exceptions.FilesystemMigrationException;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
 
@@ -9,6 +10,7 @@ import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationRe
 public interface FilesystemMigrationService {
     /**
      * Schedules filesystem migration to run asynchronously using the {@link com.atlassian.scheduler.SchedulerService}
+     *
      * @return a <code>Boolean</code> value that represents if a migration task has been successfully scheduled.
      */
     Boolean scheduleMigration();
@@ -29,7 +31,16 @@ public interface FilesystemMigrationService {
 
     /**
      * Return true if the filesystem migration is in non-terminal state
+     *
      * @return true if the filesystem migration is in progress
      */
     boolean isRunning();
+
+    /**
+     * Cancel filesystem migration that is currently in progress
+     *
+     * @throws InvalidMigrationStageError   if the migration is not running
+     * @throws FilesystemMigrationException if there was a problem when aborting migration
+     */
+    void abortMigration() throws InvalidMigrationStageError, FilesystemMigrationException;
 }

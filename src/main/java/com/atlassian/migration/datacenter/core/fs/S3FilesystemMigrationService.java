@@ -2,6 +2,7 @@ package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
+import com.atlassian.migration.datacenter.core.exceptions.FilesystemMigrationException;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
@@ -45,7 +46,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private static final Logger logger = LoggerFactory.getLogger(S3FilesystemMigrationService.class);
 
     private static final int NUM_UPLOAD_THREADS = Integer.getInteger("NUM_UPLOAD_THREADS", 1);
-    private static final String BUCKET_NAME = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
+    static final String BUCKET_NAME = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
 
     private final AwsCredentialsProvider credentialsProvider;
     private final RegionService regionService;
@@ -73,6 +74,17 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     @Override
     public boolean isRunning() {
         return this.migrationService.getCurrentStage().equals(MigrationStage.WAIT_FS_MIGRATION_COPY);
+    }
+
+    @Override
+    public void abortMigration() throws InvalidMigrationStageError, FilesystemMigrationException {
+        if (!isRunning()) {
+            throw new InvalidMigrationStageError(String.format("Invalid migration stage when cancelling filesystem migration: %s", migrationService.getCurrentStage()));
+        }
+        migrationService.transition(MigrationStage.WAIT_FS_MIGRATION_COPY, MigrationStage.ERROR);
+
+        // TODO should this be a new state - CANCELLED?
+        report.setStatus(FAILED);
     }
 
     @Override
