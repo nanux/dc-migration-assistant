@@ -8,11 +8,12 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
 
+import java.io.File;
+import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.channels.AsynchronousFileChannel;
 import java.nio.channels.CompletionHandler;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.charset.Charset;
 import java.nio.file.StandardOpenOption;
 
 @Slf4j
@@ -31,11 +32,16 @@ public class S3ToFileWriter implements Runnable {
     @SneakyThrows
     @Override
     public void run() {
-        try {
-            S3Object s3object = this.s3Client.getObject(this.entity.getBucket().getName(), this.entity.getObject().getKey());
+        String key = URLDecoder.decode(this.entity.getObject().getKey(), Charset.defaultCharset().toString());
+        try (S3Object s3object = this.s3Client.getObject(this.entity.getBucket().getName(), key)) {
             S3ObjectInputStream inputStream = s3object.getObjectContent();
-            final Path localPath = Paths.get(this.jiraHome.concat("/").concat(this.entity.getObject().getKey()));
-            AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(localPath, StandardOpenOption.WRITE, StandardOpenOption.CREATE);
+            final File localPath = new File(this.jiraHome.concat("/").concat(key));
+            if (!localPath.getParentFile().exists()) {
+                if (localPath.getParentFile().mkdirs()) {
+                    log.debug("Made the directory {}", localPath.getPath());
+                }
+            }
+            AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(localPath.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
             byte[] bytes = IOUtils.toByteArray(inputStream);
             ByteBuffer buffer = ByteBuffer.wrap(bytes);
             fileChannel.write(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
@@ -49,8 +55,10 @@ public class S3ToFileWriter implements Runnable {
                     log.error("Failed to write the file {}", localPath.toString());
                 }
             });
+            inputStream.close();
         } catch (Exception ex) {
-            log.error(ex.getLocalizedMessage());
+            log.error("Failed to process ".concat(ex.getLocalizedMessage()));
+            log.error(ex.getCause().getLocalizedMessage());
         }
     }
 }

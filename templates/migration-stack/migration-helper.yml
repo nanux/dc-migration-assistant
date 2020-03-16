@@ -23,6 +23,9 @@ Parameters:
   MigrationFilePath:
     Type: String
     Description: 'The directory on the migration helper server to write the files to from S3'
+  RouteTableIds:
+    Type: String
+    Description: 'The route tables in the Helper VPC to use when accessing S3'
 
 Resources:
 
@@ -47,19 +50,46 @@ Resources:
     Type: AWS::SQS::QueuePolicy
     Properties:
       PolicyDocument:
+        Id: !Sub "MigrationQueue_Policy_${AWS::AccountId}"
         Version: 2012-10-17
         Statement:
-          - Effect: Allow
+          - Sid: "MigrationQueue_SendMessage"
+            Effect: Allow
             Principal:
               AWS: '*'
             Action:
               - SQS:SendMessage
-            Resource: '*'
+            Resource: !GetAtt MigrationQueue.Arn
             Condition:
               ArnEquals:
-                aws:SourceArn: "arn:aws:s3:::*"
+                aws:SourceArn: !Join ["", ["arn:aws:s3:::",!Sub 'atl-migrationbucket-${AWS::StackName}']]
       Queues:
         - !Ref MigrationQueue
+
+  MigrationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      DelaySeconds: 0
+      MaximumMessageSize: 262144
+      MessageRetentionPeriod: 864000
+      QueueName: !Sub 'atl-migration-queue-${AWS::StackName}'
+      ReceiveMessageWaitTimeSeconds: 0
+      VisibilityTimeout: 90
+
+  EndpointS3:
+    Type: 'AWS::EC2::VPCEndpoint'
+    Properties:
+      RouteTableIds: !Ref RouteTableIds
+      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
+      VpcId: !Ref HelperVpcId
+
+  S3EndpointAddresses:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /config/migration-helper/app.s3.vpc.endpoints
+      Type: StringList
+      Value: !GetAtt EndpointS3.DnsEntries
+      Description: CloudFormation Stack Name
 
   StackNameParameter:
     Type: AWS::SSM::Parameter
@@ -74,18 +104,8 @@ Resources:
     Properties:
       Name: /config/migration-helper/app.jira.file.path
       Type: String
-      Value: !Ref MigrationFilePath
+      Value: "atl-migration-queue-migration-helper"
       Description: File Path
-
-  MigrationQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      DelaySeconds: 0
-      MaximumMessageSize: 262144
-      MessageRetentionPeriod: 864000
-      QueueName: !Sub 'atl-migration-queue-${AWS::StackName}'
-      ReceiveMessageWaitTimeSeconds: 0
-      VisibilityTimeout: 90
 
   #EC2 Migration Helper
   HelperLaunchConfig:

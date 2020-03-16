@@ -2,8 +2,6 @@ package com.atlassian.migration.datacenter.fs.processor.configuration;
 
 import com.amazonaws.services.sqs.AmazonSQSAsync;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
-import org.springframework.cloud.aws.autoconfigure.cache.ElastiCacheAutoConfiguration;
 import org.springframework.cloud.aws.core.env.ResourceIdResolver;
 import org.springframework.cloud.aws.messaging.config.QueueMessageHandlerFactory;
 import org.springframework.cloud.aws.messaging.listener.QueueMessageHandler;
@@ -20,7 +18,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Configuration
-@EnableAutoConfiguration(exclude = ElastiCacheAutoConfiguration.class)
 @ComponentScan
 public class FileSystemProcessorConfiguration {
 
