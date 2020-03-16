@@ -1,15 +1,14 @@
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.migration.datacenter.core.util.UploadQueue;
-import com.atlassian.migration.datacenter.spi.fs.reporting.FailedFileMigration;
-import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
-import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
+import com.atlassian.migration.datacenter.spi.fs.reporting.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.concurrent.BlockingQueue;
@@ -18,12 +17,10 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 public class DirectoryStreamCrawler implements Crawler {
     private static final Logger logger = LoggerFactory.getLogger(DirectoryStreamCrawler.class);
 
-    private FileSystemMigrationErrorReport report;
-    private FileSystemMigrationProgress progress;
+    private FileSystemMigrationReport report;
 
-    public DirectoryStreamCrawler(FileSystemMigrationErrorReport report, FileSystemMigrationProgress progress) {
+    public DirectoryStreamCrawler(FileSystemMigrationReport report) {
         this.report = report;
-        this.progress = progress;
     }
 
     @Override
@@ -32,7 +29,14 @@ public class DirectoryStreamCrawler implements Crawler {
             final DirectoryStream<Path> paths;
             paths = Files.newDirectoryStream(start);
             listDirectories(queue, paths);
-            logger.info("Crawled and added {} files for upload.", progress.getNumberOfFilesFound());
+            logger.info("Crawled and added {} files for upload.", report.getNumberOfFilesFound());
+
+        } catch (NoSuchFileException e) {
+            logger.error("Failed to find path "+start, e);
+            report.reportFileNotMigrated(new FailedFileMigration(start, e.getMessage()));
+            report.setStatus(FilesystemMigrationStatus.FAILED);
+            throw e;
+
         } finally {
             try {
                 queue.finish();
@@ -58,7 +62,7 @@ public class DirectoryStreamCrawler implements Crawler {
                     logger.error("Error when queuing {}, with exception {}", p, e);
                     report.reportFileNotMigrated(new FailedFileMigration(p, e.getMessage()));
                 }
-                progress.reportFileFound();
+                report.reportFileFound();
             }
         });
     }

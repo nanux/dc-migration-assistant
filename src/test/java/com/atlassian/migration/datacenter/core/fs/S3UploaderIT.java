@@ -6,10 +6,12 @@ import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
+import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
 import com.atlassian.migration.datacenter.core.util.UploadQueue;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
+import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -42,9 +44,7 @@ class S3UploaderIT {
     private static final String TREBUCHET_LOCALSTACK_BUCKET = "trebuchet-localstack-bucket";
     private UploadQueue<Path> queue;
     private S3Uploader uploader;
-    private AtomicBoolean isCrawlDone;
-    private FileSystemMigrationErrorReport errorReport;
-    private FileSystemMigrationProgress progress;
+    private FileSystemMigrationReport report;
 
     @Mock
     private AwsCredentialsProvider mockCredentialsProvider;
@@ -73,11 +73,9 @@ class S3UploaderIT {
             }
         });
 
-        errorReport = new DefaultFileSystemMigrationErrorReport();
-        progress = new DefaultFilesystemMigrationProgress();
-        isCrawlDone = new AtomicBoolean(false);
+        report = new DefaultFileSystemMigrationReport();
         queue = new UploadQueue<>(10);
-        uploader = new S3Uploader(config, errorReport, progress);
+        uploader = new S3Uploader(config, report);
     }
 
     @Test
@@ -95,18 +93,18 @@ class S3UploaderIT {
         final List<S3ObjectSummary> objectSummaries = s3Client.listObjects(TREBUCHET_LOCALSTACK_BUCKET).getObjectSummaries();
 
         assertEquals(
-                errorReport.getFailedFiles().size(),
+                report.getFailedFiles().size(),
                 0,
                 String.format(
                         "expected no upload errors but found %s",
-                        errorReport.getFailedFiles()
+                        report.getFailedFiles()
                                 .stream()
                                 .reduce("",
                                         (acc, failedMigration) -> String.format("%s%s: %s\n", acc, failedMigration.getFilePath().toString(),
                                                 failedMigration.getReason()), (acc, partial) -> acc + "\n" + partial)));
         assertEquals(objectSummaries.size(), 1);
         assertEquals(objectSummaries.get(0).getKey(), tempDir.relativize(file).toString());
-        assertEquals(1, progress.getCountOfMigratedFiles());
+        assertEquals(1, report.getCountOfMigratedFiles());
     }
 
     Path addFileToQueue(String fileName) throws IOException, InterruptedException{
