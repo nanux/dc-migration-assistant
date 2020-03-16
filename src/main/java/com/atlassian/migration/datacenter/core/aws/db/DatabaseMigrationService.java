@@ -30,28 +30,21 @@ import java.util.concurrent.atomic.AtomicReference;
 public class DatabaseMigrationService
 {
     private final ApplicationConfiguration applicationConfiguration;
-    private final Optional<URI> endpointOverride;
     private final Path tempDirectory;
     private final S3AsyncClient s3AsyncClient;
 
     private Process extractorProcess;
     private AtomicReference<MigrationStatus> status = new AtomicReference();
 
+
     //TODO: Move tempdirectory away from the constructor and pass that into the method instead
     public DatabaseMigrationService(ApplicationConfiguration applicationConfiguration,
-                                    Path tempDirectory, S3AsyncClient client)
+                                    Path tempDirectory,
+                                    S3AsyncClient s3AsyncClient)
     {
-        this(applicationConfiguration, tempDirectory, client, null);
-    }
-
-    DatabaseMigrationService(ApplicationConfiguration applicationConfiguration,
-                             Path tempDirectory,
-                             S3AsyncClient s3AsyncClient,
-                             URI endpointOverride) {
         this.applicationConfiguration = applicationConfiguration;
         this.tempDirectory = tempDirectory;
         this.s3AsyncClient = s3AsyncClient;
-        this.endpointOverride = Optional.ofNullable(endpointOverride);
         this.setStatus(MigrationStatus.NOT_STARTED);
     }
 
