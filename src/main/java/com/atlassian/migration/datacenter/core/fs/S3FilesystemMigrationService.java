@@ -42,7 +42,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private static final Logger logger = LoggerFactory.getLogger(S3FilesystemMigrationService.class);
 
     private static final int NUM_UPLOAD_THREADS = Integer.getInteger("NUM_UPLOAD_THREADS", 1);
-    static final String BUCKET_NAME = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
+    private static final String BUCKET_NAME = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
 
     private final S3AsyncClient s3AsyncClient;
     private final JiraHome jiraHome;
