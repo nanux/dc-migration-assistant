@@ -1,20 +1,29 @@
 package com.atlassian.migration.datacenter.configuration;
 
+import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.application.ApplicationConfiguration;
 import com.atlassian.migration.datacenter.core.application.JiraConfiguration;
+import com.atlassian.migration.datacenter.core.aws.AWSMigrationService;
+import com.atlassian.migration.datacenter.core.aws.CfnApi;
 import com.atlassian.migration.datacenter.core.aws.GlobalInfrastructure;
 import com.atlassian.migration.datacenter.core.aws.auth.AtlassianPluginAWSCredentialsProvider;
 import com.atlassian.migration.datacenter.core.aws.auth.EncryptedCredentialsStorage;
 import com.atlassian.migration.datacenter.core.aws.auth.ProbeAWSAuth;
 import com.atlassian.migration.datacenter.core.aws.auth.ReadCredentialsService;
+import com.atlassian.migration.datacenter.core.aws.auth.WriteCredentialsService;
+import com.atlassian.migration.datacenter.core.aws.cloud.AWSConfigurationService;
 import com.atlassian.migration.datacenter.core.aws.db.DatabaseMigrationService;
+import com.atlassian.migration.datacenter.core.aws.infrastructure.QuickstartDeploymentService;
+import com.atlassian.migration.datacenter.core.aws.region.AvailabilityZoneManager;
 import com.atlassian.migration.datacenter.core.aws.region.PluginSettingsRegionManager;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
+import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
+import com.atlassian.util.concurrent.Supplier;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -22,7 +31,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 import java.nio.file.Paths;
 
 @Configuration
-@Import({MigrationAssistantOsgiImportConfiguration.class})
+@ComponentScan
 public class MigrationAssistantBeanConfiguration {
 
     @Bean
@@ -39,13 +48,13 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public ReadCredentialsService readCredentialsService(PluginSettingsFactory pluginSettingsFactory, JiraHome jiraHome) {
-        return new EncryptedCredentialsStorage(pluginSettingsFactory, jiraHome);
+    public ReadCredentialsService readCredentialsService(Supplier<PluginSettingsFactory> pluginSettingsFactorySupplier, JiraHome jiraHome) {
+        return new EncryptedCredentialsStorage(pluginSettingsFactorySupplier, jiraHome);
     }
 
     @Bean
-    public RegionService regionService(PluginSettingsFactory pluginSettingsFactory, GlobalInfrastructure globalInfrastructure) {
-        return new PluginSettingsRegionManager(pluginSettingsFactory, globalInfrastructure);
+    public RegionService regionService(Supplier<PluginSettingsFactory> pluginSettingsFactorySupplier, GlobalInfrastructure globalInfrastructure) {
+        return new PluginSettingsRegionManager(pluginSettingsFactorySupplier, globalInfrastructure);
     }
 
     @Bean
@@ -67,5 +76,29 @@ public class MigrationAssistantBeanConfiguration {
     public DatabaseMigrationService databaseMigrationService(ApplicationConfiguration jiraConfiguration, S3AsyncClient s3AsyncClient) {
         String tempDirectoryPath = System.getProperty("java.io.tmpdir");
         return new DatabaseMigrationService(jiraConfiguration, Paths.get(tempDirectoryPath), s3AsyncClient);
+    }
+
+    @Bean
+    public AvailabilityZoneManager availabilityZoneManager(AwsCredentialsProvider awsCredentialsProvider, GlobalInfrastructure globalInfrastructure) {
+        return new AvailabilityZoneManager(awsCredentialsProvider, globalInfrastructure);
+    }
+
+    public AWSConfigurationService awsConfigurationService(AwsCredentialsProvider awsCredentialsProvider, RegionService regionService, MigrationService migrationService) {
+        return new AWSConfigurationService((WriteCredentialsService) awsCredentialsProvider, regionService, migrationService);
+    }
+
+    @Bean
+    public CfnApi cfnApi(AwsCredentialsProvider awsCredentialsProvider, RegionService regionService) {
+        return new CfnApi(awsCredentialsProvider, regionService);
+    }
+
+    @Bean
+    public MigrationService migrationService(ActiveObjects ao) {
+        return new AWSMigrationService(ao);
+    }
+
+    @Bean
+    public QuickstartDeploymentService quickstartDeploymentService(ActiveObjects ao, CfnApi cfnApi, MigrationService migrationService) {
+        return new QuickstartDeploymentService(ao, cfnApi, migrationService);
     }
 }
