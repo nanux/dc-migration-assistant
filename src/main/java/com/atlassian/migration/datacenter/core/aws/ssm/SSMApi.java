@@ -1,4 +1,4 @@
-package com.atlassian.migration.datacenter.core.aws;
+package com.atlassian.migration.datacenter.core.aws.ssm;
 
 import software.amazon.awssdk.services.ssm.SsmClient;
 import software.amazon.awssdk.services.ssm.model.GetCommandInvocationRequest;

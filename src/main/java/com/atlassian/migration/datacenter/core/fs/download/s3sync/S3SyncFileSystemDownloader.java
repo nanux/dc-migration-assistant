@@ -1,14 +1,9 @@
 package com.atlassian.migration.datacenter.core.fs.download.s3sync;
 
-import com.atlassian.migration.datacenter.core.aws.SSMApi;
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.atlassian.migration.datacenter.core.aws.ssm.SSMApi;
+import com.atlassian.migration.datacenter.core.aws.ssm.SuccessfulSSMCommandConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.ssm.model.CommandInvocationStatus;
-import software.amazon.awssdk.services.ssm.model.GetCommandInvocationResponse;
 
 import java.util.Collections;
 
@@ -40,46 +35,31 @@ public class S3SyncFileSystemDownloader {
         // FIXME: Reload the migration stack instance ID in case instance has gone down during migration
         String commandID = ssmApi.runSSMDocument(SSM_PLAYBOOK, MIGRATION_STACK_INSTANCE, Collections.emptyMap());
 
-        GetCommandInvocationResponse command = null;
-        for (int i = 0; i < maxCommandStatusRetries; i++) {
-            command = ssmApi.getSSMCommand(commandID, MIGRATION_STACK_INSTANCE);
-            final CommandInvocationStatus status = command.status();
+        SuccessfulSSMCommandConsumer consumer = new EnsureSuccessfulSSMCommandConsumer(ssmApi, commandID, MIGRATION_STACK_INSTANCE);
 
-            logger.debug("Checking delivery of s3 sync ssm command. Attempt {}. Status is: {}", i, status.toString());
-
-            if (status.equals(CommandInvocationStatus.SUCCESS)) {
-                return;
-            }
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                logger.error("interrupted while waiting for s3 sync ssm command to be delivered", e);
-                throw new CannotLaunchCommandException("unable to launch file system download command");
-            }
+        try {
+            consumer.handleCommandOutput(maxCommandStatusRetries);
+        } catch (SuccessfulSSMCommandConsumer.UnsuccessfulSSMCommandInvocationException e) {
+            logger.error("error launching s3 sync command", e);
+            throw new CannotLaunchCommandException("unable to launch file system download command successfully.");
+        } catch (SuccessfulSSMCommandConsumer.SSMCommandInvocationProcessingError never) {
         }
-        throw new CannotLaunchCommandException("unable to launch file system download command successfully. Command status is " + command.status().toString());
     }
 
     public S3SyncCommandStatus getFileSystemDownloadStatus() throws IndeterminateS3SyncStatusException {
         String statusCommandId = ssmApi.runSSMDocument(STATUS_SSM_PLAYBOOK, MIGRATION_STACK_INSTANCE, Collections.emptyMap());
 
-        for (int i = 0; i < maxCommandStatusRetries; i++) {
-            GetCommandInvocationResponse statusResponse = ssmApi.getSSMCommand(statusCommandId, MIGRATION_STACK_INSTANCE);
+        SuccessfulSSMCommandConsumer<S3SyncCommandStatus> consumer = new UnmarshalS3SyncStatusSSMCommandConsumer(ssmApi, statusCommandId, MIGRATION_STACK_INSTANCE);
 
-            if (statusResponse.status().equals(CommandInvocationStatus.SUCCESS)) {
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-
-                try {
-                    return mapper.readValue(statusResponse.standardOutputContent(), S3SyncCommandStatus.class);
-                } catch (JsonProcessingException e) {
-                    logger.error("unable to unmarshal output from s3 sync status command", e);
-                    throw new IndeterminateS3SyncStatusException("unable to read status of sync command");
-                }
-            }
+        try {
+            return consumer.handleCommandOutput(maxCommandStatusRetries);
+        } catch (SuccessfulSSMCommandConsumer.UnsuccessfulSSMCommandInvocationException e) {
+            logger.error("Status command did not complete successfully", e);
+            return null;
+        } catch (SuccessfulSSMCommandConsumer.SSMCommandInvocationProcessingError e) {
+            logger.error("Unable to read status of s3 sync command", e);
+            return null;
         }
-        return null;
     }
 
     static class IndeterminateS3SyncStatusException extends Exception {
