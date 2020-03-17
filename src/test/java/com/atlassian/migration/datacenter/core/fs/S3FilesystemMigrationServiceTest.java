@@ -18,6 +18,9 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.internal.util.reflection.FieldSetter;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.jmx.export.annotation.ManagedOperation;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -43,6 +46,9 @@ class S3FilesystemMigrationServiceTest {
 
     @Mock
     SchedulerService schedulerService;
+
+    @Mock
+    S3SyncFileSystemDownloader fileSystemDownloader;
 
     @InjectMocks
     S3FilesystemMigrationService fsService;
