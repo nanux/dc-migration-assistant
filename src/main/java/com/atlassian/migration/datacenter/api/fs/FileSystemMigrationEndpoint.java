@@ -45,12 +45,20 @@ public class FileSystemMigrationEndpoint {
                     .entity(ImmutableMap.of("status", fsMigrationService.getReport().getStatus()))
                     .build();
         }
-        boolean started = fsMigrationService.scheduleMigration();
-        Response.ResponseBuilder builder = started ? Response.status(Response.Status.ACCEPTED) : Response.status(Response.Status.CONFLICT);
+        boolean started = false;
+        try {
+            started = fsMigrationService.scheduleMigration();
+            Response.ResponseBuilder builder = started ? Response.status(Response.Status.ACCEPTED) : Response.status(Response.Status.CONFLICT);
 
-        return builder
-                .entity(ImmutableMap.of("migrationScheduled", started))
-                .build();
+            return builder
+                    .entity(ImmutableMap.of("migrationScheduled", started))
+                    .build();
+        } catch (InvalidMigrationStageError invalidMigrationStageError) {
+            return Response
+                    .status(Response.Status.CONFLICT)
+                    .entity(ImmutableMap.of("error", invalidMigrationStageError.getMessage()))
+                    .build();
+        }
     }
 
     @GET

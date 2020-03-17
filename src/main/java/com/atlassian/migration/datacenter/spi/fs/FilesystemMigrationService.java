@@ -12,7 +12,7 @@ public interface FilesystemMigrationService {
      *
      * @return a <code>Boolean</code> value that represents if a migration task has been successfully scheduled.
      */
-    Boolean scheduleMigration();
+    Boolean scheduleMigration() throws InvalidMigrationStageError;
 
     /**
      * Start migration of the application home. This is a long running blocking operation and should be run in

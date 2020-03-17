@@ -94,10 +94,14 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     }
 
     @Override
-    public Boolean scheduleMigration() {
+    public Boolean scheduleMigration() throws InvalidMigrationStageError {
         Migration currentMigration = this.migrationService.getCurrentMigration();
         if (currentMigration.getStage() != FS_MIGRATION_COPY) {
-            return false;
+            throw new InvalidMigrationStageError(
+                    String.format(
+                            "Cannot start filesystem migration as the system is not ready. Required state should be %s but is %s",
+                            FS_MIGRATION_COPY,
+                            currentMigration.getStage()));
         }
 
         final JobRunnerKey runnerKey = JobRunnerKey.of(S3UploadJobRunner.KEY);

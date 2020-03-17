@@ -78,8 +78,7 @@ class S3FilesystemMigrationServiceTest {
         when(migrationService.getCurrentMigration()).thenReturn(mockMigration);
         when(mockMigration.getStage()).thenReturn(MigrationStage.NOT_STARTED);
 
-        Boolean isScheduled = fsService.scheduleMigration();
-        assertEquals(false, isScheduled);
+        assertThrows(InvalidMigrationStageError.class, fsService::scheduleMigration);
     }
 
     @Test
