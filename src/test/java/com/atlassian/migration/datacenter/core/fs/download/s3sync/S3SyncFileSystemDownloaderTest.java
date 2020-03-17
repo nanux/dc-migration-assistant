@@ -10,6 +10,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.ssm.model.CommandInvocationStatus;
 import software.amazon.awssdk.services.ssm.model.GetCommandInvocationResponse;
 
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -24,8 +26,10 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class S3SyncFileSystemDownloaderTest {
 
-    public static final String SYNC_STATUS_SUCCESS_COMPLETE_JSON = "{\"finished\": true, \"code\": \"0\"}";
-    private static final String SYNC_STATUS_DETERMINED_PARTIAL = "{\"status\": {\"progress\": 49492787.2, \"files_remaining\": 528, \"total\": 451411968.0, \"isCalculating\": false}, \"hasErrors\": false}\n";
+    private static final String SYNC_STATUS_SUCCESS_COMPLETE_JSON = "{\"finished\": true, \"code\": \"0\", \"status\": {}, \"hasErrors\": false}\n";
+    private static final String SYNC_STATUS_DETERMINED_PARTIAL_JSON = "{\"status\": {\"progress\": 49492787.2, \"files_remaining\": 528, \"total\": 451411968.0, \"isCalculating\": false}, \"hasErrors\": false}\n";
+    private static final String SYNC_STATUS_COMPLETE_ERROR_JSON = "{\"finished\": true, \"code\": \"1\", \"status\": {}, \"hasErrors\": true, \"errors\": [\"fatal error: Unable to locate credentials\\n\"]}\n";
+
     @Mock
     SSMApi mockSsmApi;
 
@@ -74,15 +78,11 @@ class S3SyncFileSystemDownloaderTest {
 
     @Test
     void shouldGetStatusOfSsmCommand() throws IndeterminateS3SyncStatusException {
-        when(mockSsmApi.runSSMDocument(anyString(), anyString(), anyMap())).thenReturn("status-command-invocation");
+        givenSyncCommandIsRunning();
 
-        GetCommandInvocationResponse mockStatusResponse = GetCommandInvocationResponse.builder()
-                .status(CommandInvocationStatus.SUCCESS)
-                .standardOutputContent(SYNC_STATUS_SUCCESS_COMPLETE_JSON)
-                .build();
-        when(mockSsmApi.getSSMCommand(anyString(), anyString())).thenReturn(mockStatusResponse);
+        givenStatusCommandCompletesSuccessfullyWithOutput(SYNC_STATUS_SUCCESS_COMPLETE_JSON);
 
-        S3SyncCommandStatus status = sut.getFileSystemDownloadStatus();
+        S3SyncCommandStatus status = whenStatusCommandIsInvoked();
 
         assertTrue(status.isComplete());
         assertEquals(status.getExitCode(), 0);
@@ -91,20 +91,48 @@ class S3SyncFileSystemDownloaderTest {
 
     @Test
     void shouldGetStatusWhenSyncIsPartiallyCompleteButNoLongerCalculating() throws IndeterminateS3SyncStatusException {
-        when(mockSsmApi.runSSMDocument(anyString(), anyString(), anyMap())).thenReturn("status-command-invocation");
+        givenSyncCommandIsRunning();
 
-        GetCommandInvocationResponse mockStatusResponse = GetCommandInvocationResponse.builder()
-                .status(CommandInvocationStatus.SUCCESS)
-                .standardOutputContent(SYNC_STATUS_DETERMINED_PARTIAL)
-                .build();
-        when(mockSsmApi.getSSMCommand(anyString(), anyString())).thenReturn(mockStatusResponse);
+        givenStatusCommandCompletesSuccessfullyWithOutput(SYNC_STATUS_DETERMINED_PARTIAL_JSON);
 
-        S3SyncCommandStatus status = sut.getFileSystemDownloadStatus();
+        S3SyncCommandStatus status = whenStatusCommandIsInvoked();
 
         assertFalse(status.isCalculating());
         assertFalse(status.hasErrors());
         assertEquals(49492787.2, status.getBytesDownloaded());
         assertEquals(451411968.0, status.getTotalBytesToDownload());
         assertEquals(528, status.getFilesRemainingToDownload());
+    }
+
+    @Test
+    void shouldGetStatusWhenSyncIsCompleteWithErrors() throws IndeterminateS3SyncStatusException {
+        givenSyncCommandIsRunning();
+
+        givenStatusCommandCompletesSuccessfullyWithOutput(SYNC_STATUS_COMPLETE_ERROR_JSON);
+
+        S3SyncCommandStatus status = whenStatusCommandIsInvoked();
+
+        assertTrue(status.hasErrors());
+        assertTrue(status.isComplete());
+        assertFalse(status.isCalculating());
+        assertEquals(1, status.getExitCode());
+        assertEquals(1, status.getErrors().size());
+        assertThat(status.getErrors(), hasItem("fatal error: Unable to locate credentials\n"));
+    }
+
+    private void givenSyncCommandIsRunning() {
+        when(mockSsmApi.runSSMDocument(anyString(), anyString(), anyMap())).thenReturn("status-command-invocation");
+    }
+
+    private void givenStatusCommandCompletesSuccessfullyWithOutput(String syncStatusDeterminedPartial) {
+        GetCommandInvocationResponse mockStatusResponse = GetCommandInvocationResponse.builder()
+                .status(CommandInvocationStatus.SUCCESS)
+                .standardOutputContent(syncStatusDeterminedPartial)
+                .build();
+        when(mockSsmApi.getSSMCommand(anyString(), anyString())).thenReturn(mockStatusResponse);
+    }
+
+    private S3SyncCommandStatus whenStatusCommandIsInvoked() throws IndeterminateS3SyncStatusException {
+        return sut.getFileSystemDownloadStatus();
     }
 }
