@@ -3,8 +3,8 @@ package com.atlassian.migration.datacenter.core.fs;
 import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.exceptions.FileUploadException;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloadManager;
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloader;
-import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
 import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.spi.MigrationService;
@@ -37,7 +37,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private final JiraHome jiraHome;
     private final MigrationService migrationService;
     private final SchedulerService schedulerService;
-    private final S3SyncFileSystemDownloader fileSystemDownloader;
+    private final S3SyncFileSystemDownloadManager fileSystemDownloadManager;
 
     private FileSystemMigrationReport report;
 
@@ -45,7 +45,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     //TODO: Region Service and provider will be replaced by the S3 Client
     public S3FilesystemMigrationService(S3AsyncClient s3AsyncClient,
                                         JiraHome jiraHome,
-                                        S3SyncFileSystemDownloader fileSystemDownloader,
+                                        S3SyncFileSystemDownloadManager fileSystemDownloadManager,
                                         MigrationService migrationService,
                                         SchedulerService schedulerService)
     {
@@ -53,7 +53,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         this.jiraHome = jiraHome;
         this.migrationService = migrationService;
         this.schedulerService = schedulerService;
-        this.fileSystemDownloader = fileSystemDownloader;
+        this.fileSystemDownloadManager = fileSystemDownloadManager;
     }
 
     @Override
@@ -125,6 +125,12 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
             fsUploader.uploadDirectory(getSharedHomeDir());
         } catch (FileUploadException e) {
             logger.error("Caught exception during upload; check report for details.", e);
+        }
+
+        try {
+            fileSystemDownloadManager.downloadFileSystem();
+        } catch (S3SyncFileSystemDownloader.CannotLaunchCommandException e) {
+            logger.error("unable to launch s3 sync ssm command", e);
         }
 
         if (report.getStatus().equals(DONE)) {

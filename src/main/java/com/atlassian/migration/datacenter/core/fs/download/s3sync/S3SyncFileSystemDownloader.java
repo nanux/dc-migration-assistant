@@ -62,7 +62,7 @@ public class S3SyncFileSystemDownloader {
         }
     }
 
-    static class IndeterminateS3SyncStatusException extends Exception {
+    public static class IndeterminateS3SyncStatusException extends Exception {
         IndeterminateS3SyncStatusException(String message) {
             super(message);
         }

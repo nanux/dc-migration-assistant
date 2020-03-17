@@ -3,6 +3,7 @@ package com.atlassian.migration.datacenter.core.fs;
 import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.aws.auth.AtlassianPluginAWSCredentialsProvider;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
+import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloadManager;
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloader;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
@@ -46,8 +47,7 @@ class S3FilesystemMigrationServiceIT {
     @Mock MigrationService migrationService;
     @Mock JiraHome jiraHome;
     @Mock SchedulerService schedulerService;
-    @Mock
-    S3SyncFileSystemDownloader fileSystemDownloader;
+    @Mock S3SyncFileSystemDownloadManager fileSystemDownloader;
 
     private S3AsyncClient s3AsyncClient;
     private String bucket = "trebuchet-testing";

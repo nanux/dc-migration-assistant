@@ -2,6 +2,7 @@ package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloadManager;
 import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
@@ -45,6 +46,9 @@ class S3FilesystemMigrationServiceTest {
 
     @Mock
     S3AsyncClient s3AsyncClient;
+
+    @Mock
+    S3SyncFileSystemDownloadManager downloadManager;
 
     @InjectMocks
     S3FilesystemMigrationService fsService;
