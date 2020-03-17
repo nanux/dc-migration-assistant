@@ -69,13 +69,11 @@ last_line = getLastLineOfSyncOutput(output_file_path)
 
 finished, exit_code = checkIfSyncCompleted(last_line)
 
+result = dict()
+
 if finished:
-    progress = {
-        'finished': True,
-        'code': exit_code
-    }
-    print(json.dumps(progress))
-    exit(0)
+    result['finished'] = True
+    result['code'] = exit_code
 
 try:
     progress = parseSyncOutput(last_line)
@@ -84,16 +82,12 @@ except ValueError:
 
 try:
     errors = parseError(error_file_path)
-    result = {
-        'status': progress,
-        'hasErrors': True,
-        'errors': errors
-    }
+    result['status'] = progress
+    result['hasErrors'] = True
+    result['errors'] = errors
 except:
-    result = {
-        'status': progress,
-        'hasErrors': False
-    }
+    result['status'] = progress
+    result['hasErrors'] = False
 
 print(json.dumps(result))
 exit(0)
