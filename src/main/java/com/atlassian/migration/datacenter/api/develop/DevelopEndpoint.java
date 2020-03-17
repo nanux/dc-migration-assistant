@@ -45,6 +45,8 @@ public class DevelopEndpoint {
     static class Stage {
         private String stage;
 
+        public Stage() {}
+        
         public Stage(String stage) {
             this.stage = stage;
         }
