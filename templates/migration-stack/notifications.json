@@ -1,0 +1,10 @@
+{
+  "QueueConfigurations": [
+    {
+      "QueueArn": "http://localhost:4576/queue/atl-migration-queue-migration-helper",
+      "Events": [
+        "s3:ObjectCreated:*"
+      ]
+    }
+  ]
+}

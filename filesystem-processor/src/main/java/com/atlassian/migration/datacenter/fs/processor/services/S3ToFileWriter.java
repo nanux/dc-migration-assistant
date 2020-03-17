@@ -41,23 +41,23 @@ public class S3ToFileWriter implements Runnable {
                         log.debug("Made the directory {}", localPath.getPath());
                     }
                 }
-                if (!localPath.exists()) {
-                    try (AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(localPath.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
-                        byte[] bytes = IOUtils.toByteArray(inputStream);
-                        ByteBuffer buffer = ByteBuffer.wrap(bytes);
-                        fileChannel.write(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
-                            @Override
-                            public void completed(Integer result, ByteBuffer attachment) {
-                                log.debug("Wrote the file {}", localPath.toString());
-                            }
 
-                            @Override
-                            public void failed(Throwable exc, ByteBuffer attachment) {
-                                log.error("Failed to write the file {}", localPath.toString());
-                            }
-                        });
+                AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(localPath.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
+                byte[] bytes = IOUtils.toByteArray(inputStream);
+                ByteBuffer buffer = ByteBuffer.wrap(bytes);
+                fileChannel.write(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
+                    @Override
+                    public void completed(Integer result, ByteBuffer attachment) {
+                        log.debug("Wrote the file {}", localPath.toString());
                     }
-                }
+
+                    @Override
+                    public void failed(Throwable exc, ByteBuffer attachment) {
+                        log.error(exc.getCause().getLocalizedMessage());
+                        log.error("Failed to write the file {}", localPath.toString());
+                    }
+                });
+
             }
         } catch (Exception ex) {
             log.error("Failed to process ".concat(ex.getLocalizedMessage()));

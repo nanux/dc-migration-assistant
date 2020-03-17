@@ -2,22 +2,25 @@ AWSTemplateFormatVersion: 2010-09-09
 Description: Jira / Confluence Server to DC (AWS) Helper
 
 Resources:
-  QueuePolicy:
-    Type: AWS::SQS::QueuePolicy
+  #S3 Bucket for Database Transfer
+  MigrationBucket:
+    Type: AWS::S3::Bucket
     Properties:
-      PolicyDocument:
-        Id: !Sub "MigrationQueue_Policy_000000000000"
-        Version: 2012-10-17
-        Statement:
-          - Sid: "MigrationQueue_SendMessage"
-            Effect: Allow
-            Principal:
-              AWS: '*'
-            Action:
-              - SQS:SendMessage
-            Resource: "arn:aws:sqs:eu-central-1:000000000000:atl-migration-queue-migration-helper"
-            Condition:
-              ArnEquals:
-                aws:SourceArn: "arn:aws:s3:::atl-migrationbucket-migration-helper"
-      Queues:
-        - "arn:aws:sqs:eu-central-1:000000000000:atl-migration-queue-migration-helper"
+      BucketName: !Sub 'atl-migrationbucket-${AWS::StackName}'
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+    DeletionPolicy: Delete
+
+  MigrationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      DelaySeconds: 0
+      MaximumMessageSize: 262144
+      MessageRetentionPeriod: 864000
+      FifoQueue: true
+      QueueName: !Sub 'atl-migration-queue-${AWS::StackName}'
+      ReceiveMessageWaitTimeSeconds: 0
+      VisibilityTimeout: 90
+
