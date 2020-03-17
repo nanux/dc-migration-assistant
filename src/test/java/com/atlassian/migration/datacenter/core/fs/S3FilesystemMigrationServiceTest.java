@@ -2,7 +2,6 @@ package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
-import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloader;
 import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
@@ -18,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,7 +44,7 @@ class S3FilesystemMigrationServiceTest {
     SchedulerService schedulerService;
 
     @Mock
-    S3SyncFileSystemDownloader fileSystemDownloader;
+    S3AsyncClient s3AsyncClient;
 
     @InjectMocks
     S3FilesystemMigrationService fsService;
