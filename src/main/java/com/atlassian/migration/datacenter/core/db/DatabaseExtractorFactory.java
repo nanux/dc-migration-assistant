@@ -8,7 +8,6 @@ import org.springframework.stereotype.Component;
 /**
  * Copyright Atlassian: 10/03/2020
  */
-@Component
 public class DatabaseExtractorFactory
 {
     public static DatabaseExtractor getExtractor(ApplicationConfiguration config) throws DatabaseMigrationFailure

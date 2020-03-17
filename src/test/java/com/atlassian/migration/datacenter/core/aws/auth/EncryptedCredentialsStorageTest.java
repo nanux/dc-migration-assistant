@@ -3,12 +3,12 @@ package com.atlassian.migration.datacenter.core.aws.auth;
 import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.sal.api.pluginsettings.PluginSettings;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
+import com.atlassian.util.concurrent.Supplier;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -26,7 +26,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class EncryptedCredentialsStorageTest {
 
-    @InjectMocks
     EncryptedCredentialsStorage encryptedCredentialsStorage;
 
     @Mock
@@ -34,6 +33,7 @@ public class EncryptedCredentialsStorageTest {
 
     @Mock
     PluginSettingsFactory pluginSettingsFactory;
+
 
     @AfterAll
     static void tearDown() {
@@ -49,6 +49,7 @@ public class EncryptedCredentialsStorageTest {
 
     @BeforeEach
     void setup() {
+        encryptedCredentialsStorage = new EncryptedCredentialsStorage(() -> this.pluginSettingsFactory, jiraHome);
         when(jiraHome.getHome()).thenReturn(new File("."));
         when(this.pluginSettingsFactory.createGlobalSettings()).thenReturn(new PluginSettings() {
             Map<String, Object> settings = new HashMap<>();

@@ -21,7 +21,6 @@ import static java.util.Objects.requireNonNull;
 /**
  * Manages a migration from on-premise to self-hosted AWS.
  */
-@Component
 public class AWSMigrationService implements MigrationService {
     private static final Logger log = LoggerFactory.getLogger(AWSMigrationService.class);
     private ActiveObjects ao;

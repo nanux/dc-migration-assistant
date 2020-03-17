@@ -2,7 +2,6 @@ package com.atlassian.migration.datacenter.core.application;
 
 import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.application.DatabaseConfiguration.DBType;
-import org.springframework.stereotype.Component;
 import org.xml.sax.InputSource;
 
 import javax.xml.xpath.XPath;
@@ -18,7 +17,6 @@ import java.util.Optional;
 /**
  * Copyright Atlassian: 04/03/2020
  */
-@Component
 public class JiraConfiguration implements ApplicationConfiguration
 {
     private static final String DATASOURCE_XPATH = "/jira-database-config/jdbc-datasource/";

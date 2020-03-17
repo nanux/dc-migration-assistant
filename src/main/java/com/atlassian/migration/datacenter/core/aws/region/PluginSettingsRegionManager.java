@@ -3,9 +3,10 @@ package com.atlassian.migration.datacenter.core.aws.region;
 import com.atlassian.migration.datacenter.core.aws.GlobalInfrastructure;
 import com.atlassian.sal.api.pluginsettings.PluginSettings;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
+import com.atlassian.util.concurrent.Supplier;
 import software.amazon.awssdk.regions.Region;
+
+import javax.annotation.PostConstruct;
 
 /**
  * Manages the persistence and retrieval of the region used to make AWS SDK API calls.
@@ -13,15 +14,22 @@ import software.amazon.awssdk.regions.Region;
  */
 public class PluginSettingsRegionManager implements RegionService {
 
-    private static final String AWS_REGION_PLUGIN_STORAGE_KEY = "com.atlassian.migration.datacenter.core.aws.region";
-    private static final String REGION_PLUGIN_STORAGE_SUFFIX = ".region";
+    static final String AWS_REGION_PLUGIN_STORAGE_KEY = "com.atlassian.migration.datacenter.core.aws.region";
+    static final String REGION_PLUGIN_STORAGE_SUFFIX = ".region";
 
-    private final PluginSettingsFactory pluginSettingsFactory;
+
     private final GlobalInfrastructure globalInfrastructure;
+    private Supplier<PluginSettingsFactory> pluginSettingsFactorySupplier;
+    private PluginSettings pluginSettings;
 
-    public PluginSettingsRegionManager(PluginSettingsFactory pluginSettingsFactory, GlobalInfrastructure globalInfrastructure) {
-        this.pluginSettingsFactory = pluginSettingsFactory;
+    public PluginSettingsRegionManager(Supplier<PluginSettingsFactory> pluginSettingsFactorySupplier, GlobalInfrastructure globalInfrastructure) {
+        this.pluginSettingsFactorySupplier = pluginSettingsFactorySupplier;
         this.globalInfrastructure = globalInfrastructure;
+    }
+
+    @PostConstruct
+    public void postConstruct(){
+        this.pluginSettings = this.pluginSettingsFactorySupplier.get().createGlobalSettings();
     }
 
     /**
@@ -30,8 +38,7 @@ public class PluginSettingsRegionManager implements RegionService {
      */
     @Override
     public String getRegion() {
-        PluginSettings pluginSettings = pluginSettingsFactory.createGlobalSettings();
-        String pluginSettingsRegion = (String) pluginSettings.get(AWS_REGION_PLUGIN_STORAGE_KEY + REGION_PLUGIN_STORAGE_SUFFIX);
+        String pluginSettingsRegion = (String) this.pluginSettings.get(AWS_REGION_PLUGIN_STORAGE_KEY + REGION_PLUGIN_STORAGE_SUFFIX);
         if (pluginSettingsRegion == null || "".equals(pluginSettingsRegion)) {
             return Region.US_EAST_1.toString();
         }
@@ -51,8 +58,7 @@ public class PluginSettingsRegionManager implements RegionService {
             throw new InvalidAWSRegionException();
         }
 
-        PluginSettings pluginSettings = pluginSettingsFactory.createGlobalSettings();
-        pluginSettings.put(AWS_REGION_PLUGIN_STORAGE_KEY + REGION_PLUGIN_STORAGE_SUFFIX, region);
+        this.pluginSettings.put(AWS_REGION_PLUGIN_STORAGE_KEY + REGION_PLUGIN_STORAGE_SUFFIX, region);
     }
 
     private boolean isValidRegion(String testRegion) {
