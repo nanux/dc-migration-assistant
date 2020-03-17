@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Jira / Confluence Server to DC (AWS) Helper
+
+Resources:
+  QueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Id: !Sub "MigrationQueue_Policy_000000000000"
+        Version: 2012-10-17
+        Statement:
+          - Sid: "MigrationQueue_SendMessage"
+            Effect: Allow
+            Principal:
+              AWS: '*'
+            Action:
+              - SQS:SendMessage
+            Resource: "arn:aws:sqs:eu-central-1:000000000000:atl-migration-queue-migration-helper"
+            Condition:
+              ArnEquals:
+                aws:SourceArn: "arn:aws:s3:::atl-migrationbucket-migration-helper"
+      Queues:
+        - "arn:aws:sqs:eu-central-1:000000000000:atl-migration-queue-migration-helper"

@@ -34,28 +34,31 @@ public class S3ToFileWriter implements Runnable {
     public void run() {
         String key = URLDecoder.decode(this.entity.getObject().getKey(), Charset.defaultCharset().toString());
         try (S3Object s3object = this.s3Client.getObject(this.entity.getBucket().getName(), key)) {
-            S3ObjectInputStream inputStream = s3object.getObjectContent();
-            final File localPath = new File(this.jiraHome.concat("/").concat(key));
-            if (!localPath.getParentFile().exists()) {
-                if (localPath.getParentFile().mkdirs()) {
-                    log.debug("Made the directory {}", localPath.getPath());
+            try (S3ObjectInputStream inputStream = s3object.getObjectContent()) {
+                final File localPath = new File(this.jiraHome.concat("/").concat(key));
+                if (!localPath.getParentFile().exists()) {
+                    if (localPath.getParentFile().mkdirs()) {
+                        log.debug("Made the directory {}", localPath.getPath());
+                    }
+                }
+                if (!localPath.exists()) {
+                    try (AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(localPath.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE)) {
+                        byte[] bytes = IOUtils.toByteArray(inputStream);
+                        ByteBuffer buffer = ByteBuffer.wrap(bytes);
+                        fileChannel.write(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
+                            @Override
+                            public void completed(Integer result, ByteBuffer attachment) {
+                                log.debug("Wrote the file {}", localPath.toString());
+                            }
+
+                            @Override
+                            public void failed(Throwable exc, ByteBuffer attachment) {
+                                log.error("Failed to write the file {}", localPath.toString());
+                            }
+                        });
+                    }
                 }
             }
-            AsynchronousFileChannel fileChannel = AsynchronousFileChannel.open(localPath.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE);
-            byte[] bytes = IOUtils.toByteArray(inputStream);
-            ByteBuffer buffer = ByteBuffer.wrap(bytes);
-            fileChannel.write(buffer, 0, buffer, new CompletionHandler<Integer, ByteBuffer>() {
-                @Override
-                public void completed(Integer result, ByteBuffer attachment) {
-                    log.debug("Wrote the file {}", localPath.toString());
-                }
-
-                @Override
-                public void failed(Throwable exc, ByteBuffer attachment) {
-                    log.error("Failed to write the file {}", localPath.toString());
-                }
-            });
-            inputStream.close();
         } catch (Exception ex) {
             log.error("Failed to process ".concat(ex.getLocalizedMessage()));
             log.error(ex.getCause().getLocalizedMessage());

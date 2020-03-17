@@ -23,9 +23,6 @@ Parameters:
   MigrationFilePath:
     Type: String
     Description: 'The directory on the migration helper server to write the files to from S3'
-  RouteTableIds:
-    Type: String
-    Description: 'The route tables in the Helper VPC to use when accessing S3'
 
 Resources:
 
@@ -76,21 +73,6 @@ Resources:
       ReceiveMessageWaitTimeSeconds: 0
       VisibilityTimeout: 90
 
-  EndpointS3:
-    Type: 'AWS::EC2::VPCEndpoint'
-    Properties:
-      RouteTableIds: !Ref RouteTableIds
-      ServiceName: !Sub 'com.amazonaws.${AWS::Region}.s3'
-      VpcId: !Ref HelperVpcId
-
-  S3EndpointAddresses:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: /config/migration-helper/app.s3.vpc.endpoints
-      Type: StringList
-      Value: !GetAtt EndpointS3.DnsEntries
-      Description: CloudFormation Stack Name
-
   StackNameParameter:
     Type: AWS::SSM::Parameter
     Properties:
@@ -104,8 +86,24 @@ Resources:
     Properties:
       Name: /config/migration-helper/app.jira.file.path
       Type: String
-      Value: "atl-migration-queue-migration-helper"
+      Value: !Ref MigrationFilePath
       Description: File Path
+
+  VPCIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /config/migration-helper/app.vpc.id
+      Type: String
+      Value: !Ref HelperVpcId
+      Description: Helper VPC Id
+
+  RegionParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /config/migration-helper/app.region.id
+      Type: String
+      Value: !Ref AWS::Region
+      Description: Region Name
 
   #EC2 Migration Helper
   HelperLaunchConfig:

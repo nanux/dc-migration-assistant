@@ -1,7 +1,6 @@
 package com.atlassian.migration.datacenter.fs.processor.configuration;
 
 import com.amazonaws.services.sqs.AmazonSQSAsync;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.cloud.aws.core.env.ResourceIdResolver;
 import org.springframework.cloud.aws.messaging.config.QueueMessageHandlerFactory;
 import org.springframework.cloud.aws.messaging.listener.QueueMessageHandler;
@@ -9,16 +8,15 @@ import org.springframework.cloud.aws.messaging.listener.SimpleMessageListenerCon
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Primary;
+import org.springframework.context.annotation.Profile;
 import org.springframework.messaging.converter.MappingJackson2MessageConverter;
-import org.springframework.messaging.converter.MessageConverter;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Collections;
 
 @Configuration
 @ComponentScan
+@Profile({"production", "localStack"})
 public class FileSystemProcessorConfiguration {
 
     @Bean
@@ -33,22 +31,13 @@ public class FileSystemProcessorConfiguration {
     }
 
     @Bean
-    public QueueMessageHandler queueMessageHandler(AmazonSQSAsync amazonSQSAsync, List<MessageConverter> customMessageConverters) {
-        QueueMessageHandlerFactory queueMessageHandlerFactory = new QueueMessageHandlerFactory();
-        queueMessageHandlerFactory.setAmazonSqs(amazonSQSAsync);
-        queueMessageHandlerFactory.setMessageConverters(customMessageConverters);
-        return queueMessageHandlerFactory.createQueueMessageHandler();
-    }
-
-    @Bean
-    @Primary
-    public List<MessageConverter> customMessageConverters() {
-        ObjectMapper objectMapper = new ObjectMapper();
+    public QueueMessageHandler queueMessageHandler(AmazonSQSAsync amazonSQSAsync) {
+        QueueMessageHandlerFactory factory = new QueueMessageHandlerFactory();
         MappingJackson2MessageConverter messageConverter = new MappingJackson2MessageConverter();
-        messageConverter.setObjectMapper(objectMapper);
-        List<MessageConverter> converters = new ArrayList<>(1);
-        converters.add(messageConverter);
-        return converters;
+        messageConverter.setStrictContentTypeMatch(false);
+        factory.setAmazonSqs(amazonSQSAsync);
+        factory.setMessageConverters(Collections.singletonList(messageConverter));
+        return factory.createQueueMessageHandler();
     }
 
     @Bean
