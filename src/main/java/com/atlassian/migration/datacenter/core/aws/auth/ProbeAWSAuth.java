@@ -1,9 +1,26 @@
+/*
+ * Copyright 2020 Atlassian
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.atlassian.migration.datacenter.core.aws.auth;
 
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cloudformation.CloudFormationAsyncClient;
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException;
@@ -20,10 +37,10 @@ import java.util.stream.Collectors;
 public class ProbeAWSAuth {
     private static final Logger logger = LoggerFactory.getLogger(ProbeAWSAuth.class);
 
-    private AtlassianPluginAWSCredentialsProvider credentialsProvider;
+    private AwsCredentialsProvider credentialsProvider;
     private RegionService regionService;
 
-    public ProbeAWSAuth(AtlassianPluginAWSCredentialsProvider credentialsProvider, RegionService regionService) {
+    public ProbeAWSAuth(AwsCredentialsProvider credentialsProvider, RegionService regionService) {
         this.credentialsProvider = credentialsProvider;
         this.regionService = regionService;
     }

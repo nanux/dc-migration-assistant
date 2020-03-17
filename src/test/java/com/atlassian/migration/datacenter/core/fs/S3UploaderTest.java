@@ -1,9 +1,27 @@
+/*
+ * Copyright 2020 Atlassian
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
+import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
-import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
+import com.atlassian.migration.datacenter.core.util.UploadQueue;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
+import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,12 +36,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.*;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -44,11 +57,9 @@ class S3UploaderTest {
     private SdkHttpResponse sdkHttpResponse;
 
 
-    private ConcurrentLinkedQueue<Path> queue = new ConcurrentLinkedQueue<>();
+    private UploadQueue<Path> queue;
     private S3Uploader uploader;
-    private AtomicBoolean isCrawlDone;
-    private FileSystemMigrationErrorReport errorReport;
-    private FileSystemMigrationProgress progress;
+    private FileSystemMigrationReport report;
 
     @TempDir
     Path tempDir;
@@ -56,11 +67,9 @@ class S3UploaderTest {
     @BeforeEach
     void setup() {
         S3UploadConfig config = new S3UploadConfig("bucket-name", s3AsyncClient, tempDir);
-        queue = new ConcurrentLinkedQueue<>();
-        progress = new DefaultFilesystemMigrationProgress();
-        errorReport = new DefaultFileSystemMigrationErrorReport();
-        uploader = new S3Uploader(config, errorReport, progress);
-        isCrawlDone = new AtomicBoolean(false);
+        queue = new UploadQueue<>(20);
+        report = new DefaultFileSystemMigrationReport();
+        uploader = new S3Uploader(config, report);
     }
 
     @Test
@@ -73,7 +82,7 @@ class S3UploaderTest {
         addFileToQueue("file1");
 
         final Future<?> submit = Executors.newFixedThreadPool(1).submit(() -> {
-            uploader.upload(queue, isCrawlDone);
+            uploader.upload(queue);
         });
 
         // verify consumption of the first path
@@ -85,13 +94,13 @@ class S3UploaderTest {
         addFileToQueue("file2");
 
         // finish crawling
-        isCrawlDone.set(true);
+        queue.finish();
         submit.get();
 
         // upload should finish and there shouldn't be more paths to process
         assertTrue(submit.isDone());
         assertTrue(queue.isEmpty());
-        assertTrue(errorReport.getFailedFiles().isEmpty());
+        assertTrue(report.getFailedFiles().isEmpty());
     }
 
     @Test
@@ -102,25 +111,25 @@ class S3UploaderTest {
         when(s3AsyncClient.putObject(any(PutObjectRequest.class), any(Path.class))).thenReturn(s3response);
 
         Path testPath = addFileToQueue("file1");
-        isCrawlDone.set(true);
+        queue.finish();
 
         final Future<?> submit = Executors.newFixedThreadPool(1).submit(() -> {
-            uploader.upload(queue, isCrawlDone);
+            uploader.upload(queue);
         });
 
         submit.get();
-        assertEquals(1, progress.getCountOfMigratedFiles());
+        assertEquals(1, report.getCountOfMigratedFiles());
     }
 
     @Test
-    void uploadNonExistentDirectoryShouldReturnFailedCollection() {
+    void uploadNonExistentDirectoryShouldReturnFailedCollection() throws InterruptedException {
         final Path nonExistentFile = tempDir.resolve("non-existent");
-        queue.add(nonExistentFile);
-        isCrawlDone.set(true);
+        queue.put(nonExistentFile);
+        queue.finish();
 
-        uploader.upload(queue, isCrawlDone);
+        uploader.upload(queue);
 
-        assertEquals(errorReport.getFailedFiles().size(), 1);
+        assertEquals(report.getFailedFiles().size(), 1);
     }
 
     @Test
@@ -133,22 +142,23 @@ class S3UploaderTest {
         addFileToQueue("file1");
 
         final Future<?> submit = Executors.newFixedThreadPool(1).submit(() -> {
-            uploader.upload(queue, isCrawlDone);
+            uploader.upload(queue);
         });
 
         Thread.sleep(100);
 
-        assertEquals(1, progress.getNumberOfCommencedFileUploads());
+        assertEquals(1, report.getNumberOfCommencedFileUploads());
 
-        isCrawlDone.set(true);
+        queue.finish();
 
         submit.get();
     }
 
-    Path addFileToQueue(String fileName) throws IOException {
+    Path addFileToQueue(String fileName) throws IOException, InterruptedException {
         final Path file = tempDir.resolve(fileName);
         Files.write(file, "".getBytes());
-        queue.add(file);
+        queue.put(file);
         return file;
     }
+
 }

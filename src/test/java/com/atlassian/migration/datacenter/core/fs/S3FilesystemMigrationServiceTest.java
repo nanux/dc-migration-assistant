@@ -1,8 +1,25 @@
+/*
+ * Copyright 2020 Atlassian
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.aws.auth.AtlassianPluginAWSCredentialsProvider;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
+import com.atlassian.migration.datacenter.core.exceptions.FileUploadException;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.spi.MigrationService;
@@ -19,7 +36,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.jmx.export.annotation.ManagedOperation;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -35,11 +54,6 @@ import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class S3FilesystemMigrationServiceTest {
-    @Mock
-    RegionService regionService;
-
-    @Mock
-    AtlassianPluginAWSCredentialsProvider credentialsProvider;
 
     @Mock
     JiraHome jiraHome;
@@ -47,9 +61,11 @@ class S3FilesystemMigrationServiceTest {
     @Mock
     MigrationService migrationService;
 
-
     @Mock
     SchedulerService schedulerService;
+
+    @Mock
+    S3AsyncClient s3AsyncClient;
 
     @InjectMocks
     S3FilesystemMigrationService fsService;
@@ -59,7 +75,6 @@ class S3FilesystemMigrationServiceTest {
         Path nonexistentDir = Paths.get(UUID.randomUUID().toString());
         when(this.migrationService.getCurrentStage()).thenReturn(MigrationStage.FS_MIGRATION_COPY);
         when(jiraHome.getHome()).thenReturn(nonexistentDir.toFile());
-        when(regionService.getRegion()).thenReturn(Region.US_EAST_1.toString());
 
         fsService.startMigration();
 
