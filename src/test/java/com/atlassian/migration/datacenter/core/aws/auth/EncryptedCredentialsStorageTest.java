@@ -3,7 +3,6 @@ package com.atlassian.migration.datacenter.core.aws.auth;
 import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.sal.api.pluginsettings.PluginSettings;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
-import com.atlassian.util.concurrent.Supplier;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,10 +29,9 @@ public class EncryptedCredentialsStorageTest {
 
     @Mock
     static JiraHome jiraHome;
-
     @Mock
     PluginSettingsFactory pluginSettingsFactory;
-
+    private PluginSettings pluginSettings;
 
     @AfterAll
     static void tearDown() {
@@ -49,9 +47,7 @@ public class EncryptedCredentialsStorageTest {
 
     @BeforeEach
     void setup() {
-        encryptedCredentialsStorage = new EncryptedCredentialsStorage(() -> this.pluginSettingsFactory, jiraHome);
-        when(jiraHome.getHome()).thenReturn(new File("."));
-        when(this.pluginSettingsFactory.createGlobalSettings()).thenReturn(new PluginSettings() {
+        pluginSettings = new PluginSettings() {
             Map<String, Object> settings = new HashMap<>();
 
             @Override
@@ -68,8 +64,13 @@ public class EncryptedCredentialsStorageTest {
             public Object remove(String s) {
                 return this.settings.remove(s);
             }
-        });
-        this.encryptedCredentialsStorage.afterPropertiesSet();
+        };
+
+        when(jiraHome.getHome()).thenReturn(new File("."));
+        when(this.pluginSettingsFactory.createGlobalSettings()).thenReturn(pluginSettings);
+
+        this.encryptedCredentialsStorage = new EncryptedCredentialsStorage(() -> this.pluginSettingsFactory, jiraHome);
+        this.encryptedCredentialsStorage.postConstruct();
     }
 
     @Test
@@ -108,5 +109,4 @@ public class EncryptedCredentialsStorageTest {
         String retrievedValue = this.encryptedCredentialsStorage.getSecretAccessKey();
         assertEquals(testSecretAccessKey, retrievedValue);
     }
-
 }
