@@ -28,6 +28,8 @@ public class S3SyncFileSystemDownloadManager {
             try {
                 S3SyncCommandStatus status = downloader.getFileSystemDownloadStatus();
 
+                logger.debug("got status of file system download: " + status.toString());
+
                 if (status.isComplete()) {
                     syncCompleteFuture.complete(null);
                 }

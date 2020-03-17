@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.ImmutableList;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -16,8 +17,8 @@ import java.util.Map;
  */
 @JsonAutoDetect
 public class S3SyncCommandStatus {
-
     private boolean finished;
+
     private boolean hasErrors;
     private int code;
     private double progress;
@@ -25,7 +26,6 @@ public class S3SyncCommandStatus {
     private int filesRemaining;
     private boolean calculating;
     private List<String> errors;
-
     @JsonProperty("status")
     @JsonInclude(JsonInclude.Include.NON_ABSENT)
     private void unpackStatus(Map<String, Object> status) {
@@ -68,5 +68,19 @@ public class S3SyncCommandStatus {
 
     public List<String> getErrors() {
         return ImmutableList.copyOf(errors);
+    }
+
+    @Override
+    public String toString() {
+        return "S3SyncCommandStatus{" +
+                "finished=" + finished +
+                ", hasErrors=" + hasErrors +
+                ", code=" + code +
+                ", progress=" + progress +
+                ", total=" + total +
+                ", filesRemaining=" + filesRemaining +
+                ", calculating=" + calculating +
+                ", errors=" + Arrays.toString(errors.toArray()) +
+                '}';
     }
 }
