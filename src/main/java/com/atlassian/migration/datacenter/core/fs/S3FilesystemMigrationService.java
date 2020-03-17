@@ -118,7 +118,6 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         Uploader s3Uploader = new S3Uploader(s3UploadConfig, report);
 
         FilesystemUploader fsUploader = new FilesystemUploader(homeCrawler, s3Uploader);
-        fsUploader.uploadDirectory(getSharedHomeDir());
 
         try {
             fsUploader.uploadDirectory(getSharedHomeDir());
