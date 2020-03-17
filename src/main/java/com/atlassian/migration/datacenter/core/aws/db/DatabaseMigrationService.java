@@ -4,24 +4,20 @@ import com.atlassian.migration.datacenter.core.application.ApplicationConfigurat
 import com.atlassian.migration.datacenter.core.db.DatabaseExtractor;
 import com.atlassian.migration.datacenter.core.db.DatabaseExtractorFactory;
 import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
-import com.atlassian.migration.datacenter.core.fs.Crawler;
-import com.atlassian.migration.datacenter.core.fs.DirectoryStreamCrawler;
-import com.atlassian.migration.datacenter.core.fs.S3UploadConfig;
-import com.atlassian.migration.datacenter.core.fs.S3Uploader;
+import com.atlassian.migration.datacenter.core.fs.*;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
+import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
+import com.atlassian.migration.datacenter.core.util.UploadQueue;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
+import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -69,25 +65,21 @@ public class DatabaseMigrationService
         setStatus(MigrationStatus.DUMP_COMPLETE);
 
 
-        ConcurrentLinkedQueue<Path> uploadQueue = new ConcurrentLinkedQueue<>();
-        FileSystemMigrationProgress progress = new DefaultFilesystemMigrationProgress();
-        FileSystemMigrationErrorReport report = new DefaultFileSystemMigrationErrorReport();
+        FileSystemMigrationReport report = new DefaultFileSystemMigrationReport();
 
         String bucket = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
         S3UploadConfig config = new S3UploadConfig(bucket, this.s3AsyncClient, target.getParent());
 
-        S3Uploader uploader = new S3Uploader(config, report, progress);
-        Crawler crawler = new DirectoryStreamCrawler(report, progress);
 
+        S3Uploader uploader = new S3Uploader(config, report);
+        Crawler crawler = new DirectoryStreamCrawler(report);
+
+
+        FilesystemUploader filesystemUploader = new FilesystemUploader(crawler, uploader);
         setStatus(MigrationStatus.UPLOAD_IN_PROGRESS);
-        try {
-            crawler.crawlDirectory(target, uploadQueue);
-        } catch (IOException e) {
-            String msg = "Failed to read the database dump directory.";
-            setStatus(MigrationStatus.error(msg, e));
-            throw new DatabaseMigrationFailure(msg, e);
-        }
-        uploader.upload(uploadQueue, new AtomicBoolean(true));
+
+        filesystemUploader.uploadDirectory(target);
+
         setStatus(MigrationStatus.UPLOAD_COMPLETE);
 
         setStatus(MigrationStatus.FINISHED);
