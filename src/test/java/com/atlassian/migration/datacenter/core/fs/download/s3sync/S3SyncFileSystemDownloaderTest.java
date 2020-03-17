@@ -1,6 +1,7 @@
 package com.atlassian.migration.datacenter.core.fs.download.s3sync;
 
 import com.atlassian.migration.datacenter.core.aws.SSMApi;
+import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloader.IndeterminateS3SyncStatusException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +24,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class S3SyncFileSystemDownloaderTest {
 
+    public static final String SYNC_STATUS_SUCCESS_COMPLETE_JSON = "{\"finished\": true, \"code\": \"0\"}";
+    private static final String SYNC_STATUS_DETERMINED_PARTIAL = "{\"status\": {\"progress\": 49492787.2, \"files_remaining\": 528, \"total\": 451411968.0, \"isCalculating\": false}, \"hasErrors\": false}\n";
     @Mock
     SSMApi mockSsmApi;
 
@@ -70,12 +73,12 @@ class S3SyncFileSystemDownloaderTest {
     }
 
     @Test
-    void shouldGetStatusOfSsmCommand() throws com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloader.IndeterminateS3SyncStatusException {
+    void shouldGetStatusOfSsmCommand() throws IndeterminateS3SyncStatusException {
         when(mockSsmApi.runSSMDocument(anyString(), anyString(), anyMap())).thenReturn("status-command-invocation");
 
         GetCommandInvocationResponse mockStatusResponse = GetCommandInvocationResponse.builder()
                 .status(CommandInvocationStatus.SUCCESS)
-                .standardOutputContent("{\"finished\": true, \"code\": \"0\"}")
+                .standardOutputContent(SYNC_STATUS_SUCCESS_COMPLETE_JSON)
                 .build();
         when(mockSsmApi.getSSMCommand(anyString(), anyString())).thenReturn(mockStatusResponse);
 
@@ -84,5 +87,24 @@ class S3SyncFileSystemDownloaderTest {
         assertTrue(status.isComplete());
         assertEquals(status.getExitCode(), 0);
         assertFalse(status.hasErrors());
+    }
+
+    @Test
+    void shouldGetStatusWhenSyncIsPartiallyCompleteButNoLongerCalculating() throws IndeterminateS3SyncStatusException {
+        when(mockSsmApi.runSSMDocument(anyString(), anyString(), anyMap())).thenReturn("status-command-invocation");
+
+        GetCommandInvocationResponse mockStatusResponse = GetCommandInvocationResponse.builder()
+                .status(CommandInvocationStatus.SUCCESS)
+                .standardOutputContent(SYNC_STATUS_DETERMINED_PARTIAL)
+                .build();
+        when(mockSsmApi.getSSMCommand(anyString(), anyString())).thenReturn(mockStatusResponse);
+
+        S3SyncCommandStatus status = sut.getFileSystemDownloadStatus();
+
+        assertFalse(status.isCalculating());
+        assertFalse(status.hasErrors());
+        assertEquals(49492787.2, status.getBytesDownloaded());
+        assertEquals(451411968.0, status.getTotalBytesToDownload());
+        assertEquals(528, status.getFilesRemainingToDownload());
     }
 }
