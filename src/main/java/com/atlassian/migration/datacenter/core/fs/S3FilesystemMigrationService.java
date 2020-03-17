@@ -1,3 +1,19 @@
+/*
+ * Copyright 2020 Atlassian
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.jira.config.util.JiraHome;
@@ -17,15 +33,12 @@ import com.atlassian.scheduler.config.JobRunnerKey;
 import com.atlassian.scheduler.config.RunMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.nio.file.Path;
 
 import static com.atlassian.migration.datacenter.spi.MigrationStage.FS_MIGRATION_COPY;
-import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.DONE;
-import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.FAILED;
-import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.RUNNING;
+import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.*;
 
 public class S3FilesystemMigrationService implements FilesystemMigrationService {
     private static final Logger logger = LoggerFactory.getLogger(S3FilesystemMigrationService.class);
@@ -36,6 +49,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private final JiraHome jiraHome;
     private final MigrationService migrationService;
     private final SchedulerService schedulerService;
+    private final S3SyncFileSystemDownloader fileSystemDownloader;
 
     private FileSystemMigrationReport report;
 
@@ -43,6 +57,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     //TODO: Region Service and provider will be replaced by the S3 Client
     public S3FilesystemMigrationService(S3AsyncClient s3AsyncClient,
                                         JiraHome jiraHome,
+                                        S3SyncFileSystemDownloader fileSystemDownloader,
                                         MigrationService migrationService,
                                         SchedulerService schedulerService)
     {
@@ -50,6 +65,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         this.jiraHome = jiraHome;
         this.migrationService = migrationService;
         this.schedulerService = schedulerService;
+        this.fileSystemDownloader = fileSystemDownloader;
     }
 
     @Override
@@ -122,7 +138,6 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         } catch (FileUploadException e) {
             logger.error("Caught exception during upload; check report for details.", e);
         }
-
 
         if (report.getStatus().equals(DONE)) {
             this.migrationService.transition(MigrationStage.WAIT_FS_MIGRATION_COPY, MigrationStage.OFFLINE_WARNING);
