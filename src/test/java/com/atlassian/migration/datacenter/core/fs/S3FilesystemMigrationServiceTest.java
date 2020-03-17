@@ -1,9 +1,6 @@
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.jira.config.util.JiraHome;
-import com.atlassian.migration.datacenter.core.aws.auth.AtlassianPluginAWSCredentialsProvider;
-import com.atlassian.migration.datacenter.core.aws.region.RegionService;
-import com.atlassian.migration.datacenter.core.exceptions.FileUploadException;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.spi.MigrationService;
@@ -21,8 +18,6 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.internal.util.reflection.FieldSetter;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.jmx.export.annotation.ManagedOperation;
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.nio.file.Path;
@@ -139,13 +134,13 @@ class S3FilesystemMigrationServiceTest {
 
     @Test
     void shouldAbortRunningMigration() throws Exception {
-        final Crawler crawler = mock(Crawler.class);
+        final FilesystemUploader uploader = mock(FilesystemUploader.class);
         when(migrationService.getCurrentStage()).thenReturn(MigrationStage.WAIT_FS_MIGRATION_COPY);
-        FieldSetter.setField(fsService, fsService.getClass().getDeclaredField("crawler"), crawler);
+        FieldSetter.setField(fsService, fsService.getClass().getDeclaredField("fsUploader"), uploader);
 
         fsService.abortMigration();
 
-        verify(crawler).stop();
+        verify(uploader).abort();
         verify(migrationService).error();
         assertEquals(fsService.getReport().getStatus(), FilesystemMigrationStatus.FAILED);
     }

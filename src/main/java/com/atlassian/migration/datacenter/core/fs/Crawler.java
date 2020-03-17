@@ -7,6 +7,4 @@ import java.nio.file.Path;
 
 public interface Crawler {
     void crawlDirectory(Path start, UploadQueue<Path> queue) throws IOException;
-
-    void stop();
 }

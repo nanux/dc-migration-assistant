@@ -21,7 +21,6 @@ import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import java.nio.file.Path;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.atlassian.migration.datacenter.spi.MigrationStage.FS_MIGRATION_COPY;
 import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.DONE;
@@ -38,25 +37,20 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private final JiraHome jiraHome;
     private final MigrationService migrationService;
     private final SchedulerService schedulerService;
-    private final S3SyncFileSystemDownloader fileSystemDownloader;
 
     private FileSystemMigrationReport report;
-    private AtomicBoolean isDoneCrawling;
-    private Crawler crawler;
+    private FilesystemUploader fsUploader;
 
     public S3FilesystemMigrationService(S3AsyncClient s3AsyncClient,
                                         JiraHome jiraHome,
-                                        S3SyncFileSystemDownloader fileSystemDownloader,
                                         MigrationService migrationService,
                                         SchedulerService schedulerService) {
         this.s3AsyncClient = s3AsyncClient;
         this.jiraHome = jiraHome;
         this.migrationService = migrationService;
         this.schedulerService = schedulerService;
-        this.fileSystemDownloader = fileSystemDownloader;
 
         report = new DefaultFileSystemMigrationReport();
-        isDoneCrawling = new AtomicBoolean(false);
     }
 
     @Override
@@ -66,15 +60,14 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
     @Override
     public void abortMigration() throws InvalidMigrationStageError {
-        if (!isRunning()) {
+        if (!isRunning() || fsUploader == null) {
             throw new InvalidMigrationStageError(String.format("Invalid migration stage when cancelling filesystem migration: %s", migrationService.getCurrentStage()));
         }
 
-        isDoneCrawling.set(true);
-        crawler.stop();
+        fsUploader.abort();
 
-        migrationService.error();
         report.setStatus(FAILED);
+        migrationService.error();
     }
 
     @Override
@@ -134,12 +127,12 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         migrationService.transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
         report.setStatus(RUNNING);
 
-        crawler = new DirectoryStreamCrawler(report);
+        Crawler crawler = new DirectoryStreamCrawler(report);
 
         S3UploadConfig s3UploadConfig = new S3UploadConfig(getS3Bucket(), s3AsyncClient, getSharedHomeDir());
         Uploader s3Uploader = new S3Uploader(s3UploadConfig, report);
 
-        FilesystemUploader fsUploader = new FilesystemUploader(crawler, s3Uploader);
+        fsUploader = new FilesystemUploader(crawler, s3Uploader);
 
         try {
             fsUploader.uploadDirectory(getSharedHomeDir());

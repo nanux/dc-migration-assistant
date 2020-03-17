@@ -48,15 +48,7 @@ public class DirectoryStreamCrawler implements Crawler {
         }
     }
 
-    @Override
-    public void stop() {
-        active.set(false);
-    }
-
     private void listDirectories(UploadQueue<Path> queue, DirectoryStream<Path> paths) {
-        if (!active.get()) {
-            return;
-        }
         paths.forEach(p -> {
             if (Files.isDirectory(p)) {
                 try (final DirectoryStream<Path> newPaths = Files.newDirectoryStream(p.toAbsolutePath())) {

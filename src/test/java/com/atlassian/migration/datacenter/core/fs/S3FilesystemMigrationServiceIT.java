@@ -3,7 +3,6 @@ package com.atlassian.migration.datacenter.core.fs;
 import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.aws.auth.AtlassianPluginAWSCredentialsProvider;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
@@ -23,7 +22,10 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
-import software.amazon.awssdk.services.s3.model.*;
+import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
+import software.amazon.awssdk.services.s3.model.CreateBucketResponse;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
 
 import java.io.IOException;
 import java.net.URI;
@@ -32,7 +34,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
@@ -91,7 +92,7 @@ class S3FilesystemMigrationServiceIT {
 
         Path file = genRandFile();
 
-         FilesystemMigrationService fsService = new S3FilesystemMigrationService(s3AsyncClient, jiraHome, fileSystemDownloader, migrationService, schedulerService);
+        FilesystemMigrationService fsService = new S3FilesystemMigrationService(s3AsyncClient, jiraHome, migrationService, schedulerService);
 
         fsService.startMigration();
 
