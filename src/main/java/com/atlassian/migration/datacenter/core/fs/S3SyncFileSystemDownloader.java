@@ -16,7 +16,7 @@
 
 package com.atlassian.migration.datacenter.core.fs;
 
-import com.atlassian.migration.datacenter.core.aws.SSMApi;
+import com.atlassian.migration.datacenter.core.aws.ssm.SSMApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ssm.model.CommandInvocationStatus;

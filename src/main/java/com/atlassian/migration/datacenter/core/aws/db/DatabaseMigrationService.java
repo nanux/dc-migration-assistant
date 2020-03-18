@@ -43,7 +43,7 @@ public class DatabaseMigrationService
     private final S3AsyncClient s3AsyncClient;
 
     private Process extractorProcess;
-    private AtomicReference<MigrationStatus> status = new AtomicReference();
+    private AtomicReference<MigrationStatus> status = new AtomicReference<>();
 
 
     //TODO: Move tempdirectory away from the constructor and pass that into the method instead
