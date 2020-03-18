@@ -12,6 +12,7 @@ import com.atlassian.migration.datacenter.core.aws.auth.ReadCredentialsService;
 import com.atlassian.migration.datacenter.core.aws.db.DatabaseMigrationService;
 import com.atlassian.migration.datacenter.core.aws.region.PluginSettingsRegionManager;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
+import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloadManager;
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloader;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
 import org.springframework.context.annotation.Bean;
@@ -88,5 +89,10 @@ public class MigrationAssistantBeanConfiguration {
     @Bean
     public S3SyncFileSystemDownloader s3SyncFileSystemDownloader(SSMApi ssmApi) {
         return new S3SyncFileSystemDownloader(ssmApi);
+    }
+
+    @Bean
+    public S3SyncFileSystemDownloadManager s3SyncFileSystemDownloadManager(S3SyncFileSystemDownloader downloader) {
+        return new S3SyncFileSystemDownloadManager(downloader);
     }
 }

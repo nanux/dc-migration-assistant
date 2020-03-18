@@ -459,6 +459,13 @@ Outputs:
   DownloadSSMDocument:
     Description: "The name of the SSM document to be invoked to copy all files in the migration bucket (under the prefix shared-home)"
     Value: !Ref SharedHomeDownloadDocument
+  DownloadStatusSSMDocument:
+    Description: "The name of the SSM document to be invoked to get the status of the bulk copy s3 sync"
+    Value: !Ref DownloadProgressDocument
+  ServerGroup:
+    Description: "The autoscaling group containing the Migration host"
+    Value: !Ref HelperServerGroup
   MigrationBucket:
     Description: "The name of the s3 bucket to be used for facilitating this migration"
     Value: !Ref MigrationBucket
+
