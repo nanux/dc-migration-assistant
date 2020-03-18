@@ -35,9 +35,12 @@ import com.atlassian.migration.datacenter.core.aws.infrastructure.QuickstartDepl
 import com.atlassian.migration.datacenter.core.aws.region.AvailabilityZoneManager;
 import com.atlassian.migration.datacenter.core.aws.region.PluginSettingsRegionManager;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
+import com.atlassian.migration.datacenter.core.fs.S3FilesystemMigrationService;
 import com.atlassian.migration.datacenter.core.fs.S3SyncFileSystemDownloader;
 import com.atlassian.migration.datacenter.spi.MigrationService;
+import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
+import com.atlassian.scheduler.SchedulerService;
 import com.atlassian.util.concurrent.Supplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -75,17 +78,7 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public ReadCredentialsService readCredentialsService(EncryptedCredentialsStorage encryptedCredentialsStorage) {
-        return encryptedCredentialsStorage;
-    }
-
-    @Bean
-    public ReadCredentialsService writeCredentialsService(EncryptedCredentialsStorage encryptedCredentialsStorage) {
-        return encryptedCredentialsStorage;
-    }
-
-    @Bean
-    public EncryptedCredentialsStorage encryptedCredentialsStorage(Supplier<PluginSettingsFactory> pluginSettingsFactorySupplier, JiraHome jiraHome) {
+    public EncryptedCredentialsStorage readCredentialsService(Supplier<PluginSettingsFactory> pluginSettingsFactorySupplier, JiraHome jiraHome) {
         return new EncryptedCredentialsStorage(pluginSettingsFactorySupplier, jiraHome);
     }
 
@@ -131,13 +124,18 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public AWSConfigurationService awsConfigurationService(AwsCredentialsProvider awsCredentialsProvider, RegionService regionService, MigrationService migrationService) {
-        return new AWSConfigurationService((WriteCredentialsService) awsCredentialsProvider, regionService, migrationService);
+    public AWSConfigurationService awsConfigurationService(WriteCredentialsService writeCredentialsService, RegionService regionService, MigrationService migrationService) {
+        return new AWSConfigurationService(writeCredentialsService, regionService, migrationService);
     }
 
     @Bean
     public CfnApi cfnApi(AwsCredentialsProvider awsCredentialsProvider, RegionService regionService) {
         return new CfnApi(awsCredentialsProvider, regionService);
+    }
+
+    @Bean
+    public FilesystemMigrationService filesystemMigrationService(Supplier<S3AsyncClient> clientSupplier, JiraHome jiraHome, S3SyncFileSystemDownloader downloader, MigrationService migrationService, SchedulerService schedulerService) {
+        return new S3FilesystemMigrationService(clientSupplier, jiraHome, downloader, migrationService, schedulerService);
     }
 
     @Bean

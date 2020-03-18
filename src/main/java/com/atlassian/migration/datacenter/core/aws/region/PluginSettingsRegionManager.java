@@ -20,6 +20,8 @@ import com.atlassian.migration.datacenter.core.aws.GlobalInfrastructure;
 import com.atlassian.sal.api.pluginsettings.PluginSettings;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
 import com.atlassian.util.concurrent.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.regions.Region;
 
 import javax.annotation.PostConstruct;
@@ -29,6 +31,8 @@ import javax.annotation.PostConstruct;
  * The region is stored in the plugin settings of this app.
  */
 public class PluginSettingsRegionManager implements RegionService {
+
+    private static final Logger logger = LoggerFactory.getLogger(PluginSettingsRegionManager.class);
 
     static final String AWS_REGION_PLUGIN_STORAGE_KEY = "com.atlassian.migration.datacenter.core.aws.region";
     static final String REGION_PLUGIN_STORAGE_SUFFIX = ".region";
@@ -44,7 +48,9 @@ public class PluginSettingsRegionManager implements RegionService {
     }
 
     @PostConstruct
+    // FIXME: I do not work
     public void postConstruct(){
+        logger.debug("setting up plugin settings");
         this.pluginSettings = this.pluginSettingsFactorySupplier.get().createGlobalSettings();
     }
 
@@ -54,7 +60,9 @@ public class PluginSettingsRegionManager implements RegionService {
      */
     @Override
     public String getRegion() {
-        String pluginSettingsRegion = (String) this.pluginSettings.get(AWS_REGION_PLUGIN_STORAGE_KEY + REGION_PLUGIN_STORAGE_SUFFIX);
+        // FIXME: Need to find a way to inject without calling the supplier every time
+        PluginSettings pluginSettings = this.pluginSettingsFactorySupplier.get().createGlobalSettings();
+        String pluginSettingsRegion = (String) pluginSettings.get(AWS_REGION_PLUGIN_STORAGE_KEY + REGION_PLUGIN_STORAGE_SUFFIX);
         if (pluginSettingsRegion == null || "".equals(pluginSettingsRegion)) {
             return Region.US_EAST_1.toString();
         }
@@ -74,7 +82,9 @@ public class PluginSettingsRegionManager implements RegionService {
             throw new InvalidAWSRegionException();
         }
 
-        this.pluginSettings.put(AWS_REGION_PLUGIN_STORAGE_KEY + REGION_PLUGIN_STORAGE_SUFFIX, region);
+        // FIXME: Need to find a way to inject without calling the supplier every time
+        PluginSettings pluginSettings = this.pluginSettingsFactorySupplier.get().createGlobalSettings();
+        pluginSettings.put(AWS_REGION_PLUGIN_STORAGE_KEY + REGION_PLUGIN_STORAGE_SUFFIX, region);
     }
 
     private boolean isValidRegion(String testRegion) {
