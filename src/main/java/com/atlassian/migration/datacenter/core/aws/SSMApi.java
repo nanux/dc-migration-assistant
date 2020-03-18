@@ -16,21 +16,29 @@
 
 package com.atlassian.migration.datacenter.core.aws;
 
+import com.atlassian.util.concurrent.Supplier;
 import software.amazon.awssdk.services.ssm.SsmClient;
 import software.amazon.awssdk.services.ssm.model.GetCommandInvocationRequest;
 import software.amazon.awssdk.services.ssm.model.GetCommandInvocationResponse;
 import software.amazon.awssdk.services.ssm.model.SendCommandRequest;
 import software.amazon.awssdk.services.ssm.model.SendCommandResponse;
 
+import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
 
 public class SSMApi {
 
+    private Supplier<SsmClient> clientFactory;
     private SsmClient client;
 
-    public SSMApi(SsmClient client) {
-        this.client = client;
+    public SSMApi(Supplier<SsmClient> clientFactory) {
+        this.clientFactory = clientFactory;
+    }
+
+    @PostConstruct
+    public void postConstruct(){
+        this.client = this.clientFactory.get();
     }
 
     /**
