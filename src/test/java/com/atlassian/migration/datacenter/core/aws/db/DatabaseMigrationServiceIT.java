@@ -96,7 +96,9 @@ class DatabaseMigrationServiceIT
 
     @Test
     void testDatabaseMigration() throws ExecutionException, InterruptedException {
-        DatabaseMigrationService service = new DatabaseMigrationService(configuration, tempDir, s3client);
+        DatabaseMigrationService service = new DatabaseMigrationService(configuration, tempDir, () -> s3client);
+        service.postConstruct();
+
         service.performMigration();
 
         HeadObjectRequest req = HeadObjectRequest.builder()

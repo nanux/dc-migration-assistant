@@ -17,8 +17,7 @@
 package com.atlassian.migration.datacenter.core.aws.region;
 
 import com.atlassian.migration.datacenter.core.aws.GlobalInfrastructure;
-import com.atlassian.migration.datacenter.core.aws.auth.AtlassianPluginAWSCredentialsProvider;
-import org.springframework.stereotype.Component;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.ec2.Ec2Client;
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
@@ -26,13 +25,12 @@ import software.amazon.awssdk.services.ec2.model.DescribeAvailabilityZonesRespon
 
 import java.util.List;
 
-@Component
 public class AvailabilityZoneManager implements AvailabilityZoneService {
 
-    private final AtlassianPluginAWSCredentialsProvider credentialsProvider;
+    private final AwsCredentialsProvider credentialsProvider;
     private final GlobalInfrastructure globalInfrastructure;
 
-    public AvailabilityZoneManager(AtlassianPluginAWSCredentialsProvider credentialsProvider, GlobalInfrastructure globalInfrastructure) {
+    public AvailabilityZoneManager(AwsCredentialsProvider credentialsProvider, GlobalInfrastructure globalInfrastructure) {
         this.credentialsProvider = credentialsProvider;
         this.globalInfrastructure = globalInfrastructure;
     }

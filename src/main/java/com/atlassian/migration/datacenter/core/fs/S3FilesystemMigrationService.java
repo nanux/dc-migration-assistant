@@ -31,11 +31,12 @@ import com.atlassian.scheduler.config.JobConfig;
 import com.atlassian.scheduler.config.JobId;
 import com.atlassian.scheduler.config.JobRunnerKey;
 import com.atlassian.scheduler.config.RunMode;
+import com.atlassian.util.concurrent.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
+import javax.annotation.PostConstruct;
 import java.nio.file.Path;
 
 import static com.atlassian.migration.datacenter.spi.MigrationStage.FS_MIGRATION_COPY;
@@ -43,30 +44,37 @@ import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigr
 import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.FAILED;
 import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.RUNNING;
 
-@Component
 public class S3FilesystemMigrationService implements FilesystemMigrationService {
     private static final Logger logger = LoggerFactory.getLogger(S3FilesystemMigrationService.class);
 
     private static final String BUCKET_NAME = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
 
-    private final S3AsyncClient s3AsyncClient;
+    private S3AsyncClient s3AsyncClient;
     private final JiraHome jiraHome;
     private final MigrationService migrationService;
     private final SchedulerService schedulerService;
+    private Supplier<S3AsyncClient> s3AsyncClientSupplier;
 
     private FileSystemMigrationReport report;
     private FilesystemUploader fsUploader;
 
-    public S3FilesystemMigrationService(S3AsyncClient s3AsyncClient,
+
+    public S3FilesystemMigrationService(Supplier<S3AsyncClient> s3AsyncClientSupplier,
                                         JiraHome jiraHome,
                                         MigrationService migrationService,
-                                        SchedulerService schedulerService) {
-        this.s3AsyncClient = s3AsyncClient;
+                                        SchedulerService schedulerService)
+    {
+        this.s3AsyncClientSupplier = s3AsyncClientSupplier;
         this.jiraHome = jiraHome;
         this.migrationService = migrationService;
         this.schedulerService = schedulerService;
 
         report = new DefaultFileSystemMigrationReport();
+    }
+
+    @PostConstruct
+    public void postConstruct(){
+        this.s3AsyncClient = this.s3AsyncClientSupplier.get();
     }
 
     @Override

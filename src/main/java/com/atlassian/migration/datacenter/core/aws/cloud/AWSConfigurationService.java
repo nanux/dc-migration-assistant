@@ -27,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-@Component
 public class AWSConfigurationService implements CloudProviderConfigurationService {
     private static final Logger logger = LoggerFactory.getLogger(AWSConfigurationService.class);
 
