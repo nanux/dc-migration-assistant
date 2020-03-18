@@ -14,12 +14,17 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.core.aws.auth;
+package com.atlassian.migration.datacenter.core.exceptions;
 
-public interface WriteCredentialsService {
+public class FileUploadException extends RuntimeException
+{
+    public FileUploadException(String message)
+    {
+        super(message);
+    }
 
-    void storeAccessKeyId(String accessKeyId);
-
-    void storeSecretAccessKey(String secretAccessKey);
-
+    public FileUploadException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
 }

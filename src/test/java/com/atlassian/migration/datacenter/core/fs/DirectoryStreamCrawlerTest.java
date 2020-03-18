@@ -1,9 +1,24 @@
+/*
+ * Copyright 2020 Atlassian
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.atlassian.migration.datacenter.core.fs;
 
-import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
-import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
-import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
-import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
+import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
+import com.atlassian.migration.datacenter.core.util.UploadQueue;
+import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -16,29 +31,24 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 class DirectoryStreamCrawlerTest {
     @TempDir
     Path tempDir;
 
     private Crawler directoryStreamCrawler;
-    private ConcurrentLinkedQueue<Path> queue;
+    private UploadQueue<Path> queue;
     private Set<Path> expectedPaths;
-    private FileSystemMigrationErrorReport errorReport;
-    private FileSystemMigrationProgress progress;
+    private FileSystemMigrationReport report;
 
     @BeforeEach
     void createFiles() throws Exception {
-        queue = new ConcurrentLinkedQueue<>();
+        queue = new UploadQueue<>(10);
         expectedPaths = new HashSet<>();
-        errorReport = new DefaultFileSystemMigrationErrorReport();
-        progress = new DefaultFilesystemMigrationProgress();
-        directoryStreamCrawler = new DirectoryStreamCrawler(errorReport, progress);
+        report = new DefaultFileSystemMigrationReport();
+        directoryStreamCrawler = new DirectoryStreamCrawler(report);
 
         expectedPaths.add(Files.write(tempDir.resolve("newfile.txt"), "newfile content".getBytes()));
         final Path subdirectory = Files.createDirectory(tempDir.resolve("subdirectory"));
@@ -47,7 +57,7 @@ class DirectoryStreamCrawlerTest {
 
     @Test
     void shouldListAllSubdirectories() throws Exception {
-        directoryStreamCrawler = new DirectoryStreamCrawler(errorReport, progress);
+        directoryStreamCrawler = new DirectoryStreamCrawler(report);
         directoryStreamCrawler.crawlDirectory(tempDir, queue);
 
         expectedPaths.forEach(path -> assertTrue(queue.contains(path), String.format("Expected %s is absent from crawler queue", path)));
@@ -60,10 +70,10 @@ class DirectoryStreamCrawlerTest {
 
     @Test
     void shouldReportFileAsFoundWhenCrawled() throws Exception {
-        directoryStreamCrawler = new DirectoryStreamCrawler(errorReport, progress);
+        directoryStreamCrawler = new DirectoryStreamCrawler(report);
         directoryStreamCrawler.crawlDirectory(tempDir, queue);
 
-        assertEquals(expectedPaths.size(), progress.getNumberOfFilesFound());
+        assertEquals(expectedPaths.size(), report.getNumberOfFilesFound());
     }
 
     @Test
@@ -74,6 +84,6 @@ class DirectoryStreamCrawlerTest {
 
         directoryStreamCrawler.crawlDirectory(tempDir, queue);
 
-        assertEquals(errorReport.getFailedFiles().size(), 1);
+        assertEquals(report.getFailedFiles().size(), 1);
     }
 }
