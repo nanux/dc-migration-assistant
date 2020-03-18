@@ -75,7 +75,17 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public ReadCredentialsService readCredentialsService(Supplier<PluginSettingsFactory> pluginSettingsFactorySupplier, JiraHome jiraHome) {
+    public ReadCredentialsService readCredentialsService(EncryptedCredentialsStorage encryptedCredentialsStorage) {
+        return encryptedCredentialsStorage;
+    }
+
+    @Bean
+    public ReadCredentialsService writeCredentialsService(EncryptedCredentialsStorage encryptedCredentialsStorage) {
+        return encryptedCredentialsStorage;
+    }
+
+    @Bean
+    public EncryptedCredentialsStorage encryptedCredentialsStorage(Supplier<PluginSettingsFactory> pluginSettingsFactorySupplier, JiraHome jiraHome) {
         return new EncryptedCredentialsStorage(pluginSettingsFactorySupplier, jiraHome);
     }
 
@@ -120,6 +130,7 @@ public class MigrationAssistantBeanConfiguration {
         return new AvailabilityZoneManager(awsCredentialsProvider, globalInfrastructure);
     }
 
+    @Bean
     public AWSConfigurationService awsConfigurationService(AwsCredentialsProvider awsCredentialsProvider, RegionService regionService, MigrationService migrationService) {
         return new AWSConfigurationService((WriteCredentialsService) awsCredentialsProvider, regionService, migrationService);
     }
