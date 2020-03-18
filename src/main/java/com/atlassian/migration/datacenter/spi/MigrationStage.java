@@ -16,6 +16,8 @@
 
 package com.atlassian.migration.datacenter.spi;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Represents all possible states of an on-premise to cloud migration.
  */
@@ -32,6 +34,7 @@ public enum MigrationStage {
     AUTHENTICATION("authentication"),
     NOT_STARTED("");
 
+    @JsonProperty
     private String key;
 
     MigrationStage(String key) {
