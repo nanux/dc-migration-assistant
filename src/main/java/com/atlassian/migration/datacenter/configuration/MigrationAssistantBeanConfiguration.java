@@ -134,8 +134,8 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public FilesystemMigrationService filesystemMigrationService(Supplier<S3AsyncClient> clientSupplier, JiraHome jiraHome, S3SyncFileSystemDownloader downloader, MigrationService migrationService, SchedulerService schedulerService) {
-        return new S3FilesystemMigrationService(clientSupplier, jiraHome, downloader, migrationService, schedulerService);
+    public FilesystemMigrationService filesystemMigrationService(Supplier<S3AsyncClient> clientSupplier, JiraHome jiraHome, MigrationService migrationService, SchedulerService schedulerService) {
+        return new S3FilesystemMigrationService(clientSupplier, jiraHome, migrationService, schedulerService);
     }
 
     @Bean
