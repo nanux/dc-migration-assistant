@@ -21,7 +21,6 @@ import com.atlassian.migration.datacenter.core.application.DatabaseConfiguration
 import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
 import org.springframework.stereotype.Component;
 
-@Component
 public class DatabaseExtractorFactory
 {
     public static DatabaseExtractor getExtractor(ApplicationConfiguration config) throws DatabaseMigrationFailure

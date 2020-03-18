@@ -24,7 +24,6 @@ import software.amazon.awssdk.regions.RegionMetadata;
 import java.util.List;
 import java.util.stream.Collectors;
 
-@Component
 public class GlobalInfrastructure {
 
     public List<String> getRegions() {

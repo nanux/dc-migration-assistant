@@ -107,7 +107,8 @@ class S3FilesystemMigrationServiceIT {
 
         Path file = genRandFile();
 
-         FilesystemMigrationService fsService = new S3FilesystemMigrationService(s3AsyncClient, jiraHome, fileSystemDownloader, migrationService, schedulerService);
+         S3FilesystemMigrationService fsService = new S3FilesystemMigrationService(() -> s3AsyncClient, jiraHome, fileSystemDownloader, migrationService, schedulerService);
+         fsService.postConstruct();
 
         fsService.startMigration();
 

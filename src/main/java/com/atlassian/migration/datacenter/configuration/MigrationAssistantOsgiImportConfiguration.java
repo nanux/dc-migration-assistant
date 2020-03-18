@@ -18,16 +18,16 @@ package com.atlassian.migration.datacenter.configuration;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.jira.config.util.JiraHome;
-import com.atlassian.migration.datacenter.core.aws.auth.EncryptedCredentialsStorage;
-import com.atlassian.migration.datacenter.core.aws.auth.ReadCredentialsService;
 import com.atlassian.sal.api.auth.LoginUriProvider;
 import com.atlassian.sal.api.permission.PermissionEnforcer;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
 import com.atlassian.scheduler.SchedulerService;
 import com.atlassian.soy.renderer.SoyTemplateRenderer;
+import com.atlassian.util.concurrent.Supplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import static com.atlassian.migration.datacenter.configuration.SpringOsgiConfigurationUtil.lazyImportOsgiService;
 import static com.atlassian.plugins.osgi.javaconfig.OsgiServices.importOsgiService;
 
 @Configuration
@@ -65,5 +65,10 @@ public class MigrationAssistantOsgiImportConfiguration {
     @Bean
     public SchedulerService schedulerService() {
         return importOsgiService(SchedulerService.class);
+    }
+
+    @Bean
+    public Supplier<PluginSettingsFactory> settingsFactorySupplier() {
+        return lazyImportOsgiService(PluginSettingsFactory.class);
     }
 }
