@@ -98,6 +98,11 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         JobId jobId = JobId.of(S3UploadJobRunner.KEY + currentMigration.getID());
         logger.info("Starting filesystem migration");
 
+        if (schedulerService.getJobDetails(jobId) != null) {
+            logger.warn("Tried to schedule file system migration while job already exists");
+            return false;
+        }
+
         //TODO: Can the job runner be injected? It has no state
         schedulerService.registerJobRunner(runnerKey, new S3UploadJobRunner(this));
         logger.info("Registered new job runner for S3");
@@ -108,10 +113,8 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         try {
             logger.info("Scheduling new job for S3 upload runner");
 
-            this.migrationService.transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
-
             schedulerService.scheduleJob(jobId, jobConfig);
-        } catch (SchedulerServiceException | InvalidMigrationStageError e) {
+        } catch (SchedulerServiceException e) {
             logger.error("Exception when scheduling S3 upload job", e);
             this.schedulerService.unscheduleJob(jobId);
             migrationService.error();
