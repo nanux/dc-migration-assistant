@@ -154,6 +154,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         try {
             fileSystemDownloadManager.downloadFileSystem();
         } catch (S3SyncFileSystemDownloader.CannotLaunchCommandException e) {
+            report.setStatus(FAILED);
             logger.error("unable to launch s3 sync ssm command", e);
         }
 
