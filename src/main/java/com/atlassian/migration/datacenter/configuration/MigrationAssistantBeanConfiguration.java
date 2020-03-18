@@ -35,9 +35,7 @@ import com.atlassian.migration.datacenter.core.aws.infrastructure.QuickstartDepl
 import com.atlassian.migration.datacenter.core.aws.region.AvailabilityZoneManager;
 import com.atlassian.migration.datacenter.core.aws.region.PluginSettingsRegionManager;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
-
 import com.atlassian.migration.datacenter.core.fs.S3SyncFileSystemDownloader;
-
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
 import com.atlassian.util.concurrent.Supplier;
@@ -54,18 +52,18 @@ import java.nio.file.Paths;
 @Configuration
 @ComponentScan
 public class MigrationAssistantBeanConfiguration {
-
+    
     @Bean
-    public S3AsyncClient s3AsyncClient(AwsCredentialsProvider credentialsProvider, RegionService regionService) {
-        return S3AsyncClient.builder()
+    public Supplier<S3AsyncClient> s3AsyncClientSupplier(AwsCredentialsProvider credentialsProvider, RegionService regionService) {
+        return () -> S3AsyncClient.builder()
                 .credentialsProvider(credentialsProvider)
                 .region(Region.of(regionService.getRegion()))
                 .build();
     }
 
     @Bean
-    public SsmClient ssmClient(AwsCredentialsProvider credentialsProvider, RegionService regionService) {
-        return SsmClient.builder()
+    public Supplier<SsmClient> ssmClient(AwsCredentialsProvider credentialsProvider, RegionService regionService) {
+        return () -> SsmClient.builder()
                 .credentialsProvider(credentialsProvider)
                 .region(Region.of(regionService.getRegion()))
                 .build();
@@ -102,13 +100,13 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public DatabaseMigrationService databaseMigrationService(ApplicationConfiguration jiraConfiguration, S3AsyncClient s3AsyncClient) {
+    public DatabaseMigrationService databaseMigrationService(ApplicationConfiguration jiraConfiguration, Supplier<S3AsyncClient> s3AsyncClient) {
         String tempDirectoryPath = System.getProperty("java.io.tmpdir");
         return new DatabaseMigrationService(jiraConfiguration, Paths.get(tempDirectoryPath), s3AsyncClient);
     }
 
     @Bean
-    public SSMApi ssmApi(SsmClient client) {
+    public SSMApi ssmApi(Supplier<SsmClient> client) {
         return new SSMApi(client);
     }
 

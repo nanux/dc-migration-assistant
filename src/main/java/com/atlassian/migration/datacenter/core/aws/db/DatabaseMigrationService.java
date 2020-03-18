@@ -20,49 +20,50 @@ import com.atlassian.migration.datacenter.core.application.ApplicationConfigurat
 import com.atlassian.migration.datacenter.core.db.DatabaseExtractor;
 import com.atlassian.migration.datacenter.core.db.DatabaseExtractorFactory;
 import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
-import com.atlassian.migration.datacenter.core.fs.*;
-import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
+import com.atlassian.migration.datacenter.core.fs.Crawler;
+import com.atlassian.migration.datacenter.core.fs.DirectoryStreamCrawler;
+import com.atlassian.migration.datacenter.core.fs.FilesystemUploader;
+import com.atlassian.migration.datacenter.core.fs.S3UploadConfig;
+import com.atlassian.migration.datacenter.core.fs.S3Uploader;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
-import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
-import com.atlassian.migration.datacenter.core.util.UploadQueue;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
-import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
+import com.atlassian.util.concurrent.Supplier;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
-import java.io.IOException;
-import java.net.URI;
+import javax.annotation.PostConstruct;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class DatabaseMigrationService
-{
+public class DatabaseMigrationService {
     private final ApplicationConfiguration applicationConfiguration;
     private final Path tempDirectory;
-    private final S3AsyncClient s3AsyncClient;
+    private S3AsyncClient s3AsyncClient;
+    private Supplier<S3AsyncClient> s3AsyncClientSupplier;
 
     private Process extractorProcess;
     private AtomicReference<MigrationStatus> status = new AtomicReference();
 
 
-    //TODO: Move tempdirectory away from the constructor and pass that into the method instead
     public DatabaseMigrationService(ApplicationConfiguration applicationConfiguration,
                                     Path tempDirectory,
-                                    S3AsyncClient s3AsyncClient)
-    {
+                                    Supplier<S3AsyncClient> s3AsyncClientSupplier) {
         this.applicationConfiguration = applicationConfiguration;
         this.tempDirectory = tempDirectory;
-        this.s3AsyncClient = s3AsyncClient;
+        this.s3AsyncClientSupplier = s3AsyncClientSupplier;
         this.setStatus(MigrationStatus.NOT_STARTED);
+    }
+
+    @PostConstruct
+    public void postConstruct() {
+        this.s3AsyncClient = this.s3AsyncClientSupplier.get();
     }
 
     /**
      * Start database dump and upload to S3 bucket. This is a blocking operation and should be started from ExecutorService
      * or preferably from ScheduledJob. The status of the migration can be queried via getStatus().
      */
-    public FileSystemMigrationErrorReport performMigration() throws DatabaseMigrationFailure
-    {
+    public FileSystemMigrationErrorReport performMigration() throws DatabaseMigrationFailure {
         DatabaseExtractor extractor = DatabaseExtractorFactory.getExtractor(applicationConfiguration);
         Path target = tempDirectory.resolve("db.dump");
 
