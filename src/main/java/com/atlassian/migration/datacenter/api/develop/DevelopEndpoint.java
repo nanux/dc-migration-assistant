@@ -1,10 +1,10 @@
 package com.atlassian.migration.datacenter.api.develop;
 
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.google.common.collect.ImmutableMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.PUT;
@@ -15,6 +15,7 @@ import javax.ws.rs.core.Response;
 
 @Path("/develop")
 public class DevelopEndpoint {
+    private static final Logger logger = LoggerFactory.getLogger(DevelopEndpoint.class);
     private MigrationService migrationService;
 
     public DevelopEndpoint(MigrationService migrationService) {
@@ -25,36 +26,19 @@ public class DevelopEndpoint {
     @Path("/migration/stage")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response setMigrationStage(Stage stage) {
+    public Response setMigrationStage(MigrationStage targetStage) {
         try {
-            final MigrationStage targetStage = MigrationStage.valueOf(stage.getStage());
             final MigrationStage currentStage = migrationService.getCurrentStage();
             migrationService.transition(currentStage, targetStage);
             return Response
-                    .ok(ImmutableMap.of("stage", migrationService.getCurrentStage()))
+                    .ok(ImmutableMap.of("targetStage", migrationService.getCurrentStage().toString()))
                     .build();
-        } catch (InvalidMigrationStageError | IllegalArgumentException e) {
+        } catch (Exception e) {
+            logger.warn("Cannot parse the migration stage", e);
             return Response
                     .status(Response.Status.CONFLICT)
-                    .entity(ImmutableMap.of("error", String.format("Unable to transition migration to %s", stage.getStage())))
+                    .entity(ImmutableMap.of("error", String.format("Unable to transition migration to %s", targetStage)))
                     .build();
-        }
-    }
-
-    @JsonAutoDetect
-    static class Stage {
-        private String stage;
-
-        public Stage(String stage) {
-            this.stage = stage;
-        }
-
-        public String getStage() {
-            return stage;
-        }
-
-        public void setStage(String stage) {
-            this.stage = stage;
         }
     }
 }

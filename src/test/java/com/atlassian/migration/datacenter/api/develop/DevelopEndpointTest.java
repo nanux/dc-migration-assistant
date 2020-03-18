@@ -2,6 +2,7 @@ package com.atlassian.migration.datacenter.api.develop;
 
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,11 +28,13 @@ class DevelopEndpointTest {
     void shouldSetStageWithCorrectTargetStage() throws Exception {
         final MigrationStage initialStage = MigrationStage.AUTHENTICATION;
         when(migrationService.getCurrentStage()).thenReturn(initialStage);
-        String param = "FS_MIGRATION_COPY";
 
-        endpoint.setMigrationStage(new DevelopEndpoint.Stage(param));
 
-        MigrationStage expectedStage = MigrationStage.valueOf(param);
-        verify(migrationService).transition(initialStage, expectedStage);
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final MigrationStage migrationStage = objectMapper.readValue("\"FS_MIGRATION_COPY\"", MigrationStage.class);
+
+        endpoint.setMigrationStage(migrationStage);
+
+        verify(migrationService).transition(initialStage, MigrationStage.FS_MIGRATION_COPY);
     }
 }
