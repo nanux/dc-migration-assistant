@@ -58,26 +58,37 @@ public class EncryptedCredentialsStorage implements ReadCredentialsService, Writ
                                        JiraHome jiraHome) {
         this.pluginSettingsFactorySupplier = pluginSettingsFactorySupplier;
         this.jiraHome = jiraHome;
-    }
-
-    @PostConstruct
-    public void postConstruct() {
         assert this.jiraHome != null;
         String keyFilePath = this.jiraHome.getHome().getPath().concat("/").concat(ENCRYPTION_KEY_FILE_NAME);
         String saltFilePath = this.jiraHome.getHome().getPath().concat("/").concat(ENCRYPTION_SALT_FILE_NAME);
         String password = getEncryptionData(keyFilePath);
         String salt = getEncryptionData(saltFilePath);
         this.textEncryptor = Encryptors.text(password, salt);
+    }
+
+    @PostConstruct
+    // FIXME: I do not work
+    public void postConstruct() {
         this.pluginSettings = this.pluginSettingsFactorySupplier.get().createGlobalSettings();
+        assert this.jiraHome != null;
+        String keyFilePath = this.jiraHome.getHome().getPath().concat("/").concat(ENCRYPTION_KEY_FILE_NAME);
+        String saltFilePath = this.jiraHome.getHome().getPath().concat("/").concat(ENCRYPTION_SALT_FILE_NAME);
+        String password = getEncryptionData(keyFilePath);
+        String salt = getEncryptionData(saltFilePath);
+        this.textEncryptor = Encryptors.text(password, salt);
     }
 
     @Override
     public String getAccessKeyId() {
+        // FIXME: Need to find a way to inject without calling the supplier every time
+        PluginSettings pluginSettings = this.pluginSettingsFactorySupplier.get().createGlobalSettings();
         String raw = (String) pluginSettings.get(AWS_CREDS_PLUGIN_STORAGE_KEY + ACCESS_KEY_ID_PLUGIN_STORAGE_SUFFIX);
         return this.decryptString(raw);
     }
 
     public void setAccessKeyId(String accessKeyId) {
+        // FIXME: Need to find a way to inject without calling the supplier every time
+        PluginSettings pluginSettings = this.pluginSettingsFactorySupplier.get().createGlobalSettings();
         pluginSettings.put(AWS_CREDS_PLUGIN_STORAGE_KEY + ACCESS_KEY_ID_PLUGIN_STORAGE_SUFFIX, this.encryptString(accessKeyId));
     }
 
@@ -93,11 +104,15 @@ public class EncryptedCredentialsStorage implements ReadCredentialsService, Writ
 
     @Override
     public String getSecretAccessKey() {
+        // FIXME: Need to find a way to inject without calling the supplier every time
+        PluginSettings pluginSettings = this.pluginSettingsFactorySupplier.get().createGlobalSettings();
         String raw = (String) pluginSettings.get(AWS_CREDS_PLUGIN_STORAGE_KEY + SECRET_ACCESS_KEY_PLUGIN_STORAGE_SUFFIX);
         return this.decryptString(raw);
     }
 
     public void setSecretAccessKey(String secretAccessKey) {
+        // FIXME: Need to find a way to inject without calling the supplier every time
+        PluginSettings pluginSettings = this.pluginSettingsFactorySupplier.get().createGlobalSettings();
         pluginSettings.put(AWS_CREDS_PLUGIN_STORAGE_KEY + SECRET_ACCESS_KEY_PLUGIN_STORAGE_SUFFIX, this.encryptString(secretAccessKey));
     }
 
