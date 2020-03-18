@@ -3,7 +3,6 @@ Description: Jira / Confluence Server to DC (AWS) Helper
 
 Resources:
 
-  #S3 Bucket for Database Transfer
   MigrationBucket:
     Type: AWS::S3::Bucket
     DependsOn:
@@ -24,7 +23,7 @@ Resources:
     Type: AWS::SQS::QueuePolicy
     Properties:
       PolicyDocument:
-        Id: !Sub "MigrationQueue_Policy_000000000000"
+        Id: !Sub "MigrationQueue_Policy_${AWS::AccountId}"
         Version: 2012-10-17
         Statement:
           - Sid: "MigrationQueue_SendMessage"
@@ -33,12 +32,12 @@ Resources:
               AWS: '*'
             Action:
               - SQS:SendMessage
-            Resource: "arn:aws:sqs:eu-central-1:000000000000:atl-migration-queue-migration-helper"
+            Resource: !GetAtt MigrationQueue.Arn
             Condition:
               ArnEquals:
-                aws:SourceArn: "arn:aws:s3:::atl-migrationbucket-migration-helper"
+                aws:SourceArn: !Join ["", ["arn:aws:s3:::",!Sub 'atl-migrationbucket-${AWS::StackName}']]
       Queues:
-        - "arn:aws:sqs:eu-central-1:000000000000:atl-migration-queue-migration-helper"
+        - !Ref MigrationQueue
 
   MigrationQueue:
     Type: AWS::SQS::Queue
@@ -50,34 +49,18 @@ Resources:
       ReceiveMessageWaitTimeSeconds: 0
       VisibilityTimeout: 90
 
-  StackNameParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: /config/migration-helper/cloud.aws.stack.name
-      Type: String
-      Value: !Ref AWS::StackName
-      Description: CloudFormation Stack Name
-
   JiraFilePathParameter:
     Type: AWS::SSM::Parameter
     Properties:
       Name: /config/migration-helper/app.jira.file.path
       Type: String
-      Value: "atl-migration-queue-migration-helper"
+      Value: '/efs/jira/shared'
       Description: File Path
-
-  VPCIdParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: /config/migration-helper/app.vpc.id
-      Type: String
-      Value: "vpc-02a66f2c3b0b1f599"
-      Description: Helper VPC Id
 
   RegionParameter:
     Type: AWS::SSM::Parameter
     Properties:
       Name: /config/migration-helper/app.region.id
       Type: String
-      Value: "eu-central-1"
+      Value: !Ref AWS::Region
       Description: Region Name

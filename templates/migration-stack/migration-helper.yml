@@ -23,6 +23,7 @@ Parameters:
   MigrationFilePath:
     Type: String
     Description: 'The directory on the migration helper server to write the files to from S3'
+    Default: '/efs/jira/shared'
 
 Resources:
 

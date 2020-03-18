@@ -20,37 +20,144 @@ Parameters:
   LatestAmiId:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+  MigrationFilePath:
+    Type: String
+    Description: 'The directory on the migration helper server to write the files to from S3'
+    Default: '/efs/jira/shared'
 
 Resources:
 
   #S3 Bucket for Database Transfer
+  #S3 Bucket for Database Transfer
   MigrationBucket:
     Type: AWS::S3::Bucket
+    DependsOn:
+      - QueuePolicy
     Properties:
       BucketName: !Sub 'atl-migrationbucket-${AWS::StackName}'
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
+      NotificationConfiguration:
+        QueueConfigurations:
+          - Queue: !GetAtt MigrationQueue.Arn
+            Event: s3:ObjectCreated:*
     DeletionPolicy: Delete
+
+  QueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Id: !Sub "MigrationQueue_Policy_${AWS::AccountId}"
+        Version: 2012-10-17
+        Statement:
+          - Sid: "MigrationQueue_SendMessage"
+            Effect: Allow
+            Principal:
+              AWS: '*'
+            Action:
+              - SQS:SendMessage
+            Resource: !GetAtt MigrationQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Join ["", ["arn:aws:s3:::",!Sub 'atl-migrationbucket-${AWS::StackName}']]
+      Queues:
+        - !Ref MigrationQueue
+
+  MigrationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      DelaySeconds: 0
+      MaximumMessageSize: 262144
+      MessageRetentionPeriod: 864000
+      QueueName: !Sub 'atl-migration-queue-${AWS::StackName}'
+      ReceiveMessageWaitTimeSeconds: 0
+      VisibilityTimeout: 90
+
+  JiraFilePathParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /config/migration-helper/app.jira.file.path
+      Type: String
+      Value: !Ref MigrationFilePath
+      Description: File Path
+
+  RegionParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /config/migration-helper/app.region.id
+      Type: String
+      Value: !Ref AWS::Region
+      Description: Region Name
 
   #EC2 Migration Helper
   HelperLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Metadata:
-        AWS::CloudFormation::Init:
-          configSets:
-            full_efs_config: [create_efs_script,mount_efs,prepare_efs_sync_script]
-          create_efs_script:
-            files:
-              /opt/atlassian/dc-migration-assistant/mount-efs.sh:
-                content: !Sub
-                  - |
-                    #!/bin/bash
+      AWS::CloudFormation::Init:
+        configSets:
+          full_efs_config: [prepare_java_app,create_efs_script,mount_efs,prepare_efs_sync_script]
+        prepare_java_app:
+          files:
+            /opt/atlassian/dc-migration-assistant/configure-queue-app.sh:
+              content: !Sub
+                - |
+                  #!/bin/bash
 
-                    EFS_REGION=${AWS::Region}
-                    EFS_MOUNT_DIR=/efs/
-                    EFS_FILE_SYSTEM_ID=${EFSID}
+                  sleep 20
+
+                  # install updates
+                  yum update -y
+                  yum install util-linux-user -y
+
+                  # install java 8
+                  yum install java-1.8.0 -y
+
+                  # remove java 1.7
+                  yum remove java-1.7.0-openjdk -y
+
+                  # create the working directory
+                  mkdir /opt/atlassian
+                  mkdir /opt/atlassian/dc-migration-assistant
+                  mkdir /opt/atlassian/dc-migration-assistant/queue-processor
+
+                  # create configuration specifying the used profile
+                  echo "RUN_ARGS=--spring.profiles.active=production" > /opt/atlassian/dc-migration-assistant/queue-processor/queue-processor.conf
+
+                  # download the maven artifact from github
+                  aws s3 cp s3://${MigrationBucket}/filesystem-processor-1.0.0-RELEASE.jar /opt/atlassian/dc-migration-assistant/queue-processor/filesystem-processor-1.0.0-RELEASE.jar
+
+                  # create a springboot user to run the app as a service
+                  useradd springboot
+
+                  # springboot login shell disabled
+                  chsh -s /sbin/nologin springboot
+                  chown springboot:springboot /opt/atlassian/dc-migration-assistant/queue-processor/filesystem-processor-1.0.0-RELEASE.jar
+                  chmod 500 /opt/atlassian/dc-migration-assistant/queue-processor/filesystem-processor-1.0.0-RELEASE.jar
+
+                  # create a symbolic link
+                  ln -s /opt/atlassian/dc-migration-assistant/queue-processor/filesystem-processor-1.0.0-RELEASE.jar /etc/init.d/queue-processor
+
+                  # start the service
+                  service queue-processor start
+
+                  # automatically start queue-processor if this ec2 instance reboots
+                  chkconfig queue-processor on
+
+                  echo "Ready to process files loaded to ${MigrationBucket}"
+                - { MigrationBucket: !Ref MigrationBucket }
+              mode: "000755"
+        create_efs_script:
+          files:
+            /opt/atlassian/dc-migration-assistant/mount-efs.sh:
+              content: !Sub
+                - |
+                  #!/bin/bash
+
+                  EFS_REGION=${AWS::Region}
+                  EFS_MOUNT_DIR=/efs/
+                  EFS_FILE_SYSTEM_ID=${EFSID}
 
                     echo "Mounting EFS filesystem $EFS_FILE_SYSTEM_ID to directory $EFS_MOUNT_DIR ..."
 
@@ -91,26 +198,30 @@ Resources:
                         if [[ $? -ne 0 ]]; then
                             echo 'ERROR: Permission Error!'
                             exit 1
-                        else
-                            runuser -l  ec2-user -c "rm -f $EFS_MOUNT_DIR/mount_worked"
-                        fi
-                    else
-                        echo "Directory $EFS_MOUNT_DIR is already a valid mountpoint!"
-                    fi
+                      else
+                          runuser -l  ec2-user -c "rm -f $EFS_MOUNT_DIR/mount_worked"
+                      fi
+                  else
+                      echo "Directory $EFS_MOUNT_DIR is already a valid mountpoint!"
+                  fi
 
-                    echo 'EFS mount complete.'
-                  - { EFSID: !Ref EFSFileSystemId }
-                mode: "000755"
-          mount_efs:
-            commands:
-              01_mount:
-                command: /opt/atlassian/dc-migration-assistant/mount-efs.sh
-          prepare_efs_sync_script:
-            files:
-              /opt/atlassian/dc-migration-assistant/copy-shared-home.sh:
-                content: !Sub
-                  - |
-                    #!/bin/bash
+                  echo 'EFS mount complete.'
+                - { EFSID: !Ref EFSFileSystemId }
+              mode: "000755"
+        configure_java_app:
+          commands:
+            01_configure:
+              command: /opt/atlassian/dc-migration-assistant/configure-queue-app.sh
+        mount_efs:
+          commands:
+            01_mount:
+              command: /opt/atlassian/dc-migration-assistant/mount-efs.sh
+        prepare_efs_sync_script:
+          files:
+            /opt/atlassian/dc-migration-assistant/copy-shared-home.sh:
+              content: !Sub
+                - |
+                  #!/bin/bash
                     SYNC_LOG_FILE="/var/atlassian/dc-migration-assistant/sync-log.txt"
                     echo "beginning s3 sync with shared home" >> $SYNC_LOG_FILE
                     aws s3 sync s3://${MigrationBucket}/shared-home /efs/jira/shared >> $SYNC_LOG_FILE 2>/var/atlassian/dc-migration-assistant/sync-error.txt

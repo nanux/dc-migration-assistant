@@ -95,6 +95,7 @@
         </dependency>
     </dependencies>
 
+
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -112,6 +113,9 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <executable>true</executable>
+                </configuration>
             </plugin>
         </plugins>
         <extensions>
@@ -122,5 +126,13 @@
             </extension>
         </extensions>
     </build>
+
+    <distributionManagement>
+        <repository>
+            <id>github</id>
+            <name>GitHub atlassian-labs Apache Maven Packages</name>
+            <url>https://maven.pkg.github.com/atlassian-labs/dc-migration-assistant</url>
+        </repository>
+    </distributionManagement>
 
 </project>

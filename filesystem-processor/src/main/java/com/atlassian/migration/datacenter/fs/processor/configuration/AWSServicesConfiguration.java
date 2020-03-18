@@ -19,8 +19,10 @@ import org.springframework.context.annotation.Profile;
 
 @Configuration
 @Profile({"production", "test"})
-@EnableStackConfiguration(stackName = "migration-helper")
+@EnableStackConfiguration(stackName = AWSServicesConfiguration.STACK_NAME)
 public class AWSServicesConfiguration {
+
+    public static final String STACK_NAME = "migration-helper";
 
     @Bean
     public RegionProvider regionProvider() {
