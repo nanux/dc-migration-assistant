@@ -116,7 +116,6 @@ class S3FilesystemMigrationServiceTest {
                 argThat(jobId -> jobId.compareTo(JobId.of(S3UploadJobRunner.KEY + 42)) == 0),
                 argThat(jobConfig -> jobConfig.getRunMode() == RunMode.RUN_ONCE_PER_CLUSTER)
         );
-        verify(migrationService).transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
     }
 
     @Test
@@ -130,23 +129,6 @@ class S3FilesystemMigrationServiceTest {
         Boolean isScheduled = fsService.scheduleMigration();
         assertEquals(false, isScheduled);
 
-        verify(migrationService).transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
-        verify(schedulerService).unscheduleJob(argThat(jobId -> jobId.compareTo(JobId.of(S3UploadJobRunner.KEY + 42)) == 0));
-        verify(migrationService).error();
-    }
-
-    @Test
-    void shouldUnsetScheduledJobWhenInvalidMigrationStageExceptionIsRaised() throws Exception {
-        createStubMigration(MigrationStage.FS_MIGRATION_COPY);
-
-        Mockito.doThrow(InvalidMigrationStageError.class)
-                .when(migrationService)
-                .transition(any(), any());
-
-        Boolean isScheduled = fsService.scheduleMigration();
-        assertEquals(false, isScheduled);
-
-        verify(schedulerService, never()).scheduleJob(any(), any());
         verify(schedulerService).unscheduleJob(argThat(jobId -> jobId.compareTo(JobId.of(S3UploadJobRunner.KEY + 42)) == 0));
         verify(migrationService).error();
     }
