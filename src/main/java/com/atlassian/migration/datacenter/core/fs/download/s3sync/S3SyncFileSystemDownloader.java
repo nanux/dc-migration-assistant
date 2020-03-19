@@ -18,6 +18,7 @@ package com.atlassian.migration.datacenter.core.fs.download.s3sync;
 
 import com.atlassian.migration.datacenter.core.aws.ssm.SSMApi;
 import com.atlassian.migration.datacenter.core.aws.ssm.SuccessfulSSMCommandConsumer;
+import jdk.internal.jline.internal.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,12 +58,18 @@ public class S3SyncFileSystemDownloader {
             consumer.handleCommandOutput(maxCommandStatusRetries);
         } catch (SuccessfulSSMCommandConsumer.UnsuccessfulSSMCommandInvocationException e) {
             logger.error("error launching s3 sync command", e);
-            throw new CannotLaunchCommandException("unable to launch file system download command successfully.");
+            throw new CannotLaunchCommandException("unable to launch file system download command successfully.", e);
         } catch (SuccessfulSSMCommandConsumer.SSMCommandInvocationProcessingError never) {
         }
     }
 
-    public S3SyncCommandStatus getFileSystemDownloadStatus() throws IndeterminateS3SyncStatusException {
+    /**
+     * Gets the current status of the running download in the new stack
+     *
+     * @return the status of the S3 sync or null if the status was not able to be retrieved.
+     */
+    @Nullable
+    public S3SyncCommandStatus getFileSystemDownloadStatus() {
         String statusCommandId = ssmApi.runSSMDocument(STATUS_SSM_PLAYBOOK, MIGRATION_STACK_INSTANCE, Collections.emptyMap());
 
         SuccessfulSSMCommandConsumer<S3SyncCommandStatus> consumer = new UnmarshalS3SyncStatusSSMCommandConsumer(ssmApi, statusCommandId, MIGRATION_STACK_INSTANCE);
@@ -87,6 +94,10 @@ public class S3SyncFileSystemDownloader {
     public static class CannotLaunchCommandException extends Exception {
         CannotLaunchCommandException(String message) {
             super(message);
+        }
+
+        public CannotLaunchCommandException(String message, Throwable cause) {
+            super(message, cause);
         }
     }
 }
