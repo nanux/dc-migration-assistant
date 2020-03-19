@@ -106,6 +106,9 @@ Resources:
               01_mount:
                 command: /opt/atlassian/dc-migration-assistant/mount-efs.sh
           prepare_efs_sync_script:
+            packages:
+              yum:
+                python3: []
             files:
               /opt/atlassian/dc-migration-assistant/copy-shared-home.sh:
                 content: !Sub
@@ -117,9 +120,8 @@ Resources:
                     echo "s3 sync with shared home complete with exit code $?" >> $SYNC_LOG_FILE
                   - { MigrationBucket: !Ref MigrationBucket }
                 mode: "000755"
-              /opt/atlassian/dc-migration-assistant/home-copy-status.sh:
-                content:
-                  - | 
+              /opt/atlassian/dc-migration-assistant/home-copy-status.py:
+                content: | 
                     #!/usr/bin/python3
                     
                     import subprocess
@@ -213,6 +215,7 @@ Resources:
                     
                     print(json.dumps(result))
                     exit(0)
+
             commands:
               # Default UID from dc-deployments-automation (not set by quick start) https://bitbucket.org/atlassian/dc-deployments-automation/src/81c2bc9fe8bd3fd00f3538f8d5cc7c32d3e24898/group_vars/aws_node_local.yml#lines-18
               # We need to use useradd because using a cfn-init user gives us a non-interactive user
@@ -450,7 +453,7 @@ Resources:
           inputs:
             runCommand:
             - "#!/bin/bash"
-            - runuser -l jira -c 'at -f /opt/atlassian/dc-migration-assistant/copy-shared-home.sh now'
+            - python3 /opt/atlassian/dc-migration-assistant/home-copy-status.py /var/atlassian/dc-migration-assistant/sync-log.txt /var/atlassian/dc-migration-assistant/sync-error.txt
             timeoutSeconds: "60"
             workingDirectory: "/opt/atlassian/dc-migration-assistant/"
       DocumentType: "Command"
