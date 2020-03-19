@@ -129,6 +129,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
      */
     @Override
     public void startMigration() throws InvalidMigrationStageError {
+        s3AsyncClient = this.s3AsyncClientSupplier.get();
         if (isRunning()) {
             logger.warn("Filesystem migration is currently in progress, aborting new execution.");
             return;
