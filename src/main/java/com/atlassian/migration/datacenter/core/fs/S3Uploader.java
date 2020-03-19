@@ -110,13 +110,14 @@ public class S3Uploader implements Uploader {
 
     private void handlePutObjectResponse(S3UploadOperation operation) {
         try {
-            final PutObjectResponse evaluatedResponse = operation.response.get();
             logger.trace("acknowledging file upload for {}", operation.path);
+            final PutObjectResponse evaluatedResponse = operation.response.get();
             if (!evaluatedResponse.sdkHttpResponse().isSuccessful()) {
                 final String errorMessage = String.format(
                         "Error when uploading %s to S3, %s",
                         operation.path,
                         evaluatedResponse.sdkHttpResponse().statusText());
+                logger.warn("error uploading {} to S3 - {}", operation.path, evaluatedResponse);
                 addFailedFile(operation.path, errorMessage);
             } else {
                 logger.trace("{} migrated successfully", operation.path);

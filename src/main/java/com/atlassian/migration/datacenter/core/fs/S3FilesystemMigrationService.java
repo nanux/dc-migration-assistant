@@ -150,22 +150,27 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
         FilesystemUploader fsUploader = new FilesystemUploader(homeCrawler, s3Uploader);
 
+        logger.trace("commencing upload of shared home");
         try {
             fsUploader.uploadDirectory(getSharedHomeDir());
         } catch (FileUploadException e) {
             logger.error("Caught exception during upload; check report for details.", e);
         }
 
+        logger.trace("upload of shared home complete. commencing shared home download");
         try {
             fileSystemDownloadManager.downloadFileSystem();
+            report.setStatus(DONE);
         } catch (S3SyncFileSystemDownloader.CannotLaunchCommandException e) {
             report.setStatus(FAILED);
             logger.error("unable to launch s3 sync ssm command", e);
         }
 
         if (report.getStatus().equals(DONE)) {
+            logger.trace("Completed file system migration. Transitioning to next stage.");
             this.migrationService.transition(MigrationStage.WAIT_FS_MIGRATION_COPY, MigrationStage.OFFLINE_WARNING);
-        } else if (!report.getStatus().equals(FAILED)) {
+        } else if (report.getStatus().equals(FAILED)) {
+            logger.error("Encountered error during file system migration. Transitioning to error state.");
             this.migrationService.error();
             report.setStatus(DONE);
         }

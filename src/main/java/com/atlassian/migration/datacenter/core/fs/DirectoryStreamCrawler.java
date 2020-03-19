@@ -50,7 +50,6 @@ public class DirectoryStreamCrawler implements Crawler {
         } catch (NoSuchFileException e) {
             logger.error("Failed to find path "+start, e);
             report.reportFileNotMigrated(new FailedFileMigration(start, e.getMessage()));
-            report.setStatus(FilesystemMigrationStatus.FAILED);
             throw e;
 
         } finally {

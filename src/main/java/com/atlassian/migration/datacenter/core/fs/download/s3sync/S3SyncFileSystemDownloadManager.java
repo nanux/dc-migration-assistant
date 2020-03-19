@@ -47,6 +47,7 @@ public class S3SyncFileSystemDownloadManager {
                 logger.debug("got status of file system download: " + status.toString());
 
                 if (status.isComplete()) {
+                    logger.debug("file system download is complete");
                     syncCompleteFuture.complete(null);
                 }
             } catch (S3SyncFileSystemDownloader.IndeterminateS3SyncStatusException e) {
