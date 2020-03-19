@@ -40,6 +40,7 @@ import software.amazon.awssdk.services.s3.S3AsyncClient;
 
 import javax.annotation.PostConstruct;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static com.atlassian.migration.datacenter.spi.MigrationStage.FS_MIGRATION_COPY;
 import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.*;
@@ -47,6 +48,7 @@ import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigr
 public class S3FilesystemMigrationService implements FilesystemMigrationService {
     private static final Logger logger = LoggerFactory.getLogger(S3FilesystemMigrationService.class);
 
+    private static final String OVERRIDE_UPLOAD_DIRECTORY = System.getProperty("com.atlassian.migration.datacenter.fs.overrideJiraHome", "");
     private static final String BUCKET_NAME = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
 
     private S3AsyncClient s3AsyncClient;
@@ -129,11 +131,13 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
      */
     @Override
     public void startMigration() throws InvalidMigrationStageError {
-        s3AsyncClient = this.s3AsyncClientSupplier.get();
+        logger.trace("Beginning migration. Uploading shared home dir {} to S3 bucket {}", getSharedHomeDir(), getS3Bucket());
         if (isRunning()) {
             logger.warn("Filesystem migration is currently in progress, aborting new execution.");
             return;
         }
+
+        s3AsyncClient = this.s3AsyncClientSupplier.get();
         report = new DefaultFileSystemMigrationReport();
 
         migrationService.transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
@@ -172,6 +176,9 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     }
 
     private Path getSharedHomeDir() {
+        if (!OVERRIDE_UPLOAD_DIRECTORY.equals("")) {
+            return Paths.get(OVERRIDE_UPLOAD_DIRECTORY);
+        }
         return jiraHome.getHome().toPath();
     }
 }

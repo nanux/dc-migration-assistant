@@ -53,7 +53,6 @@ public class SSMApiIT {
     @BeforeEach
     void setUp() {
         sut = new SSMApi(() -> SsmClient.builder().build());
-        sut.postConstruct();
     }
 
     @Test
