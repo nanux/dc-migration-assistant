@@ -42,10 +42,10 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class S3SyncFileSystemDownloaderTest {
 
-    private static final String SYNC_STATUS_SUCCESS_COMPLETE_JSON = "{\"finished\": true, \"code\": \"0\", \"status\": {}, \"hasErrors\": false}\n";
-    private static final String SYNC_STATUS_DETERMINED_PARTIAL_JSON = "{\"status\": {\"progress\": 49492787.2, \"files_remaining\": 528, \"total\": 451411968.0, \"isCalculating\": false}, \"hasErrors\": false}\n";
-    private static final String SYNC_STATUS_COMPLETE_ERROR_JSON = "{\"finished\": true, \"code\": \"1\", \"status\": {}, \"hasErrors\": true, \"errors\": [\"fatal error: Unable to locate credentials\\n\"]}\n";
-    private static final String SYNC_STATUS_PARTIAL_CALCULATING_WITH_ERROR_JSON = "{\"status\": {\"progress\": 4724464025.6, \"files_remaining\": 1004, \"total\": 4724464025.6, \"isCalculating\": true}, \"hasErrors\": true, \"errors\": [\"Oh dang it broke\\n\"]}\n";
+    private static final String SYNC_STATUS_SUCCESS_COMPLETE_JSON = "{\"finished\": true, \"code\": \"0\", \"status\": {}}\n";
+    private static final String SYNC_STATUS_DETERMINED_PARTIAL_JSON = "{\"status\": {\"progress\": 49492787.2, \"files_remaining\": 528, \"total\": 451411968.0, \"isCalculating\": false}}\n";
+    private static final String SYNC_STATUS_COMPLETE_ERROR_JSON = "{\"finished\": true, \"code\": \"1\", \"status\": {}, \"errors\": [\"fatal error: Unable to locate credentials\\n\"]}\n";
+    private static final String SYNC_STATUS_PARTIAL_CALCULATING_WITH_ERROR_JSON = "{\"status\": {\"progress\": 4724464025.6, \"files_remaining\": 1004, \"total\": 4724464025.6, \"isCalculating\": true}, \"errors\": [\"Oh dang it broke\\n\"]}\n";
 
     @Mock
     SSMApi mockSsmApi;

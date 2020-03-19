@@ -30,12 +30,14 @@ import java.util.Map;
  * In the event that values can't be read for any reason i.e. if they are absent
  * number values will be set to -1, the status will be assumed to be unfinished and
  * the download will be assumed to have stopped calculating.
+ *
+ * NOTE: When {@link S3SyncCommandStatus#isComplete()} is true, there will be no values for
+ * progress, total or filesRemaining.
  */
 @JsonAutoDetect
 public class S3SyncCommandStatus {
     private boolean finished;
 
-    private boolean hasErrors;
     private int code;
     private double progress;
     private double total;
@@ -79,7 +81,7 @@ public class S3SyncCommandStatus {
     }
 
     public boolean hasErrors() {
-        return hasErrors;
+        return errors != null && errors.size() > 0;
     }
 
     public List<String> getErrors() {
@@ -90,7 +92,6 @@ public class S3SyncCommandStatus {
     public String toString() {
         return "S3SyncCommandStatus{" +
                 "finished=" + finished +
-                ", hasErrors=" + hasErrors +
                 ", code=" + code +
                 ", progress=" + progress +
                 ", total=" + total +
