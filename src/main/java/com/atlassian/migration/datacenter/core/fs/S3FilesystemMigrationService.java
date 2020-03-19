@@ -151,7 +151,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
         FilesystemUploader fsUploader = new FilesystemUploader(homeCrawler, s3Uploader);
 
-        logger.trace("commencing upload of shared home");
+        logger.info("commencing upload of shared home");
         try {
             fsUploader.uploadDirectory(getSharedHomeDir());
         } catch (FileUploadException e) {
@@ -159,7 +159,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         }
 
         if (!report.getStatus().equals(FAILED)) {
-            logger.trace("upload of shared home complete. commencing shared home download");
+            logger.info("upload of shared home complete. commencing shared home download");
             try {
                 fileSystemDownloadManager.downloadFileSystem();
                 report.setStatus(DONE);
@@ -170,8 +170,8 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         }
 
         if (report.getStatus().equals(DONE)) {
-            logger.trace("Completed file system migration. Transitioning to next stage.");
-            this.migrationService.transition(MigrationStage.OFFLINE_WARNING);
+            logger.info("Completed file system migration. Transitioning to next stage.");
+            this.migrationService.transition(MigrationStage.WAIT_FS_MIGRATION_COPY, MigrationStage.OFFLINE_WARNING);
         } else if (report.getStatus().equals(FAILED)) {
             logger.error("Encountered error during file system migration. Transitioning to error state.");
             this.migrationService.error();
