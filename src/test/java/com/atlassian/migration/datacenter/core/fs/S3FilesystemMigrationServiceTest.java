@@ -28,6 +28,7 @@ import com.atlassian.scheduler.SchedulerServiceException;
 import com.atlassian.scheduler.config.JobId;
 import com.atlassian.scheduler.config.JobRunnerKey;
 import com.atlassian.scheduler.config.RunMode;
+import com.atlassian.util.concurrent.Supplier;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -41,7 +42,7 @@ import java.nio.file.Paths;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.verify;
@@ -60,7 +61,7 @@ class S3FilesystemMigrationServiceTest {
     SchedulerService schedulerService;
 
     @Mock
-    S3AsyncClient s3AsyncClient;
+    Supplier<S3AsyncClient> s3AsyncClientSupplier;
 
     @Mock
     S3SyncFileSystemDownloadManager downloadManager;
@@ -76,20 +77,18 @@ class S3FilesystemMigrationServiceTest {
 
         fsService.startMigration();
 
-        assertEquals(FilesystemMigrationStatus.FAILED, fsService.getReport().getStatus());
         verify(migrationService).transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
+        verify(migrationService).error();
     }
 
     @Test
-    void shouldFailToStartMigrationWhenMigrationStageIsInvalid() throws InvalidMigrationStageError {
-        when(this.migrationService.getCurrentStage()).thenReturn(MigrationStage.FS_MIGRATION_COPY);
-        Mockito.doThrow(InvalidMigrationStageError.class).when(migrationService).transition(any(), any());
+    void shouldFailToStartMigrationWhenMigrationAlreadyInProgress() throws InvalidMigrationStageError {
+        when(this.migrationService.getCurrentStage()).thenReturn(MigrationStage.WAIT_FS_MIGRATION_COPY);
+        when(this.jiraHome.getHome()).thenReturn(Paths.get("stub").toFile());
 
-        assertThrows(InvalidMigrationStageError.class, () -> {
-            fsService.startMigration();
-        });
+        fsService.startMigration();
 
-        assertEquals(FilesystemMigrationStatus.NOT_STARTED, fsService.getReport().getStatus());
+        assertNull(fsService.getReport());
     }
 
     @Test

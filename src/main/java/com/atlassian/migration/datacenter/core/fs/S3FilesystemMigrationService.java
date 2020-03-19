@@ -157,13 +157,15 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
             logger.error("Caught exception during upload; check report for details.", e);
         }
 
-        logger.trace("upload of shared home complete. commencing shared home download");
-        try {
-            fileSystemDownloadManager.downloadFileSystem();
-            report.setStatus(DONE);
-        } catch (S3SyncFileSystemDownloader.CannotLaunchCommandException e) {
-            report.setStatus(FAILED);
-            logger.error("unable to launch s3 sync ssm command", e);
+        if (!report.getStatus().equals(FAILED)) {
+            logger.trace("upload of shared home complete. commencing shared home download");
+            try {
+                fileSystemDownloadManager.downloadFileSystem();
+                report.setStatus(DONE);
+            } catch (S3SyncFileSystemDownloader.CannotLaunchCommandException e) {
+                report.setStatus(FAILED);
+                logger.error("unable to launch s3 sync ssm command", e);
+            }
         }
 
         if (report.getStatus().equals(DONE)) {
