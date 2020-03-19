@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.core.aws;
+package com.atlassian.migration.datacenter.core.aws.ssm;
 
 import com.atlassian.util.concurrent.Supplier;
 import software.amazon.awssdk.services.ssm.SsmClient;

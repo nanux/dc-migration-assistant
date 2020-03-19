@@ -18,6 +18,7 @@ package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.aws.auth.AtlassianPluginAWSCredentialsProvider;
+import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloadManager;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus;
@@ -57,18 +58,24 @@ import static org.testcontainers.containers.localstack.LocalStackContainer.Servi
 @Testcontainers
 @ExtendWith({MockitoExtension.class})
 class S3FilesystemMigrationServiceIT {
-    @TempDir Path dir;
-    @Mock MigrationService migrationService;
-    @Mock JiraHome jiraHome;
-    @Mock SchedulerService schedulerService;
+    @TempDir
+    Path dir;
+    @Mock
+    MigrationService migrationService;
+    @Mock
+    JiraHome jiraHome;
+    @Mock
+    SchedulerService schedulerService;
+    @Mock
+    S3SyncFileSystemDownloadManager fileSystemDownloader;
 
     private S3AsyncClient s3AsyncClient;
     private String bucket = "trebuchet-testing";
 
     @Container
     public LocalStackContainer s3 = new LocalStackContainer()
-        .withServices(S3)
-        .withEnv("DEFAULT_REGION", Region.US_EAST_1.toString());
+            .withServices(S3)
+            .withEnv("DEFAULT_REGION", Region.US_EAST_1.toString());
 
     AtlassianPluginAWSCredentialsProvider credentialsProvider;
 
@@ -104,7 +111,7 @@ class S3FilesystemMigrationServiceIT {
 
         Path file = genRandFile();
 
-         S3FilesystemMigrationService fsService = new S3FilesystemMigrationService(() -> s3AsyncClient, jiraHome, migrationService, schedulerService);
+        S3FilesystemMigrationService fsService = new S3FilesystemMigrationService(() -> s3AsyncClient, jiraHome, fileSystemDownloader, migrationService, schedulerService);
          fsService.postConstruct();
 
         fsService.startMigration();

@@ -19,6 +19,8 @@ package com.atlassian.migration.datacenter.core.fs;
 import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.exceptions.FileUploadException;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloadManager;
+import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloader;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
 import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.spi.MigrationService;
@@ -53,6 +55,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private final JiraHome jiraHome;
     private final MigrationService migrationService;
     private final SchedulerService schedulerService;
+    private final S3SyncFileSystemDownloadManager fileSystemDownloadManager;
     private Supplier<S3AsyncClient> s3AsyncClientSupplier;
 
     private FileSystemMigrationReport report;
@@ -61,6 +64,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
     public S3FilesystemMigrationService(Supplier<S3AsyncClient> s3AsyncClientSupplier,
                                         JiraHome jiraHome,
+                                        S3SyncFileSystemDownloadManager fileSystemDownloadManager,
                                         MigrationService migrationService,
                                         SchedulerService schedulerService)
     {
@@ -68,6 +72,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         this.jiraHome = jiraHome;
         this.migrationService = migrationService;
         this.schedulerService = schedulerService;
+        this.fileSystemDownloadManager = fileSystemDownloadManager;
 
         report = new DefaultFileSystemMigrationReport();
     }
@@ -114,6 +119,11 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         JobId jobId = JobId.of(S3UploadJobRunner.KEY + currentMigration.getID());
         logger.info("Starting filesystem migration");
 
+        if (schedulerService.getJobDetails(jobId) != null) {
+            logger.warn("Tried to schedule file system migration while job already exists");
+            return false;
+        }
+
         //TODO: Can the job runner be injected? It has no state
         schedulerService.registerJobRunner(runnerKey, new S3UploadJobRunner(this));
         logger.info("Registered new job runner for S3");
@@ -124,10 +134,8 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         try {
             logger.info("Scheduling new job for S3 upload runner");
 
-            this.migrationService.transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
-
             schedulerService.scheduleJob(jobId, jobConfig);
-        } catch (SchedulerServiceException | InvalidMigrationStageError e) {
+        } catch (SchedulerServiceException e) {
             logger.error("Exception when scheduling S3 upload job", e);
             this.schedulerService.unscheduleJob(jobId);
             migrationService.error();
@@ -142,6 +150,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
      */
     @Override
     public void startMigration() throws InvalidMigrationStageError {
+        s3AsyncClient = this.s3AsyncClientSupplier.get();
         if (isRunning()) {
             logger.warn("Filesystem migration is currently in progress, aborting new execution.");
             return;
@@ -162,6 +171,13 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
             fsUploader.uploadDirectory(getSharedHomeDir());
         } catch (FileUploadException e) {
             logger.error("Caught exception during upload; check report for details.", e);
+        }
+
+        try {
+            fileSystemDownloadManager.downloadFileSystem();
+        } catch (S3SyncFileSystemDownloader.CannotLaunchCommandException e) {
+            report.setStatus(FAILED);
+            logger.error("unable to launch s3 sync ssm command", e);
         }
 
         if (report.getStatus().equals(DONE)) {
