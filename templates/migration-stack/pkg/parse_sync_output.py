@@ -71,6 +71,12 @@ finished, exit_code = checkIfSyncCompleted(last_line)
 
 result = dict()
 
+try:
+    errors = parseError(error_file_path)
+    result['errors'] = errors
+except:
+    pass
+
 if finished:
     result['finished'] = True
     result['code'] = exit_code
@@ -80,14 +86,6 @@ try:
 except ValueError:
     progress = {}
 
-try:
-    errors = parseError(error_file_path)
-    result['status'] = progress
-    result['hasErrors'] = True
-    result['errors'] = errors
-except:
-    result['status'] = progress
-    result['hasErrors'] = False
 
 print(json.dumps(result))
 exit(0)
