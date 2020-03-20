@@ -16,33 +16,72 @@
 
 package com.atlassian.migration.datacenter.spi;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Optional;
+
 
 /**
  * Represents all possible states of an on-premise to cloud migration.
  */
 public enum MigrationStage {
-    ERROR("error"),
-    FINISHED("finished"),
-    CUTOVER("cutover"),
-    VALIDATE("validate"),
-    DB_MIGRATION_IMPORT("db_migration_down"), DB_MIGRATION_EXPORT("db_migration_up"),
-    OFFLINE_WARNING("cutover_warning"),
-    WAIT_FS_MIGRATION_COPY("wait_fs_migration_copy"), FS_MIGRATION_COPY("fs_migration_copy"),
-    WAIT_PROVISION_MIGRATION_STACK("wait_provision_migration"), PROVISION_MIGRATION_STACK("provision_migration"),
-    WAIT_PROVISION_APPLICATION("wait_provision_app"), PROVISION_APPLICATION("provision_app"),
-    AUTHENTICATION("authentication"),
-    NOT_STARTED("");
+    NOT_STARTED(),
+    AUTHENTICATION(NOT_STARTED),
+    PROVISION_APPLICATION(AUTHENTICATION),
+    PROVISION_APPLICATION_WAIT(PROVISION_APPLICATION),
+    PROVISION_MIGRATION_STACK(PROVISION_APPLICATION_WAIT),
+    PROVISION_MIGRATION_STACK_WAIT(PROVISION_MIGRATION_STACK),
 
-    @JsonProperty
-    private String key;
+    FS_MIGRATION_COPY(PROVISION_MIGRATION_STACK_WAIT),
+    FS_MIGRATION_COPY_WAIT(FS_MIGRATION_COPY),
 
-    MigrationStage(String key) {
-        this.key = key;
+    OFFLINE_WARNING(FS_MIGRATION_COPY_WAIT),
+
+    DB_MIGRATION_EXPORT(OFFLINE_WARNING),
+    DB_MIGRATION_EXPORT_WAIT(DB_MIGRATION_EXPORT),
+
+    DB_MIGRATION_UPLOAD(DB_MIGRATION_EXPORT_WAIT),
+    DB_MIGRATION_UPLOAD_WAIT(DB_MIGRATION_UPLOAD),
+
+    DATA_MIGRATION_IMPORT(DB_MIGRATION_UPLOAD_WAIT),
+    DATA_MIGRATION_IMPORT_WAIT(DATA_MIGRATION_IMPORT),
+
+    VALIDATE(DATA_MIGRATION_IMPORT_WAIT),
+    CUTOVER(VALIDATE),
+    FINISHED(CUTOVER),
+    ERROR();
+
+    private Optional<MigrationStage> validFrom;
+    private Optional<Throwable> exception;
+
+    MigrationStage() {
+        this.exception = Optional.empty();
+        this.validFrom = Optional.empty();
     }
+
+    MigrationStage(MigrationStage validFrom) {
+        this.exception = Optional.empty();
+        this.validFrom = Optional.of(validFrom);
+    }
+
+    //TODO: Refactor away from static to an instance method.
+    public static boolean isValidTransition(MigrationStage from, MigrationStage to) {
+        return !to.validFrom.isPresent() || to.validFrom.get().equals(from);
+    }
+
+//    TODO: Review develop endpoint is see if migration stage will be (de)serialized
+//    If not, then create a JSON creator method to convert from string to enum type.
+//    @JsonProperty
+//    private String key;
 
     @Override
     public String toString() {
-        return key;
+        return super.toString().toLowerCase();
+    }
+
+    public Optional<Throwable> getException() {
+        return exception;
+    }
+
+    public void setException(Optional<Throwable> exception) {
+        this.exception = exception;
     }
 }

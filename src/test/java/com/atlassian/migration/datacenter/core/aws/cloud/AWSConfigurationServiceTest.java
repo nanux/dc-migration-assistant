@@ -76,7 +76,7 @@ class AWSConfigurationServiceTest {
 
     @Test
     void shouldStoreCredentialsOnlyWhenStateIsAuthentication() {
-        when(mockMigrationService.getCurrentStage()).thenReturn(MigrationStage.WAIT_FS_MIGRATION_COPY);
+        when(mockMigrationService.getCurrentStage()).thenReturn(MigrationStage.FS_MIGRATION_COPY_WAIT);
         assertThrows(InvalidMigrationStageError.class, () -> sut.configureCloudProvider("garbage", "garbage", "garbage"));
     }
 
@@ -90,7 +90,7 @@ class AWSConfigurationServiceTest {
 
         sut.configureCloudProvider("garbage", "garbage", "garbage");
 
-        verify(mockMigrationService).transition(MigrationStage.AUTHENTICATION, MigrationStage.PROVISION_APPLICATION);
+        verify(mockMigrationService).transition(MigrationStage.PROVISION_APPLICATION);
     }
 
     @Test
@@ -105,7 +105,7 @@ class AWSConfigurationServiceTest {
             fail();
         } catch (RuntimeException rte) {
             assertEquals(InvalidAWSRegionException.class, rte.getCause().getClass());
-            verify(mockMigrationService, never()).transition(any(), any());
+            verify(mockMigrationService, never()).transition(any());
         }
     }
 

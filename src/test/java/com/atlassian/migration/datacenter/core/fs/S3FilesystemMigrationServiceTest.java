@@ -37,14 +37,17 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
+import javax.ws.rs.HEAD;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -77,13 +80,25 @@ class S3FilesystemMigrationServiceTest {
 
         fsService.startMigration();
 
-        verify(migrationService).transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
+        verify(migrationService).transition(MigrationStage.FS_MIGRATION_COPY_WAIT);
         verify(migrationService).error();
     }
 
     @Test
+    void shouldFailToStartMigrationWhenMigrationStageIsInvalid() throws InvalidMigrationStageError {
+        when(this.migrationService.getCurrentStage()).thenReturn(MigrationStage.FS_MIGRATION_COPY);
+        when(this.jiraHome.getHome()).thenReturn(Paths.get("stub").toFile());
+        Mockito.doThrow(InvalidMigrationStageError.class).when(migrationService).transition(any());
+        assertThrows(InvalidMigrationStageError.class, () -> {
+            fsService.startMigration();
+        });
+
+        assertEquals(FilesystemMigrationStatus.NOT_STARTED, fsService.getReport().getStatus());
+    }
+
+    @Test
     void shouldFailToStartMigrationWhenMigrationAlreadyInProgress() throws InvalidMigrationStageError {
-        when(this.migrationService.getCurrentStage()).thenReturn(MigrationStage.WAIT_FS_MIGRATION_COPY);
+        when(this.migrationService.getCurrentStage()).thenReturn(MigrationStage.FS_MIGRATION_COPY_WAIT);
         when(this.jiraHome.getHome()).thenReturn(Paths.get("stub").toFile());
 
         fsService.startMigration();

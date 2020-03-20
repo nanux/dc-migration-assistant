@@ -43,7 +43,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static com.atlassian.migration.datacenter.spi.MigrationStage.FS_MIGRATION_COPY;
-import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.*;
+import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.DONE;
+import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.FAILED;
+import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.RUNNING;
 
 public class S3FilesystemMigrationService implements FilesystemMigrationService {
     private static final Logger logger = LoggerFactory.getLogger(S3FilesystemMigrationService.class);
@@ -81,7 +83,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
     @Override
     public boolean isRunning() {
-        return this.migrationService.getCurrentStage().equals(MigrationStage.WAIT_FS_MIGRATION_COPY);
+        return this.migrationService.getCurrentStage().equals(MigrationStage.FS_MIGRATION_COPY_WAIT);
     }
 
     @Override
@@ -114,7 +116,6 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
                 .withRunMode(RunMode.RUN_ONCE_PER_CLUSTER);
         try {
             logger.info("Scheduling new job for S3 upload runner");
-
             schedulerService.scheduleJob(jobId, jobConfig);
         } catch (SchedulerServiceException e) {
             logger.error("Exception when scheduling S3 upload job", e);
@@ -140,7 +141,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         s3AsyncClient = this.s3AsyncClientSupplier.get();
         report = new DefaultFileSystemMigrationReport();
 
-        migrationService.transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
+        migrationService.transition(MigrationStage.FS_MIGRATION_COPY_WAIT);
         report.setStatus(RUNNING);
 
         Crawler homeCrawler = new DirectoryStreamCrawler(report);
@@ -170,7 +171,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
         if (report.getStatus().equals(DONE)) {
             logger.trace("Completed file system migration. Transitioning to next stage.");
-            this.migrationService.transition(MigrationStage.WAIT_FS_MIGRATION_COPY, MigrationStage.OFFLINE_WARNING);
+            this.migrationService.transition(MigrationStage.OFFLINE_WARNING);
         } else if (report.getStatus().equals(FAILED)) {
             logger.error("Encountered error during file system migration. Transitioning to error state.");
             this.migrationService.error();
