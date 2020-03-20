@@ -157,15 +157,14 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
             fileSystemDownloadManager.downloadFileSystem();
 
             report.setStatus(DONE);
+
+            logger.info("Completed file system migration. Transitioning to next stage.");
+            migrationService.transition(MigrationStage.OFFLINE_WARNING);
         } catch (FileSystemMigrationFailure e) {
             logger.error("Encountered critical error during file system migration");
             report.setStatus(FAILED);
             migrationService.error();
-            return;
         }
-
-        logger.info("Completed file system migration. Transitioning to next stage.");
-        migrationService.transition(MigrationStage.OFFLINE_WARNING);
     }
 
     private String getS3Bucket() {
