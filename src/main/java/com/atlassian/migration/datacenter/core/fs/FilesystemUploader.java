@@ -28,22 +28,19 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class FilesystemUploader
-{
+public class FilesystemUploader {
     private static final Logger logger = LoggerFactory.getLogger(FilesystemUploader.class);
     private Uploader uploader;
     private Crawler crawler;
     private final ExecutorService pool;
 
-    public FilesystemUploader(Crawler crawler, Uploader uploader)
-    {
+    public FilesystemUploader(Crawler crawler, Uploader uploader) {
         this.uploader = uploader;
         this.crawler = crawler;
         this.pool = Executors.newFixedThreadPool(2);
     }
 
-    public void uploadDirectory(Path dir) throws FileUploadException
-    {
+    public void uploadDirectory(Path dir) throws FileUploadException {
         UploadQueue<Path> queue = new UploadQueue<>(uploader.maxConcurrent());
 
         Future<Boolean> crawlFuture = pool.submit(() -> {

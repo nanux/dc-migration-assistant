@@ -16,12 +16,7 @@
 
 package com.atlassian.migration.datacenter.core.application;
 
-import org.apache.commons.lang3.StringUtils;
-
-import java.util.Arrays;
-
-public class DatabaseConfiguration
-{
+public class DatabaseConfiguration {
     public enum DBType {
         POSTGRESQL,
         MYSQL,
@@ -36,8 +31,7 @@ public class DatabaseConfiguration
     private Integer port;
     private DBType type;
 
-    public DatabaseConfiguration(DBType type, String host, Integer port, String name, String username, String password)
-    {
+    public DatabaseConfiguration(DBType type, String host, Integer port, String name, String username, String password) {
         this.host = host;
         this.name = name;
         this.username = username;
@@ -46,33 +40,27 @@ public class DatabaseConfiguration
         this.type = type;
     }
 
-    public String getHost()
-    {
+    public String getHost() {
         return host;
     }
 
-    public String getName()
-    {
+    public String getName() {
         return name;
     }
 
-    public String getUsername()
-    {
+    public String getUsername() {
         return username;
     }
 
-    public String getPassword()
-    {
+    public String getPassword() {
         return password;
     }
 
-    public Integer getPort()
-    {
+    public Integer getPort() {
         return port;
     }
 
-    public DBType getType()
-    {
+    public DBType getType() {
         return type;
     }
 }

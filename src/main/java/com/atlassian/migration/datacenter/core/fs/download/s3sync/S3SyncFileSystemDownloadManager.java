@@ -53,7 +53,7 @@ public class S3SyncFileSystemDownloadManager {
             } catch (S3SyncFileSystemDownloader.IndeterminateS3SyncStatusException e) {
                 logger.error("error when retrieving s3 sync status", e);
             }
-        }, 0 , 5, TimeUnit.MINUTES);
+        }, 0, 5, TimeUnit.MINUTES);
 
         syncCompleteFuture.whenComplete((_i, _j) -> scheduledFuture.cancel(true));
     }

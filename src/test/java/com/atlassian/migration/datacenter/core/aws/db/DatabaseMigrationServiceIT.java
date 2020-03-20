@@ -49,17 +49,16 @@ import static org.testcontainers.containers.localstack.LocalStackContainer.Servi
 @Tag("integration")
 @Testcontainers
 @ExtendWith(MockitoExtension.class)
-class DatabaseMigrationServiceIT
-{
+class DatabaseMigrationServiceIT {
     @Container
     public static PostgreSQLContainer postgres = (PostgreSQLContainer) new PostgreSQLContainer("postgres:9.6")
-        .withDatabaseName("jira")
-        .withCopyFileToContainer(MountableFile.forClasspathResource("db/jira.sql"), "/docker-entrypoint-initdb.d/jira.sql");
+            .withDatabaseName("jira")
+            .withCopyFileToContainer(MountableFile.forClasspathResource("db/jira.sql"), "/docker-entrypoint-initdb.d/jira.sql");
 
     @Container
     public LocalStackContainer s3 = new LocalStackContainer()
-        .withServices(S3)
-        .withEnv("DEFAULT_REGION", Region.US_EAST_1.toString());
+            .withServices(S3)
+            .withEnv("DEFAULT_REGION", Region.US_EAST_1.toString());
 
     private S3AsyncClient s3client;
     private String bucket = "trebuchet-testing";
@@ -73,22 +72,22 @@ class DatabaseMigrationServiceIT
     @BeforeEach
     void setUp() throws Exception {
         when(configuration.getDatabaseConfiguration())
-            .thenReturn(new DatabaseConfiguration(DatabaseConfiguration.DBType.POSTGRESQL,
-                                                  postgres.getContainerIpAddress(),
-                                                  postgres.getMappedPort(5432),
-                                                  postgres.getDatabaseName(),
-                                                  postgres.getUsername(),
-                                                  postgres.getPassword()));
+                .thenReturn(new DatabaseConfiguration(DatabaseConfiguration.DBType.POSTGRESQL,
+                        postgres.getContainerIpAddress(),
+                        postgres.getMappedPort(5432),
+                        postgres.getDatabaseName(),
+                        postgres.getUsername(),
+                        postgres.getPassword()));
 
         s3client = S3AsyncClient.builder()
-            .endpointOverride(new URI(s3.getEndpointConfiguration(S3).getServiceEndpoint()))
-            .credentialsProvider(new AwsCredentialsProviderShim(s3.getDefaultCredentialsProvider()))
-            .region(Region.US_EAST_1)
-            .build();
+                .endpointOverride(new URI(s3.getEndpointConfiguration(S3).getServiceEndpoint()))
+                .credentialsProvider(new AwsCredentialsProviderShim(s3.getDefaultCredentialsProvider()))
+                .region(Region.US_EAST_1)
+                .build();
 
         CreateBucketRequest req = CreateBucketRequest.builder()
-            .bucket(bucket)
-            .build();
+                .bucket(bucket)
+                .build();
         CreateBucketResponse resp = s3client.createBucket(req).get();
         assertTrue(resp.sdkHttpResponse().isSuccessful());
     }
@@ -102,9 +101,9 @@ class DatabaseMigrationServiceIT
         service.performMigration();
 
         HeadObjectRequest req = HeadObjectRequest.builder()
-            .bucket(bucket)
-            .key("db.dump/toc.dat")
-            .build();
+                .bucket(bucket)
+                .key("db.dump/toc.dat")
+                .build();
         HeadObjectResponse resp = s3client.headObject(req).get();
         assertTrue(resp.sdkHttpResponse().isSuccessful());
     }

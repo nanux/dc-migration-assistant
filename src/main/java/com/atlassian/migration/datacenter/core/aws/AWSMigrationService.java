@@ -26,7 +26,6 @@ import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Proxy;
 
@@ -73,7 +72,7 @@ public class AWSMigrationService implements MigrationService {
         Migration migration = findFirstOrCreateMigration();
         final MigrationStage currentStage = migration.getStage();
         if (!currentStage.equals(from)) {
-            throw InvalidMigrationStageError.errorWithMessage(from,currentStage);
+            throw InvalidMigrationStageError.errorWithMessage(from, currentStage);
         }
         setCurrentStage(migration, to);
     }
@@ -95,7 +94,7 @@ public class AWSMigrationService implements MigrationService {
             // In case we have interrupted migration (e.g. the node went down), we want to pick up where we've
             // left off.
             return migrations[0];
-        } else if (migrations.length == 0){
+        } else if (migrations.length == 0) {
             // We didn't start the migration, so we need to create record in the db and a migration context
             Migration migration = ao.create(Migration.class);
             migration.setStage(NOT_STARTED);

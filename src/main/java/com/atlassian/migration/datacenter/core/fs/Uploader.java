@@ -23,5 +23,6 @@ import java.nio.file.Path;
 
 public interface Uploader {
     void upload(UploadQueue<Path> queue) throws FileUploadException;
+
     Integer maxConcurrent();
 }

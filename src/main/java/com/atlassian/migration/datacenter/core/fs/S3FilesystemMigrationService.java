@@ -78,7 +78,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     }
 
     @PostConstruct
-    public void postConstruct(){
+    public void postConstruct() {
         this.s3AsyncClient = this.s3AsyncClientSupplier.get();
     }
 

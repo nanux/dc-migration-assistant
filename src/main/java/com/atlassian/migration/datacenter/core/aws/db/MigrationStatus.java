@@ -18,8 +18,7 @@ package com.atlassian.migration.datacenter.core.aws.db;
 
 import java.util.Optional;
 
-public class MigrationStatus
-{
+public class MigrationStatus {
     public enum State {
         NOT_STARTED,
         DUMP_IN_PROGRESS,
@@ -27,22 +26,20 @@ public class MigrationStatus
         UPLOAD_IN_PROGRESS,
         UPLOAD_COMPLETE,
         ERROR,
-        FINISHED;
+        FINISHED
     }
 
     private final State state;
     private final Optional<Throwable> exception;
     private final String message;
 
-    MigrationStatus(State state, String message)
-    {
+    MigrationStatus(State state, String message) {
         this.state = state;
         this.message = message;
         this.exception = Optional.empty();
     }
 
-    MigrationStatus(State state, String message, Throwable exception)
-    {
+    MigrationStatus(State state, String message, Throwable exception) {
         this.state = state;
         this.exception = Optional.of(exception);
         this.message = message;

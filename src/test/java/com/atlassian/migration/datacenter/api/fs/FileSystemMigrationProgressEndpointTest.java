@@ -150,7 +150,7 @@ public class FileSystemMigrationProgressEndpointTest {
     }
 
     @Test
-    void shouldNotRunFileMigrationWhenExistingMigrationIsInProgress(){
+    void shouldNotRunFileMigrationWhenExistingMigrationIsInProgress() {
         FileSystemMigrationReport reportMock = Mockito.mock(FileSystemMigrationReport.class);
         when(reportMock.getStatus()).thenReturn(RUNNING);
 
@@ -160,7 +160,7 @@ public class FileSystemMigrationProgressEndpointTest {
         Response response = endpoint.runFileMigration();
 
         assertEquals(Response.Status.CONFLICT.getStatusCode(), response.getStatus());
-        assertEquals(RUNNING, ((Map<String,String>) response.getEntity()).get("status"));
+        assertEquals(RUNNING, ((Map<String, String>) response.getEntity()).get("status"));
     }
 
     @Test
