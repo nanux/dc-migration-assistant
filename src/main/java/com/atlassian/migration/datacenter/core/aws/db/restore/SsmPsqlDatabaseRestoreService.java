@@ -19,8 +19,8 @@ package com.atlassian.migration.datacenter.core.aws.db.restore;
 import com.atlassian.migration.datacenter.core.aws.ssm.SSMApi;
 import com.atlassian.migration.datacenter.core.aws.ssm.SuccessfulSSMCommandConsumer;
 import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
+import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.EnsureSuccessfulSSMCommandConsumer;
-import com.atlassian.util.concurrent.Supplier;
 
 import java.util.Collections;
 
@@ -43,14 +43,20 @@ public class SsmPsqlDatabaseRestoreService {
         this(ssm, 10);
     }
 
-    void restoreDatabase() throws DatabaseMigrationFailure {
+    public void restoreDatabase(DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback) throws DatabaseMigrationFailure, InvalidMigrationStageError {
+        restoreStageTransitionCallback.transitionToServiceStartStage();
+
         String commandId = ssm.runSSMDocument(SSM_PLAYBOOK, MIGRATION_STACK_INSTANCE, Collections.emptyMap());
 
         SuccessfulSSMCommandConsumer consumer = new EnsureSuccessfulSSMCommandConsumer(ssm, commandId, MIGRATION_STACK_INSTANCE);
 
+        restoreStageTransitionCallback.transitionToServiceWaitStage();
+
         try {
             consumer.handleCommandOutput(maxCommandRetries);
+            restoreStageTransitionCallback.transitionToServiceNextStage();
         } catch (SuccessfulSSMCommandConsumer.UnsuccessfulSSMCommandInvocationException | SuccessfulSSMCommandConsumer.SSMCommandInvocationProcessingError e) {
+            restoreStageTransitionCallback.transitionToServiceErrorStage();
             throw new DatabaseMigrationFailure("Unable to invoke database download command", e);
         }
     }

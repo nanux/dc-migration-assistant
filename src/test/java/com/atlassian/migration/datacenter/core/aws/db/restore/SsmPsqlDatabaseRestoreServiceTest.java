@@ -16,12 +16,13 @@
 
 package com.atlassian.migration.datacenter.core.aws.db.restore;
 
+import com.atlassian.migration.datacenter.core.aws.MigrationStageCallback;
 import com.atlassian.migration.datacenter.core.aws.ssm.SSMApi;
 import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
+import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.ssm.model.CommandInvocationStatus;
@@ -38,6 +39,9 @@ class SsmPsqlDatabaseRestoreServiceTest {
     @Mock
     SSMApi ssmApi;
 
+    @Mock
+    DatabaseRestoreStageTransitionCallback callback;
+
     SsmPsqlDatabaseRestoreService sut;
 
     @BeforeEach
@@ -46,17 +50,17 @@ class SsmPsqlDatabaseRestoreServiceTest {
     }
 
     @Test
-    void shouldBeSuccessfulWhenCommandStatusIsSuccessful() {
+    void shouldBeSuccessfulWhenCommandStatusIsSuccessful() throws InvalidMigrationStageError {
         givenCommandCompletesWithStatus(CommandInvocationStatus.SUCCESS);
 
-        sut.restoreDatabase();
+        sut.restoreDatabase(callback);
     }
 
     @Test
     void shouldThrowWhenCommandStatusIsFailed() {
         givenCommandCompletesWithStatus(CommandInvocationStatus.FAILED);
 
-        assertThrows(DatabaseMigrationFailure.class, () -> sut.restoreDatabase());
+        assertThrows(DatabaseMigrationFailure.class, () -> sut.restoreDatabase(callback));
     }
 
     private void givenCommandCompletesWithStatus(CommandInvocationStatus status) {
