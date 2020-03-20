@@ -34,6 +34,7 @@ import com.atlassian.migration.datacenter.core.aws.db.DatabaseArchiveStageTransi
 import com.atlassian.migration.datacenter.core.aws.db.DatabaseArtifactS3UploadService;
 import com.atlassian.migration.datacenter.core.aws.db.DatabaseMigrationService;
 import com.atlassian.migration.datacenter.core.aws.db.DatabaseUploadStageTransitionCallback;
+import com.atlassian.migration.datacenter.core.aws.db.restore.DatabaseRestoreStageTransitionCallback;
 import com.atlassian.migration.datacenter.core.aws.infrastructure.QuickstartDeploymentService;
 import com.atlassian.migration.datacenter.core.aws.region.AvailabilityZoneManager;
 import com.atlassian.migration.datacenter.core.aws.region.PluginSettingsRegionManager;
@@ -52,7 +53,6 @@ import com.atlassian.util.concurrent.Supplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -124,6 +124,11 @@ public class MigrationAssistantBeanConfiguration {
     @Bean
     public DatabaseUploadStageTransitionCallback databaseUploadStageTransitionCallback(MigrationService migrationService){
         return new DatabaseUploadStageTransitionCallback(migrationService);
+    }
+
+    @Bean
+    public DatabaseRestoreStageTransitionCallback databaseRestoreStageTransitionCallback(MigrationService migrationService) {
+        return new DatabaseRestoreStageTransitionCallback(migrationService);
     }
 
     @Bean
