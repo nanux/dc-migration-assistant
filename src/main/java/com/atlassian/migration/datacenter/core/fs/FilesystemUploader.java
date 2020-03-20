@@ -18,8 +18,11 @@ package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.migration.datacenter.core.exceptions.FileUploadException;
 import com.atlassian.migration.datacenter.core.util.UploadQueue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -27,6 +30,7 @@ import java.util.concurrent.Future;
 
 public class FilesystemUploader
 {
+    private static final Logger logger = LoggerFactory.getLogger(FilesystemUploader.class);
     private Uploader uploader;
     private Crawler crawler;
     private final ExecutorService pool;
@@ -63,7 +67,11 @@ public class FilesystemUploader
         pool.shutdown();
     }
 
+    /**
+     * Abort the migration process and shuts down all executor services in the pool
+     */
     public void abort() {
-        pool.shutdownNow();
+        final List<Runnable> runnables = pool.shutdownNow();
+        logger.warn("Shut down executors, list of task not commenced: {}", runnables);
     }
 }

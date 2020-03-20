@@ -100,7 +100,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         }
 
         final JobRunnerKey runnerKey = JobRunnerKey.of(S3UploadJobRunner.KEY);
-        JobId jobId = JobId.of(S3UploadJobRunner.KEY + currentMigration.getID());
+        JobId jobId = getScheduledJobId();
         logger.info("Starting filesystem migration");
 
         if (schedulerService.getJobDetails(jobId) != null) {
@@ -183,18 +183,29 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
     @Override
     public void abortMigration() throws InvalidMigrationStageError {
+        // we always try to remove scheduled job if the system is in inconsistent state
+        if (schedulerService.getJobDetails(getScheduledJobId()) != null) {
+            schedulerService.unscheduleJob(getScheduledJobId());
+            logger.info("Removed scheduled filesystem migration job");
+        }
+
         if (!isRunning() || fsUploader == null) {
             throw new InvalidMigrationStageError(String.format("Invalid migration stage when cancelling filesystem migration: %s", migrationService.getCurrentStage()));
         }
 
+        logger.warn("Aborting running filesystem migration");
         fsUploader.abort();
-
         report.setStatus(FAILED);
+
         migrationService.error();
     }
 
     private String getS3Bucket() {
         return BUCKET_NAME;
+    }
+
+    private JobId getScheduledJobId() {
+        return JobId.of(S3UploadJobRunner.KEY + migrationService.getCurrentMigration().getID());
     }
 
     private Path getSharedHomeDir() {
