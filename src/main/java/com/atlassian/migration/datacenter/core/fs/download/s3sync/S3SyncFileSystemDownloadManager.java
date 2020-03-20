@@ -41,17 +41,13 @@ public class S3SyncFileSystemDownloadManager {
 
 
         ScheduledFuture<?> scheduledFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
-            try {
-                S3SyncCommandStatus status = downloader.getFileSystemDownloadStatus();
+            S3SyncCommandStatus status = downloader.getFileSystemDownloadStatus();
 
-                logger.debug("got status of file system download: " + status.toString());
+            logger.debug("got status of file system download: " + status.toString());
 
-                if (status.isComplete()) {
-                    logger.debug("file system download is complete");
-                    syncCompleteFuture.complete(null);
-                }
-            } catch (S3SyncFileSystemDownloader.IndeterminateS3SyncStatusException e) {
-                logger.error("error when retrieving s3 sync status", e);
+            if (status.isComplete()) {
+                logger.debug("file system download is complete");
+                syncCompleteFuture.complete(null);
             }
         }, 0 , 5, TimeUnit.MINUTES);
 

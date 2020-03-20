@@ -16,7 +16,7 @@
 
 package com.atlassian.migration.datacenter.core.fs;
 
-import com.atlassian.migration.datacenter.core.exceptions.FileUploadException;
+import com.atlassian.migration.datacenter.core.exceptions.FileSystemMigrationFailure;
 import com.atlassian.migration.datacenter.core.util.UploadQueue;
 
 import java.nio.file.Path;
@@ -25,19 +25,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class FilesystemUploader
-{
+public class FilesystemUploader {
     private Uploader uploader;
     private Crawler crawler;
 
-    public FilesystemUploader(Crawler crawler, Uploader uploader)
-    {
+    public FilesystemUploader(Crawler crawler, Uploader uploader) {
         this.uploader = uploader;
         this.crawler = crawler;
     }
 
-    public void uploadDirectory(Path dir) throws FileUploadException
-    {
+    public void uploadDirectory(Path dir) throws FileUploadException {
         ExecutorService pool = Executors.newFixedThreadPool(2);
         UploadQueue<Path> queue = new UploadQueue<>(uploader.maxConcurrent());
 
@@ -54,11 +51,22 @@ public class FilesystemUploader
             crawlFuture.get();
             uploadFuture.get();
         } catch (InterruptedException e) {
-            throw new FileUploadException("Failed to traverse/upload filesystem: "+dir,e);
+            throw new FileUploadException("Failed to traverse/upload filesystem: " + dir, e);
         } catch (ExecutionException e) {
-            throw new FileUploadException("Failed to traverse/upload filesystem: "+dir,e.getCause());
+            throw new FileUploadException("Failed to traverse/upload filesystem: " + dir, e.getCause());
         }
 
         pool.shutdown();
     }
+
+    public static class FileUploadException extends FileSystemMigrationFailure {
+        public FileUploadException(String message) {
+            super(message);
+        }
+
+        public FileUploadException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
 }

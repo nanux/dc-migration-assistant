@@ -18,7 +18,7 @@ package com.atlassian.migration.datacenter.core.fs.download.s3sync;
 
 import com.atlassian.migration.datacenter.core.aws.ssm.SSMApi;
 import com.atlassian.migration.datacenter.core.aws.ssm.SuccessfulSSMCommandConsumer;
-import jdk.internal.jline.internal.Nullable;
+import com.atlassian.migration.datacenter.core.exceptions.FileSystemMigrationFailure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +68,6 @@ public class S3SyncFileSystemDownloader {
      *
      * @return the status of the S3 sync or null if the status was not able to be retrieved.
      */
-    @Nullable
     public S3SyncCommandStatus getFileSystemDownloadStatus() {
         String statusCommandId = ssmApi.runSSMDocument(STATUS_SSM_PLAYBOOK, MIGRATION_STACK_INSTANCE, Collections.emptyMap());
 
@@ -85,13 +84,17 @@ public class S3SyncFileSystemDownloader {
         }
     }
 
-    public static class IndeterminateS3SyncStatusException extends Exception {
+    public static class IndeterminateS3SyncStatusException extends FileSystemMigrationFailure {
         IndeterminateS3SyncStatusException(String message) {
             super(message);
         }
+
+        public IndeterminateS3SyncStatusException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 
-    public static class CannotLaunchCommandException extends Exception {
+    public static class CannotLaunchCommandException extends FileSystemMigrationFailure {
         CannotLaunchCommandException(String message) {
             super(message);
         }
