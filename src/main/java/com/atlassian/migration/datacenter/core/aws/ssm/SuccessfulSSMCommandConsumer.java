@@ -55,7 +55,11 @@ public abstract class SuccessfulSSMCommandConsumer<T> {
                 throw new UnsuccessfulSSMCommandInvocationException("Interrupted while waiting to check command status", e);
             }
         }
-        throw new UnsuccessfulSSMCommandInvocationException("Command never completed successfully. Latest status is: " + command.status().toString());
+        throw new UnsuccessfulSSMCommandInvocationException(
+                String.format(
+                        "Command never completed successfully. Latest status is: %s. Latest response from SSM API is: %s",
+                        command.status().toString(),
+                        command.sdkHttpResponse().statusText()));
     }
 
     protected abstract T handleSuccessfulCommand(GetCommandInvocationResponse commandInvocation) throws SSMCommandInvocationProcessingError;

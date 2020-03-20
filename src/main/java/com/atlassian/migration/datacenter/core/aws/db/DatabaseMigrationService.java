@@ -18,6 +18,7 @@ package com.atlassian.migration.datacenter.core.aws.db;
 
 import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.core.fs.FilesystemUploader;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
 
 import java.nio.file.Path;
@@ -51,7 +52,11 @@ public class DatabaseMigrationService
      */
     public FileSystemMigrationErrorReport performMigration() throws DatabaseMigrationFailure, InvalidMigrationStageError {
         Path pathToDatabaseFile = databaseArchivalService.archiveDatabase(tempDirectory, stageTransitionCallback);
-        return s3UploadService.upload(pathToDatabaseFile, TARGET_BUCKET_NAME, this.uploadStageTransitionCallback);
+        try {
+            return s3UploadService.upload(pathToDatabaseFile, TARGET_BUCKET_NAME, this.uploadStageTransitionCallback);
+        } catch (FilesystemUploader.FileUploadException e) {
+            throw new DatabaseMigrationFailure("Error when uploading database dump to S3", e);
+        }
     }
 
 }
