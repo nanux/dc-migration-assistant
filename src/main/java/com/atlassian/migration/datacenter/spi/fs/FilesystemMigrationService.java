@@ -45,7 +45,15 @@ public interface FilesystemMigrationService {
 
     /**
      * Return true if the filesystem migration is in non-terminal state
+     *
      * @return true if the filesystem migration is in progress
      */
     boolean isRunning();
+
+    /**
+     * Cancel filesystem migration that is currently in progress
+     *
+     * @throws InvalidMigrationStageError if the migration is not running
+     */
+    void abortMigration() throws InvalidMigrationStageError;
 }

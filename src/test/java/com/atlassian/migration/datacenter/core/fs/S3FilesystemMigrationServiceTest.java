@@ -34,6 +34,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.internal.util.reflection.FieldSetter;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 
@@ -42,9 +43,10 @@ import java.nio.file.Paths;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -88,12 +90,12 @@ class S3FilesystemMigrationServiceTest {
 
         fsService.startMigration();
 
-        assertNull(fsService.getReport());
+        assertEquals(fsService.getReport().getStatus(), FilesystemMigrationStatus.NOT_STARTED);
     }
 
     @Test
     void shouldNotScheduleMigrationWhenCurrentMigrationStageIsNotFilesystemMigrationCopy() {
-        Migration mockMigration = Mockito.mock(Migration.class);
+        Migration mockMigration = mock(Migration.class);
 
         when(migrationService.getCurrentMigration()).thenReturn(mockMigration);
         when(mockMigration.getStage()).thenReturn(MigrationStage.NOT_STARTED);
@@ -131,8 +133,29 @@ class S3FilesystemMigrationServiceTest {
         verify(migrationService).error();
     }
 
+    @Test
+    void shouldAbortRunningMigration() throws Exception {
+        final FilesystemUploader uploader = mock(FilesystemUploader.class);
+        when(migrationService.getCurrentStage()).thenReturn(MigrationStage.WAIT_FS_MIGRATION_COPY);
+        FieldSetter.setField(fsService, fsService.getClass().getDeclaredField("fsUploader"), uploader);
+
+        fsService.abortMigration();
+
+        verify(uploader).abort();
+        verify(migrationService).error();
+        assertEquals(fsService.getReport().getStatus(), FilesystemMigrationStatus.FAILED);
+    }
+
+    @Test
+    void throwExceptionWhenTryToAbortNonRunningMigration() {
+        when(migrationService.getCurrentStage()).thenReturn(MigrationStage.AUTHENTICATION);
+
+        assertThrows(InvalidMigrationStageError.class, () -> fsService.abortMigration());
+    }
+
+
     private Migration createStubMigration(MigrationStage migrationStage) {
-        Migration mockMigration = Mockito.mock(Migration.class);
+        Migration mockMigration = mock(Migration.class);
         when(migrationService.getCurrentMigration()).thenReturn(mockMigration);
         when(mockMigration.getStage()).thenReturn(migrationStage);
         when(mockMigration.getID()).thenReturn(42);

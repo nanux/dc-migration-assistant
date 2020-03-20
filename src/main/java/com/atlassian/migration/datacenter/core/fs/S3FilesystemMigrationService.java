@@ -43,7 +43,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import static com.atlassian.migration.datacenter.spi.MigrationStage.FS_MIGRATION_COPY;
-import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.*;
+import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.DONE;
+import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.FAILED;
+import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.RUNNING;
 
 public class S3FilesystemMigrationService implements FilesystemMigrationService {
     private static final Logger logger = LoggerFactory.getLogger(S3FilesystemMigrationService.class);
@@ -59,19 +61,20 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private Supplier<S3AsyncClient> s3AsyncClientSupplier;
 
     private FileSystemMigrationReport report;
-
+    private FilesystemUploader fsUploader;
 
     public S3FilesystemMigrationService(Supplier<S3AsyncClient> s3AsyncClientSupplier,
                                         JiraHome jiraHome,
                                         S3SyncFileSystemDownloadManager fileSystemDownloadManager,
                                         MigrationService migrationService,
-                                        SchedulerService schedulerService)
-    {
+                                        SchedulerService schedulerService) {
         this.s3AsyncClientSupplier = s3AsyncClientSupplier;
         this.jiraHome = jiraHome;
         this.migrationService = migrationService;
         this.schedulerService = schedulerService;
         this.fileSystemDownloadManager = fileSystemDownloadManager;
+
+        this.report = new DefaultFileSystemMigrationReport();
     }
 
     @PostConstruct
@@ -148,7 +151,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         S3UploadConfig s3UploadConfig = new S3UploadConfig(getS3Bucket(), s3AsyncClient, getSharedHomeDir());
         Uploader s3Uploader = new S3Uploader(s3UploadConfig, report);
 
-        FilesystemUploader fsUploader = new FilesystemUploader(homeCrawler, s3Uploader);
+        fsUploader = new FilesystemUploader(homeCrawler, s3Uploader);
 
         logger.trace("commencing upload of shared home");
         try {
@@ -176,6 +179,18 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
             this.migrationService.error();
             report.setStatus(DONE);
         }
+    }
+
+    @Override
+    public void abortMigration() throws InvalidMigrationStageError {
+        if (!isRunning() || fsUploader == null) {
+            throw new InvalidMigrationStageError(String.format("Invalid migration stage when cancelling filesystem migration: %s", migrationService.getCurrentStage()));
+        }
+
+        fsUploader.abort();
+
+        report.setStatus(FAILED);
+        migrationService.error();
     }
 
     private String getS3Bucket() {

@@ -29,16 +29,17 @@ public class FilesystemUploader
 {
     private Uploader uploader;
     private Crawler crawler;
+    private final ExecutorService pool;
 
     public FilesystemUploader(Crawler crawler, Uploader uploader)
     {
         this.uploader = uploader;
         this.crawler = crawler;
+        this.pool = Executors.newFixedThreadPool(2);
     }
 
     public void uploadDirectory(Path dir) throws FileUploadException
     {
-        ExecutorService pool = Executors.newFixedThreadPool(2);
         UploadQueue<Path> queue = new UploadQueue<>(uploader.maxConcurrent());
 
         Future<Boolean> crawlFuture = pool.submit(() -> {
@@ -54,13 +55,15 @@ public class FilesystemUploader
             crawlFuture.get();
             uploadFuture.get();
         } catch (InterruptedException e) {
-            throw new FileUploadException("Failed to traverse/upload filesystem: "+dir,e);
+            throw new FileUploadException("Failed to traverse/upload filesystem: " + dir, e);
         } catch (ExecutionException e) {
-            throw new FileUploadException("Failed to traverse/upload filesystem: "+dir,e.getCause());
+            throw new FileUploadException("Failed to traverse/upload filesystem: " + dir, e.getCause());
         }
 
         pool.shutdown();
     }
 
-
+    public void abort() {
+        pool.shutdownNow();
+    }
 }
