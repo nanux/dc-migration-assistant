@@ -100,8 +100,7 @@ class S3FilesystemMigrationServiceTest {
         when(migrationService.getCurrentMigration()).thenReturn(mockMigration);
         when(mockMigration.getStage()).thenReturn(MigrationStage.NOT_STARTED);
 
-        Boolean isScheduled = fsService.scheduleMigration();
-        assertEquals(false, isScheduled);
+        assertThrows(InvalidMigrationStageError.class, fsService::scheduleMigration);
     }
 
     @Test
@@ -135,8 +134,9 @@ class S3FilesystemMigrationServiceTest {
 
     @Test
     void shouldAbortRunningMigration() throws Exception {
+        mockJobDetailsAndMigration(MigrationStage.WAIT_FS_MIGRATION_COPY);
+
         final FilesystemUploader uploader = mock(FilesystemUploader.class);
-        when(migrationService.getCurrentStage()).thenReturn(MigrationStage.WAIT_FS_MIGRATION_COPY);
         FieldSetter.setField(fsService, fsService.getClass().getDeclaredField("fsUploader"), uploader);
 
         fsService.abortMigration();
@@ -148,7 +148,7 @@ class S3FilesystemMigrationServiceTest {
 
     @Test
     void throwExceptionWhenTryToAbortNonRunningMigration() {
-        when(migrationService.getCurrentStage()).thenReturn(MigrationStage.AUTHENTICATION);
+        mockJobDetailsAndMigration(MigrationStage.AUTHENTICATION);
 
         assertThrows(InvalidMigrationStageError.class, () -> fsService.abortMigration());
     }
@@ -160,5 +160,13 @@ class S3FilesystemMigrationServiceTest {
         when(mockMigration.getStage()).thenReturn(migrationStage);
         when(mockMigration.getID()).thenReturn(42);
         return mockMigration;
+    }
+
+    private void mockJobDetailsAndMigration(MigrationStage migrationStage) {
+        Migration mockMigration = mock(Migration.class);
+        when(migrationService.getCurrentMigration()).thenReturn(mockMigration);
+        when(mockMigration.getID()).thenReturn(2);
+        when(schedulerService.getJobDetails(any())).thenReturn(null);
+        when(migrationService.getCurrentStage()).thenReturn(migrationStage);
     }
 }
