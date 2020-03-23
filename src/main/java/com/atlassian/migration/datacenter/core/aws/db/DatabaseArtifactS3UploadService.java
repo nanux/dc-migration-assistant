@@ -37,7 +37,7 @@ public class DatabaseArtifactS3UploadService {
     }
 
     @PostConstruct
-    public void postConstruct(){
+    public void postConstruct() {
         this.s3AsyncClient = this.s3AsyncClientSupplier.get();
     }
 

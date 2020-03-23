@@ -50,7 +50,7 @@ public class JiraConfiguration implements ApplicationConfiguration {
 
         try {
             DatabaseConfigurationXmlElement xmlElement = this.xmlMapper.readValue(databaseConfig.toFile(), DatabaseConfigurationXmlElement.class);
-            if(!xmlElement.isDataSourcePresent()){
+            if (!xmlElement.isDataSourcePresent()) {
                 return DatabaseConfiguration.h2();
             }
             return xmlElement.toDatabaseConfiguration();

@@ -53,8 +53,7 @@ public class S3Uploader implements Uploader {
     }
 
     @Override
-    public void upload(UploadQueue<Path> queue) throws FilesystemUploader.FileUploadException
-    {
+    public void upload(UploadQueue<Path> queue) throws FilesystemUploader.FileUploadException {
         try {
             for (Optional<Path> opt = queue.take(); opt.isPresent(); opt = queue.take()) {
                 uploadFile(opt.get());
@@ -62,7 +61,7 @@ public class S3Uploader implements Uploader {
         } catch (InterruptedException e) {
             String msg = "InterruptedException while fetching file from queue";
             logger.error(msg, e);
-            throw new FilesystemUploader.FileUploadException(msg,e);
+            throw new FilesystemUploader.FileUploadException(msg, e);
         }
         responsesQueue.forEach(this::handlePutObjectResponse);
         logger.info("Finished uploading files to S3");

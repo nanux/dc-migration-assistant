@@ -126,7 +126,7 @@ public class AWSMigrationServiceTest {
     }
 
     @Test
-    public void shouldRaiseErrorOnGetCurrentMigrationWhenMoreThanOneExists(){
+    public void shouldRaiseErrorOnGetCurrentMigrationWhenMoreThanOneExists() {
         initializeAndCreateSingleMigrationWithStage(MigrationStage.FS_MIGRATION_COPY_WAIT);
         initializeAndCreateSingleMigrationWithStage(ERROR);
         assertNumberOfMigrations(2);
@@ -135,7 +135,7 @@ public class AWSMigrationServiceTest {
     }
 
     @Test
-    public void shouldGetCurrentMigrationWhenOneExists(){
+    public void shouldGetCurrentMigrationWhenOneExists() {
         Migration existingMigration = initializeAndCreateSingleMigrationWithStage(MigrationStage.FS_MIGRATION_COPY_WAIT);
 
         Migration currentMigration = sut.getCurrentMigration();

@@ -68,8 +68,7 @@ public class AWSMigrationService implements MigrationService {
     }
 
     @Override
-    public void transition(MigrationStage to) throws InvalidMigrationStageError
-    {
+    public void transition(MigrationStage to) throws InvalidMigrationStageError {
         Migration migration = findFirstOrCreateMigration();
         MigrationStage currentStage = migration.getStage();
 

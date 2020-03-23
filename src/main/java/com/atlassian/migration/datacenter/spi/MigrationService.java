@@ -49,6 +49,7 @@ public interface MigrationService {
 
     /**
      * Tries to transition the migration state from one to another
+     *
      * @param to the state you want to transition to
      * @throws InvalidMigrationStageError when the transition is invalid
      */

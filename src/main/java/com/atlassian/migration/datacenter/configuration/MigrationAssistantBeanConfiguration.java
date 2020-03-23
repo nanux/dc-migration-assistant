@@ -52,7 +52,6 @@ import com.atlassian.util.concurrent.Supplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -122,7 +121,7 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public DatabaseUploadStageTransitionCallback databaseUploadStageTransitionCallback(MigrationService migrationService){
+    public DatabaseUploadStageTransitionCallback databaseUploadStageTransitionCallback(MigrationService migrationService) {
         return new DatabaseUploadStageTransitionCallback(migrationService);
     }
 
@@ -159,6 +158,7 @@ public class MigrationAssistantBeanConfiguration {
     public DatabaseArchivalService databaseArchivalService(DatabaseExtractor databaseExtractor) {
         return new DatabaseArchivalService(databaseExtractor);
     }
+
     @Bean
     public S3SyncFileSystemDownloadManager s3SyncFileSystemDownloadManager(S3SyncFileSystemDownloader downloader) {
         return new S3SyncFileSystemDownloadManager(downloader);
