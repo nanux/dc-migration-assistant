@@ -1,0 +1,79 @@
+/*
+ * Copyright 2020 Atlassian
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.atlassian.migration.datacenter.api.aws
+
+import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError
+import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeploymentService
+import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeploymentService.ApplicationDeploymentStatus
+import com.atlassian.migration.datacenter.spi.infrastructure.ProvisioningConfig
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.extension.ExtendWith
+import org.mockito.InjectMocks
+import org.mockito.Mock
+import org.mockito.Mockito
+import org.mockito.junit.jupiter.MockitoExtension
+import software.amazon.awssdk.services.cloudformation.model.StackInstanceNotFoundException
+import java.util.*
+import javax.ws.rs.core.Response
+
+@ExtendWith(MockitoExtension::class)
+internal class CloudFormationEndpointTest {
+    @Mock
+    private val deploymentService: ApplicationDeploymentService? = null
+    @InjectMocks
+    private val endpoint: CloudFormationEndpoint? = null
+
+    @Test
+    @Throws(Exception::class)
+    fun shouldAcceptRequestToProvisionCloudFormationStack() {
+        val stackName = "stack-name"
+        val provisioningConfig = ProvisioningConfig("url", stackName, HashMap())
+        val response = endpoint!!.provisionInfrastructure(provisioningConfig)
+        Assertions.assertEquals(Response.Status.ACCEPTED.statusCode, response.status)
+        Assertions.assertEquals(provisioningConfig.stackName, response.entity)
+        Mockito.verify(deploymentService)!!.deployApplication(stackName, HashMap())
+    }
+
+    @Test
+    @Throws(Exception::class)
+    fun shouldBeConflictWhenCurrentMigrationStageIsNotValid() {
+        val provisioningConfig = ProvisioningConfig("url", "stack-name", HashMap())
+        val errorMessage = "migration status is FUBAR"
+        Mockito.doThrow(InvalidMigrationStageError(errorMessage)).`when`(deploymentService)!!.deployApplication(provisioningConfig.stackName, provisioningConfig.params)
+        val response = endpoint!!.provisionInfrastructure(provisioningConfig)
+        Assertions.assertEquals(Response.Status.CONFLICT.statusCode, response.status)
+        Assertions.assertEquals(errorMessage, (response.entity as Map<*, *>)["error"])
+    }
+
+    @Test
+    fun shouldGetCurrentProvisioningStatusForGivenStackId() {
+        val expectedStatus = ApplicationDeploymentStatus.CREATE_IN_PROGRESS
+        Mockito.`when`(deploymentService!!.deploymentStatus).thenReturn(expectedStatus)
+        val response = endpoint!!.infrastructureStatus()
+        Assertions.assertEquals(Response.Status.OK.statusCode, response.status)
+        Assertions.assertEquals(expectedStatus, (response.entity as Map<*, *>)["status"])
+    }
+
+    @Test
+    fun shouldGetHandleErrorWhenStatusCannotBeRetrieved() {
+        val expectedErrorMessage = "stack Id not found"
+        Mockito.doThrow(StackInstanceNotFoundException.builder().message(expectedErrorMessage).build()).`when`(deploymentService)!!.deploymentStatus
+        val response = endpoint!!.infrastructureStatus()
+        Assertions.assertEquals(Response.Status.NOT_FOUND.statusCode, response.status)
+        Assertions.assertEquals(expectedErrorMessage, (response.entity as Map<*, *>)["error"])
+    }
+}

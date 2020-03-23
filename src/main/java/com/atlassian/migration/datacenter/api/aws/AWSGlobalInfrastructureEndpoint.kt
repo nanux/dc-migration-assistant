@@ -13,28 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.atlassian.migration.datacenter.api.aws
 
-package com.atlassian.migration.datacenter.api.aws;
-
-import com.atlassian.migration.datacenter.core.aws.GlobalInfrastructure;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.List;
+import com.atlassian.migration.datacenter.core.aws.GlobalInfrastructure
+import javax.ws.rs.Consumes
+import javax.ws.rs.GET
+import javax.ws.rs.Path
+import javax.ws.rs.Produces
+import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
 
 @Path("/aws/global-infrastructure")
-public class AWSGlobalInfrastructureEndpoint {
-
-    private GlobalInfrastructure globalInfrastructure;
-
-    public AWSGlobalInfrastructureEndpoint(GlobalInfrastructure globalInfrastructure) {
-        this.globalInfrastructure = globalInfrastructure;
-    }
-
+class AWSGlobalInfrastructureEndpoint(private val globalInfrastructure: GlobalInfrastructure?) {
     /**
      * @return A response with all AWS regions
      */
@@ -42,16 +32,14 @@ public class AWSGlobalInfrastructureEndpoint {
     @Path("/regions")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public Response getRegions() {
-        List<String> regions = globalInfrastructure.getRegions();
-        if (regions == null) {
-            return Response
-                    .serverError()
-                    .build();
-        }
-
+    fun getRegions(): Response? {
+        val regions = globalInfrastructure?.regions
+                ?: return Response
+                        .serverError()
+                        .build()
         return Response
                 .ok(regions)
-                .build();
+                .build()
     }
+
 }
