@@ -13,107 +13,85 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.atlassian.migration.datacenter.api.fs
 
-package com.atlassian.migration.datacenter.api.fs;
-
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
-import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
-import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
-import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.ImmutableMap;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
+import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError
+import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService
+import com.fasterxml.jackson.annotation.JsonAutoDetect
+import com.fasterxml.jackson.annotation.PropertyAccessor
+import com.fasterxml.jackson.core.JsonProcessingException
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.collect.ImmutableMap
+import javax.ws.rs.*
+import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
 
 @Path("/migration/fs")
-public class FileSystemMigrationEndpoint {
-
-    private final FilesystemMigrationService fsMigrationService;
-
-    private final ObjectMapper mapper;
-
-    public FileSystemMigrationEndpoint(FilesystemMigrationService fsMigrationService) {
-        this.fsMigrationService = fsMigrationService;
-        this.mapper = new ObjectMapper();
-        this.mapper.setVisibility(PropertyAccessor.ALL, Visibility.ANY);
-    }
-
-
+class FileSystemMigrationEndpoint(private val fsMigrationService: FilesystemMigrationService) {
+    private val mapper: ObjectMapper
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/start")
-    public Response runFileMigration() {
-        if (fsMigrationService.isRunning()) {
-            return Response
+    fun runFileMigration(): Response {
+        return if (fsMigrationService.isRunning) {
+            Response
                     .status(Response.Status.CONFLICT)
-                    .entity(ImmutableMap.of("status", fsMigrationService.getReport().getStatus()))
-                    .build();
-        }
-        try {
-            boolean started = fsMigrationService.scheduleMigration();
-            Response.ResponseBuilder builder = started ? Response.status(Response.Status.ACCEPTED) : Response.status(Response.Status.CONFLICT);
-
-            return builder
+                    .entity(ImmutableMap.of("status", fsMigrationService.report.status))
+                    .build()
+        } else try {
+            val started = fsMigrationService.scheduleMigration()
+            val builder = if (started) Response.status(Response.Status.ACCEPTED) else Response.status(Response.Status.CONFLICT)
+            builder
                     .entity(ImmutableMap.of("migrationScheduled", started))
-                    .build();
-        } catch (InvalidMigrationStageError invalidMigrationStageError) {
-            return Response
+                    .build()
+        } catch (invalidMigrationStageError: InvalidMigrationStageError) {
+            Response
                     .status(Response.Status.CONFLICT)
-                    .entity(ImmutableMap.of("error", invalidMigrationStageError.getMessage()))
-                    .build();
+                    .entity(ImmutableMap.of("error", invalidMigrationStageError.message))
+                    .build()
         }
     }
 
-
-    @GET
-    @Produces(APPLICATION_JSON)
     @Path("/report")
-    public Response getFilesystemMigrationStatus() {
-        FileSystemMigrationReport report = fsMigrationService.getReport();
-        if (report == null) {
-            return Response
-                    .status(Response.Status.BAD_REQUEST)
-                    .entity(ImmutableMap.of("error", "no file system migration exists"))
-                    .build();
-        }
-
-        try {
-            return Response
+    @Produces(MediaType.APPLICATION_JSON)
+    @GET
+    fun getFilesystemMigrationStatus(): Response {
+        val report = fsMigrationService.report
+                ?: return Response
+                        .status(Response.Status.BAD_REQUEST)
+                        .entity(ImmutableMap.of("error", "no file system migration exists"))
+                        .build()
+        return try {
+            Response
                     .ok(mapper.writeValueAsString(report))
-                    .build();
-        } catch (JsonProcessingException e) {
-            return Response
+                    .build()
+        } catch (e: JsonProcessingException) {
+            Response
                     .serverError()
-                    .entity(String.format("Unable to get file system status. Please contact support and show them this error: %s", e.getMessage()))
-                    .build();
+                    .entity(String.format("Unable to get file system status. Please contact support and show them this error: %s", e.message))
+                    .build()
         }
     }
 
     @DELETE
-    @Produces(APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     @Path("/abort")
-    public Response abortFilesystemMigration() {
-        try {
-            fsMigrationService.abortMigration();
-            return Response
+    fun abortFilesystemMigration(): Response {
+        return try {
+            fsMigrationService.abortMigration()
+            Response
                     .ok(ImmutableMap.of("cancelled", true))
-                    .build();
-        } catch (InvalidMigrationStageError e) {
-            return Response.status(Response.Status.CONFLICT)
+                    .build()
+        } catch (e: InvalidMigrationStageError) {
+            Response.status(Response.Status.CONFLICT)
                     .entity(ImmutableMap.of("error", "filesystem migration is not in progress"))
-                    .build();
+                    .build()
         }
+    }
+
+    init {
+        mapper = ObjectMapper()
+        mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
     }
 }
