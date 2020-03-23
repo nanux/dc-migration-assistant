@@ -16,12 +16,12 @@
 
 package com.atlassian.migration.datacenter.core.exceptions;
 
-public class FileUploadException extends RuntimeException {
-    public FileUploadException(String message) {
+public class FileSystemMigrationFailure extends Exception {
+    public FileSystemMigrationFailure(String message) {
         super(message);
     }
 
-    public FileUploadException(String message, Throwable cause) {
+    public FileSystemMigrationFailure(String message, Throwable cause) {
         super(message, cause);
     }
 }

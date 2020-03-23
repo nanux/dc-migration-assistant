@@ -68,11 +68,14 @@ public class AWSMigrationService implements MigrationService {
     }
 
     @Override
-    public void transition(MigrationStage from, MigrationStage to) throws InvalidMigrationStageError {
+    public void transition(MigrationStage to) throws InvalidMigrationStageError
+    {
         Migration migration = findFirstOrCreateMigration();
-        final MigrationStage currentStage = migration.getStage();
-        if (!currentStage.equals(from)) {
-            throw InvalidMigrationStageError.errorWithMessage(from, currentStage);
+        MigrationStage currentStage = migration.getStage();
+
+        // NOTE: This assumes that the state transitions from the start of the enum to the end.
+        if (!currentStage.isValidTransition(to)) {
+            throw InvalidMigrationStageError.errorWithMessage(currentStage, to);
         }
         setCurrentStage(migration, to);
     }
@@ -83,12 +86,12 @@ public class AWSMigrationService implements MigrationService {
         setCurrentStage(migration, ERROR);
     }
 
-    private void setCurrentStage(Migration migration, MigrationStage stage) {
+    protected void setCurrentStage(Migration migration, MigrationStage stage) {
         migration.setStage(stage);
         migration.save();
     }
 
-    private Migration findFirstOrCreateMigration() {
+    protected Migration findFirstOrCreateMigration() {
         Migration[] migrations = ao.find(Migration.class);
         if (migrations.length == 1) {
             // In case we have interrupted migration (e.g. the node went down), we want to pick up where we've

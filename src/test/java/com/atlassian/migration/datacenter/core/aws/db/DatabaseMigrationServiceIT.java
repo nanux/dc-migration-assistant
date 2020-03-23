@@ -18,6 +18,9 @@ package com.atlassian.migration.datacenter.core.aws.db;
 
 import com.atlassian.migration.datacenter.core.application.ApplicationConfiguration;
 import com.atlassian.migration.datacenter.core.application.DatabaseConfiguration;
+import com.atlassian.migration.datacenter.core.db.DatabaseExtractorFactory;
+import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.util.AwsCredentialsProviderShim;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -69,6 +72,9 @@ class DatabaseMigrationServiceIT {
     @TempDir
     Path tempDir;
 
+    @Mock(lenient = true)
+    private MigrationService migrationService;
+
     @BeforeEach
     void setUp() throws Exception {
         when(configuration.getDatabaseConfiguration())
@@ -94,9 +100,15 @@ class DatabaseMigrationServiceIT {
 
 
     @Test
-    void testDatabaseMigration() throws ExecutionException, InterruptedException {
-        DatabaseMigrationService service = new DatabaseMigrationService(configuration, tempDir, () -> s3client);
-        service.postConstruct();
+    void testDatabaseMigration() throws ExecutionException, InterruptedException, InvalidMigrationStageError {
+        DatabaseArchivalService databaseArchivalService = new DatabaseArchivalService(DatabaseExtractorFactory.getExtractor(configuration));
+        DatabaseArchiveStageTransitionCallback archiveStageTransitionCallback = new DatabaseArchiveStageTransitionCallback(migrationService);
+
+        DatabaseArtifactS3UploadService s3UploadService = new DatabaseArtifactS3UploadService(() -> s3client);
+        s3UploadService.postConstruct();
+        DatabaseUploadStageTransitionCallback uploadStageTransitionCallback = new DatabaseUploadStageTransitionCallback(this.migrationService);
+
+        DatabaseMigrationService service = new DatabaseMigrationService(tempDir, databaseArchivalService, archiveStageTransitionCallback, s3UploadService, uploadStageTransitionCallback);
 
         service.performMigration();
 
@@ -107,5 +119,4 @@ class DatabaseMigrationServiceIT {
         HeadObjectResponse resp = s3client.headObject(req).get();
         assertTrue(resp.sdkHttpResponse().isSuccessful());
     }
-
 }

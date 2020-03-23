@@ -24,8 +24,13 @@ public class DatabaseExtractorFactory {
     public static DatabaseExtractor getExtractor(ApplicationConfiguration config) throws DatabaseMigrationFailure {
         if (config.getDatabaseConfiguration().getType().equals(DBType.POSTGRESQL)) {
             return new PostgresExtractor(config);
-        } else {
-            throw new DatabaseMigrationFailure("Unsupported database type: " + config.getDatabaseConfiguration().getType());
         }
+
+        //Profile scoped perhaps?
+        if (config.getDatabaseConfiguration().getType().equals(DBType.H2)) {
+            return new UnSupportedDatabaseExtractor();
+        }
+
+        throw new DatabaseMigrationFailure("Unsupported database type: " + config.getDatabaseConfiguration().getType());
     }
 }

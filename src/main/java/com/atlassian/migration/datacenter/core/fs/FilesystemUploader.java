@@ -16,7 +16,7 @@
 
 package com.atlassian.migration.datacenter.core.fs;
 
-import com.atlassian.migration.datacenter.core.exceptions.FileUploadException;
+import com.atlassian.migration.datacenter.core.exceptions.FileSystemMigrationFailure;
 import com.atlassian.migration.datacenter.core.util.UploadQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +30,7 @@ import java.util.concurrent.Future;
 
 public class FilesystemUploader {
     private static final Logger logger = LoggerFactory.getLogger(FilesystemUploader.class);
+
     private Uploader uploader;
     private Crawler crawler;
     private final ExecutorService pool;
@@ -41,6 +42,7 @@ public class FilesystemUploader {
     }
 
     public void uploadDirectory(Path dir) throws FileUploadException {
+        ExecutorService pool = Executors.newFixedThreadPool(2);
         UploadQueue<Path> queue = new UploadQueue<>(uploader.maxConcurrent());
 
         Future<Boolean> crawlFuture = pool.submit(() -> {
@@ -71,4 +73,15 @@ public class FilesystemUploader {
         final List<Runnable> runnables = pool.shutdownNow();
         logger.warn("Shut down executors, list of task not commenced: {}", runnables);
     }
+
+    public static class FileUploadException extends FileSystemMigrationFailure {
+        public FileUploadException(String message) {
+            super(message);
+        }
+
+        public FileUploadException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
 }
