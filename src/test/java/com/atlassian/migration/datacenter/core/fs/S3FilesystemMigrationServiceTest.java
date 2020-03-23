@@ -79,13 +79,25 @@ class S3FilesystemMigrationServiceTest {
 
         fsService.startMigration();
 
-        verify(migrationService).transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
+        verify(migrationService).transition(MigrationStage.FS_MIGRATION_COPY_WAIT);
         verify(migrationService).error();
     }
 
     @Test
+    void shouldFailToStartMigrationWhenMigrationStageIsInvalid() throws InvalidMigrationStageError {
+        when(this.migrationService.getCurrentStage()).thenReturn(MigrationStage.FS_MIGRATION_COPY);
+        when(this.jiraHome.getHome()).thenReturn(Paths.get("stub").toFile());
+        Mockito.doThrow(InvalidMigrationStageError.class).when(migrationService).transition(any());
+        assertThrows(InvalidMigrationStageError.class, () -> {
+            fsService.startMigration();
+        });
+
+        assertEquals(FilesystemMigrationStatus.NOT_STARTED, fsService.getReport().getStatus());
+    }
+
+    @Test
     void shouldFailToStartMigrationWhenMigrationAlreadyInProgress() throws InvalidMigrationStageError {
-        when(this.migrationService.getCurrentStage()).thenReturn(MigrationStage.WAIT_FS_MIGRATION_COPY);
+        when(this.migrationService.getCurrentStage()).thenReturn(MigrationStage.FS_MIGRATION_COPY_WAIT);
         when(this.jiraHome.getHome()).thenReturn(Paths.get("stub").toFile());
 
         fsService.startMigration();
@@ -134,7 +146,7 @@ class S3FilesystemMigrationServiceTest {
 
     @Test
     void shouldAbortRunningMigration() throws Exception {
-        mockJobDetailsAndMigration(MigrationStage.WAIT_FS_MIGRATION_COPY);
+        mockJobDetailsAndMigration(MigrationStage.FS_MIGRATION_COPY_WAIT);
 
         final FilesystemUploader uploader = mock(FilesystemUploader.class);
         FieldSetter.setField(fsService, fsService.getClass().getDeclaredField("fsUploader"), uploader);

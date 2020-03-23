@@ -29,12 +29,18 @@ import com.atlassian.migration.datacenter.core.aws.auth.ProbeAWSAuth;
 import com.atlassian.migration.datacenter.core.aws.auth.ReadCredentialsService;
 import com.atlassian.migration.datacenter.core.aws.auth.WriteCredentialsService;
 import com.atlassian.migration.datacenter.core.aws.cloud.AWSConfigurationService;
+import com.atlassian.migration.datacenter.core.aws.db.DatabaseArchivalService;
+import com.atlassian.migration.datacenter.core.aws.db.DatabaseArchiveStageTransitionCallback;
+import com.atlassian.migration.datacenter.core.aws.db.DatabaseArtifactS3UploadService;
 import com.atlassian.migration.datacenter.core.aws.db.DatabaseMigrationService;
+import com.atlassian.migration.datacenter.core.aws.db.DatabaseUploadStageTransitionCallback;
 import com.atlassian.migration.datacenter.core.aws.infrastructure.QuickstartDeploymentService;
 import com.atlassian.migration.datacenter.core.aws.region.AvailabilityZoneManager;
 import com.atlassian.migration.datacenter.core.aws.region.PluginSettingsRegionManager;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
 import com.atlassian.migration.datacenter.core.aws.ssm.SSMApi;
+import com.atlassian.migration.datacenter.core.db.DatabaseExtractor;
+import com.atlassian.migration.datacenter.core.db.DatabaseExtractorFactory;
 import com.atlassian.migration.datacenter.core.fs.S3FilesystemMigrationService;
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloadManager;
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloader;
@@ -46,6 +52,7 @@ import com.atlassian.util.concurrent.Supplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
@@ -54,6 +61,7 @@ import software.amazon.awssdk.services.ssm.SsmClient;
 import java.nio.file.Paths;
 
 @Configuration
+//ComponentScan is required only because IDEA seems to need it.
 @ComponentScan
 public class MigrationAssistantBeanConfiguration {
 
@@ -79,7 +87,7 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public EncryptedCredentialsStorage readCredentialsService(Supplier<PluginSettingsFactory> pluginSettingsFactorySupplier, JiraHome jiraHome) {
+    public EncryptedCredentialsStorage encryptedCredentialsStorage(Supplier<PluginSettingsFactory> pluginSettingsFactorySupplier, JiraHome jiraHome) {
         return new EncryptedCredentialsStorage(pluginSettingsFactorySupplier, jiraHome);
     }
 
@@ -104,9 +112,32 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public DatabaseMigrationService databaseMigrationService(ApplicationConfiguration jiraConfiguration, Supplier<S3AsyncClient> s3AsyncClient) {
+    public DatabaseArchiveStageTransitionCallback archiveStageTransitionCallback(MigrationService migrationService) {
+        return new DatabaseArchiveStageTransitionCallback(migrationService);
+    }
+
+    @Bean
+    public DatabaseArtifactS3UploadService databaseArtifactS3UploadService(Supplier<S3AsyncClient> s3AsyncClientSupplier) {
+        return new DatabaseArtifactS3UploadService(s3AsyncClientSupplier);
+    }
+
+    @Bean
+    public DatabaseUploadStageTransitionCallback databaseUploadStageTransitionCallback(MigrationService migrationService){
+        return new DatabaseUploadStageTransitionCallback(migrationService);
+    }
+
+    @Bean
+    public DatabaseMigrationService databaseMigrationService(DatabaseArchivalService databaseArchivalService, DatabaseArchiveStageTransitionCallback archiveStageTransitionCallback, DatabaseArtifactS3UploadService s3UploadService, DatabaseUploadStageTransitionCallback uploadStageTransitionCallback) {
         String tempDirectoryPath = System.getProperty("java.io.tmpdir");
-        return new DatabaseMigrationService(jiraConfiguration, Paths.get(tempDirectoryPath), s3AsyncClient);
+        return new DatabaseMigrationService(
+                Paths.get(tempDirectoryPath),
+                databaseArchivalService, archiveStageTransitionCallback,
+                s3UploadService, uploadStageTransitionCallback);
+    }
+
+    @Bean
+    public MigrationService migrationService(ActiveObjects ao) {
+        return new AWSMigrationService(ao);
     }
 
     @Bean
@@ -119,6 +150,15 @@ public class MigrationAssistantBeanConfiguration {
         return new S3SyncFileSystemDownloader(ssmApi);
     }
 
+    @Bean
+    public DatabaseExtractor databaseExtractor(ApplicationConfiguration applicationConfiguration) {
+        return DatabaseExtractorFactory.getExtractor(applicationConfiguration);
+    }
+
+    @Bean
+    public DatabaseArchivalService databaseArchivalService(DatabaseExtractor databaseExtractor) {
+        return new DatabaseArchivalService(databaseExtractor);
+    }
     @Bean
     public S3SyncFileSystemDownloadManager s3SyncFileSystemDownloadManager(S3SyncFileSystemDownloader downloader) {
         return new S3SyncFileSystemDownloadManager(downloader);
@@ -142,11 +182,6 @@ public class MigrationAssistantBeanConfiguration {
     @Bean
     public FilesystemMigrationService filesystemMigrationService(Supplier<S3AsyncClient> clientSupplier, JiraHome jiraHome, S3SyncFileSystemDownloadManager downloadManager, MigrationService migrationService, SchedulerService schedulerService) {
         return new S3FilesystemMigrationService(clientSupplier, jiraHome, downloadManager, migrationService, schedulerService);
-    }
-
-    @Bean
-    public MigrationService migrationService(ActiveObjects ao) {
-        return new AWSMigrationService(ao);
     }
 
     @Bean

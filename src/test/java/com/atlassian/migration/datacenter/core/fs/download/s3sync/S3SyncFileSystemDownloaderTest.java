@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.services.ssm.model.CommandInvocationStatus;
 import software.amazon.awssdk.services.ssm.model.GetCommandInvocationResponse;
 
@@ -86,8 +87,9 @@ class S3SyncFileSystemDownloaderTest {
     @Test
     void shouldThrowWhenCommandDoesNotSucceedWithinTimeout() {
         when(mockSsmApi.getSSMCommand(any(), anyString())).thenReturn(
-                GetCommandInvocationResponse.builder()
+                (GetCommandInvocationResponse) GetCommandInvocationResponse.builder()
                         .status(CommandInvocationStatus.DELAYED)
+                        .sdkHttpResponse(SdkHttpResponse.builder().statusText("whoopsie dooopsie").build())
                         .build());
 
         assertThrows(S3SyncFileSystemDownloader.CannotLaunchCommandException.class, () -> sut.initiateFileSystemDownload());

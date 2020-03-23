@@ -82,7 +82,11 @@ class S3UploaderTest {
         addFileToQueue("file1");
 
         final Future<?> submit = Executors.newFixedThreadPool(1).submit(() -> {
-            uploader.upload(queue);
+            try {
+                uploader.upload(queue);
+            } catch (FilesystemUploader.FileUploadException e) {
+                throw new RuntimeException(e);
+            }
         });
 
         // verify consumption of the first path
@@ -114,7 +118,11 @@ class S3UploaderTest {
         queue.finish();
 
         final Future<?> submit = Executors.newFixedThreadPool(1).submit(() -> {
-            uploader.upload(queue);
+            try {
+                uploader.upload(queue);
+            } catch (FilesystemUploader.FileUploadException e) {
+                throw new RuntimeException(e);
+            }
         });
 
         submit.get();
@@ -122,7 +130,7 @@ class S3UploaderTest {
     }
 
     @Test
-    void uploadNonExistentDirectoryShouldReturnFailedCollection() throws InterruptedException {
+    void uploadNonExistentDirectoryShouldReturnFailedCollection() throws InterruptedException, FilesystemUploader.FileUploadException {
         final Path nonExistentFile = tempDir.resolve("non-existent");
         queue.put(nonExistentFile);
         queue.finish();
@@ -142,7 +150,11 @@ class S3UploaderTest {
         addFileToQueue("file1");
 
         final Future<?> submit = Executors.newFixedThreadPool(1).submit(() -> {
-            uploader.upload(queue);
+            try {
+                uploader.upload(queue);
+            } catch (FilesystemUploader.FileUploadException e) {
+                throw new RuntimeException(e);
+            }
         });
 
         Thread.sleep(100);
