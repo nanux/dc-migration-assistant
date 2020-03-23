@@ -26,8 +26,7 @@ import java.nio.file.Path;
 /**
  * Copyright Atlassian: 10/03/2020
  */
-public class DatabaseMigrationService
-{
+public class DatabaseMigrationService {
     private static final String TARGET_BUCKET_NAME = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
 
     private final Path tempDirectory;
@@ -37,8 +36,7 @@ public class DatabaseMigrationService
     private final DatabaseUploadStageTransitionCallback uploadStageTransitionCallback;
 
 
-    public DatabaseMigrationService(Path tempDirectory, DatabaseArchivalService databaseArchivalService, DatabaseArchiveStageTransitionCallback stageTransitionCallback, DatabaseArtifactS3UploadService s3UploadService, DatabaseUploadStageTransitionCallback uploadStageTransitionCallback)
-    {
+    public DatabaseMigrationService(Path tempDirectory, DatabaseArchivalService databaseArchivalService, DatabaseArchiveStageTransitionCallback stageTransitionCallback, DatabaseArtifactS3UploadService s3UploadService, DatabaseUploadStageTransitionCallback uploadStageTransitionCallback) {
         this.tempDirectory = tempDirectory;
         this.databaseArchivalService = databaseArchivalService;
         this.stageTransitionCallback = stageTransitionCallback;
