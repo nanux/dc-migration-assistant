@@ -24,7 +24,7 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 @Path("/aws/global-infrastructure")
-class AWSGlobalInfrastructureEndpoint(private val globalInfrastructure: GlobalInfrastructure?) {
+class AWSGlobalInfrastructureEndpoint(private val globalInfrastructure: GlobalInfrastructure) {
     /**
      * @return A response with all AWS regions
      */
@@ -32,8 +32,8 @@ class AWSGlobalInfrastructureEndpoint(private val globalInfrastructure: GlobalIn
     @Path("/regions")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    fun getRegions(): Response? {
-        val regions = globalInfrastructure?.regions
+    fun getRegions(): Response {
+        val regions = globalInfrastructure.regions
                 ?: return Response
                         .serverError()
                         .build()

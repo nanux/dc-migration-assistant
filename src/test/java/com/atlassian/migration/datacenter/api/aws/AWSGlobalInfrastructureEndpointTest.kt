@@ -16,36 +16,41 @@
 package com.atlassian.migration.datacenter.api.aws
 
 import com.atlassian.migration.datacenter.core.aws.GlobalInfrastructure
+import io.mockk.MockKAnnotations
+import io.mockk.every
+import io.mockk.impl.annotations.InjectMockKs
+import io.mockk.impl.annotations.MockK
+import io.mockk.junit5.MockKExtension
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import org.mockito.InjectMocks
-import org.mockito.Mock
-import org.mockito.Mockito
-import org.mockito.junit.jupiter.MockitoExtension
 import javax.ws.rs.core.Response
 
-@ExtendWith(MockitoExtension::class)
+@ExtendWith(MockKExtension::class)
 class AWSGlobalInfrastructureEndpointTest {
-    @Mock
-    private val mockGlobalInfrastructure: GlobalInfrastructure? = null
-    @InjectMocks
-    private val sut: AWSGlobalInfrastructureEndpoint? = null
+    @MockK
+    lateinit var mockGlobalInfrastructure: GlobalInfrastructure
+    @InjectMockKs
+    lateinit var sut: AWSGlobalInfrastructureEndpoint
+
+    @BeforeEach
+    fun init() = MockKAnnotations.init(this)
 
     @Test
     fun itShouldReturnServerErrorWhenGlobalInfrastructureModuleFails() {
-        Mockito.`when`(mockGlobalInfrastructure?.regions).thenReturn(null)
-        val res = sut?.getRegions()
-        Assertions.assertEquals(Response.Status.INTERNAL_SERVER_ERROR.statusCode, res?.status)
+        every { mockGlobalInfrastructure.regions } returns null
+        val res = sut.getRegions()
+        Assertions.assertEquals(Response.Status.INTERNAL_SERVER_ERROR.statusCode, res.status)
     }
 
     @Test
     fun itShouldReturnAllRegions() {
         val regionOne = "atlassian-east-1"
         val regionTwo = "atlassian-west-1"
-        Mockito.`when`(mockGlobalInfrastructure?.regions).thenReturn(listOf(regionOne, regionTwo))
-        val res = sut?.getRegions()
-        Assertions.assertEquals(Response.Status.OK.statusCode, res?.status)
-        Assertions.assertEquals(listOf(regionOne, regionTwo), res?.entity)
+        every { mockGlobalInfrastructure.regions } returns listOf(regionOne, regionTwo)
+        val res = sut.getRegions()
+        Assertions.assertEquals(Response.Status.OK.statusCode, res.status)
+        Assertions.assertEquals(listOf(regionOne, regionTwo), res.entity)
     }
 }
