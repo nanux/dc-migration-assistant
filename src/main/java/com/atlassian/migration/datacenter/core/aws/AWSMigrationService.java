@@ -68,8 +68,7 @@ public class AWSMigrationService implements MigrationService {
     }
 
     @Override
-    public void transition(MigrationStage to) throws InvalidMigrationStageError
-    {
+    public void transition(MigrationStage to) throws InvalidMigrationStageError {
         Migration migration = findFirstOrCreateMigration();
         MigrationStage currentStage = migration.getStage();
 
@@ -97,7 +96,7 @@ public class AWSMigrationService implements MigrationService {
             // In case we have interrupted migration (e.g. the node went down), we want to pick up where we've
             // left off.
             return migrations[0];
-        } else if (migrations.length == 0){
+        } else if (migrations.length == 0) {
             // We didn't start the migration, so we need to create record in the db and a migration context
             Migration migration = ao.create(Migration.class);
             migration.setStage(NOT_STARTED);
