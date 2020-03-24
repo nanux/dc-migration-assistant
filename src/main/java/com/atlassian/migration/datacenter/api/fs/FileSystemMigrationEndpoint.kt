@@ -28,7 +28,8 @@ import javax.ws.rs.core.Response
 
 @Path("/migration/fs")
 class FileSystemMigrationEndpoint(private val fsMigrationService: FilesystemMigrationService) {
-    private val mapper: ObjectMapper
+    private val mapper: ObjectMapper = ObjectMapper()
+
     @PUT
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
@@ -91,7 +92,6 @@ class FileSystemMigrationEndpoint(private val fsMigrationService: FilesystemMigr
     }
 
     init {
-        mapper = ObjectMapper()
         mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
     }
 }
