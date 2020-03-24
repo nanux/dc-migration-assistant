@@ -326,6 +326,12 @@
             <version>${kotlin.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>io.mockk</groupId>
+            <artifactId>mockk</artifactId>
+            <version>${mockk.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <dependencyManagement>
@@ -601,6 +607,7 @@
         <postgres.driver.version>42.2.10</postgres.driver.version>
         <kotlin.version>1.3.70</kotlin.version>
         <jackson.version>2.10.3</jackson.version>
+        <mockk.version>1.9.3</mockk.version>
     </properties>
 
 </project>
