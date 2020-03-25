@@ -27,7 +27,7 @@ class FilesystemUploader(private val crawler: Crawler, private val uploader: Upl
     private val pool: ExecutorService
     @Throws(FileUploadException::class)
     fun uploadDirectory(dir: Path) {
-        val queue = UploadQueue<Path?>(uploader.maxConcurrent())
+        val queue = UploadQueue<Path>(uploader.maxConcurrent())
         val crawlFuture = pool.submit<Boolean> {
             crawler.crawlDirectory(dir, queue)
             true

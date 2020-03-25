@@ -29,7 +29,7 @@ import java.util.function.Consumer
 
 class DirectoryStreamCrawler(private val report: FileSystemMigrationReport) : Crawler {
     @Throws(IOException::class)
-    override fun crawlDirectory(start: Path, queue: UploadQueue<Path?>) {
+    override fun crawlDirectory(start: Path, queue: UploadQueue<Path>) {
         try {
             val paths: DirectoryStream<Path>
             paths = Files.newDirectoryStream(start)
@@ -49,7 +49,7 @@ class DirectoryStreamCrawler(private val report: FileSystemMigrationReport) : Cr
         }
     }
 
-    private fun listDirectories(queue: UploadQueue<Path?>, paths: DirectoryStream<Path>) {
+    private fun listDirectories(queue: UploadQueue<Path>, paths: DirectoryStream<Path>) {
         paths.forEach(Consumer { p: Path ->
             if (Files.isDirectory(p)) {
                 logger.trace("Found directory while crawling home: {}", p)

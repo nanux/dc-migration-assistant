@@ -13,26 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.atlassian.migration.datacenter.core.aws
 
-package com.atlassian.migration.datacenter.core.aws;
+import software.amazon.awssdk.auth.credentials.AwsCredentials
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 
-import software.amazon.awssdk.auth.credentials.AwsCredentials;
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
-
-public class StubAwsCredentialsProvider implements AwsCredentialsProvider {
-
-    @Override
-    public AwsCredentials resolveCredentials() {
-        return new AwsCredentials() {
-            @Override
-            public String accessKeyId() {
-                return "stub-access-key";
+class StubAwsCredentialsProvider : AwsCredentialsProvider {
+    override fun resolveCredentials(): AwsCredentials {
+        return object : AwsCredentials {
+            override fun accessKeyId(): String {
+                return "stub-access-key"
             }
 
-            @Override
-            public String secretAccessKey() {
-                return "stub-secret-key";
+            override fun secretAccessKey(): String {
+                return "stub-secret-key"
             }
-        };
+        }
     }
 }

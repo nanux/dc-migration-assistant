@@ -37,7 +37,7 @@ class S3Uploader(private val config: S3UploadConfig, private val report: FileSys
     }
 
     @Throws(FileUploadException::class)
-    override fun upload(queue: UploadQueue<Path?>) {
+    override fun upload(queue: UploadQueue<Path>) {
         try {
             var opt = queue.take()
             while (opt.isPresent) {

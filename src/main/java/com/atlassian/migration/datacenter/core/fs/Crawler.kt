@@ -21,5 +21,5 @@ import java.nio.file.Path
 
 interface Crawler {
     @Throws(IOException::class)
-    fun crawlDirectory(start: Path, queue: UploadQueue<Path?>)
+    fun crawlDirectory(start: Path, queue: UploadQueue<Path>)
 }

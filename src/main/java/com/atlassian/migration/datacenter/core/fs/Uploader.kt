@@ -21,7 +21,7 @@ import java.nio.file.Path
 
 interface Uploader {
     @Throws(FileUploadException::class)
-    fun upload(queue: UploadQueue<Path?>)
+    fun upload(queue: UploadQueue<Path>)
 
     fun maxConcurrent(): Int
 }
