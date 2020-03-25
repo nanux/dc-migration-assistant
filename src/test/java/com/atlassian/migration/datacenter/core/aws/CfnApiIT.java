@@ -18,6 +18,7 @@ package com.atlassian.migration.datacenter.core.aws;
 
 import cloud.localstack.docker.LocalstackDockerExtension;
 import cloud.localstack.docker.annotation.LocalstackDockerProperties;
+import com.atlassian.migration.datacenter.core.aws.region.RegionService;
 import org.apache.commons.io.IOUtils;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -25,6 +26,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
@@ -55,6 +57,7 @@ import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.Mockito.mock;
 
 @Tag("integration")
 @ExtendWith({LocalstackDockerExtension.class})
@@ -101,7 +104,8 @@ class CfnApiIT {
                 .region(Region.AP_SOUTHEAST_2)
                 .endpointOverride(LOCALSTACK_CLOUDFORMATION_URI)
                 .build();
-        cfnApi = new CfnApi(client);
+
+        cfnApi = new CfnApi(client, mock(AwsCredentialsProvider.class), mock(RegionService.class));
     }
 
     @Test

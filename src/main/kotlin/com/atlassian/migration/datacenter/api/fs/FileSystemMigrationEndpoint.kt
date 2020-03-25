@@ -35,10 +35,10 @@ class FileSystemMigrationEndpoint(private val fsMigrationService: FilesystemMigr
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/start")
     fun runFileMigration(): Response {
-        return if (fsMigrationService.isRunning) {
+        return if (fsMigrationService.isRunning()) {
             Response
                     .status(Response.Status.CONFLICT)
-                    .entity(ImmutableMap.of("status", fsMigrationService.report.status))
+                    .entity(ImmutableMap.of("status", fsMigrationService.getReport().status))
                     .build()
         } else try {
             val started = fsMigrationService.scheduleMigration()
@@ -58,11 +58,13 @@ class FileSystemMigrationEndpoint(private val fsMigrationService: FilesystemMigr
     @Produces(MediaType.APPLICATION_JSON)
     @GET
     fun getFilesystemMigrationStatus(): Response {
-        val report = fsMigrationService.report
-                ?: return Response
-                        .status(Response.Status.BAD_REQUEST)
-                        .entity(ImmutableMap.of("error", "no file system migration exists"))
-                        .build()
+        val report = fsMigrationService.getReport()
+        fsMigrationService.isRunning().not().let {
+            Response
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(ImmutableMap.of("error", "no file system migration exists"))
+                    .build()
+        }
         return try {
             Response
                     .ok(mapper.writeValueAsString(report))

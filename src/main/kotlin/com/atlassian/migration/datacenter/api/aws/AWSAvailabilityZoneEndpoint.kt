@@ -31,7 +31,7 @@ class AWSAvailabilityZoneEndpoint(private val availabilityZoneService: Availabil
     @Produces(MediaType.APPLICATION_JSON)
     @GET
     fun getAvailabilityZoneList(): Response {
-        val currentRegion = Region.of(regionService.region)
+        val currentRegion = Region.of(regionService.getRegion())
         return findAZListForRegion(currentRegion)
     }
 

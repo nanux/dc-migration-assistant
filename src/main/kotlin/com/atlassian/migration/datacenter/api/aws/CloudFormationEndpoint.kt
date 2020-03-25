@@ -58,7 +58,7 @@ class CloudFormationEndpoint(private val deploymentService: ApplicationDeploymen
     @Produces(MediaType.APPLICATION_JSON)
     fun infrastructureStatus(): Response {
         return try {
-            val status = deploymentService.deploymentStatus
+            val status = deploymentService.deploymentStatus()
             Response.ok(ImmutableMap.of("status", status)).build()
         } catch (e: Exception) {
             Response.status(Response.Status.NOT_FOUND).entity(ImmutableMap.of("error", e.message)).build()

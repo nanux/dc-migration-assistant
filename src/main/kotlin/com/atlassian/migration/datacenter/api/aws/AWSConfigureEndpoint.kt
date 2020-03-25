@@ -33,7 +33,7 @@ class AWSConfigureEndpoint(private val awsConfigurationService: AWSConfiguration
     fun storeAWSCredentials(configure: AWSConfigureWebObject?): Response {
         try {
             configure?.let {
-                awsConfigurationService.configureCloudProvider(configure.accessKeyId, configure.secretAccessKey, configure.region)
+                awsConfigurationService.configureCloudProvider(configure.accessKeyId!!, configure.secretAccessKey!!, configure.region!!)
             }
         } catch (invalidMigrationStageError: InvalidMigrationStageError) {
             return Response

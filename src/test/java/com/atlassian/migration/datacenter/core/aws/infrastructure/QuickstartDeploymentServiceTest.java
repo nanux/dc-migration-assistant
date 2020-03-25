@@ -80,7 +80,7 @@ class QuickstartDeploymentServiceTest {
 
         deploySimpleStack();
 
-        assertEquals(CREATE_IN_PROGRESS, deploymentService.getDeploymentStatus());
+        assertEquals(CREATE_IN_PROGRESS, deploymentService.deploymentStatus());
     }
 
     @Test

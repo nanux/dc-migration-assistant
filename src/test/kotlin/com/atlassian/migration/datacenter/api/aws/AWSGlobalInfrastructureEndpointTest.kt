@@ -39,7 +39,7 @@ class AWSGlobalInfrastructureEndpointTest {
 
     @Test
     fun itShouldReturnServerErrorWhenGlobalInfrastructureModuleFails() {
-        every { mockGlobalInfrastructure.regions } returns null
+        every { mockGlobalInfrastructure.regions } returns emptyList()
         val res = sut.getRegions()
         Assertions.assertEquals(Response.Status.INTERNAL_SERVER_ERROR.statusCode, res.status)
     }

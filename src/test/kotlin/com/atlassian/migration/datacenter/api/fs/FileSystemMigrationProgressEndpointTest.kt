@@ -15,6 +15,7 @@
  */
 package com.atlassian.migration.datacenter.api.fs
 
+import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService
 import com.atlassian.migration.datacenter.spi.fs.reporting.FailedFileMigration
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport
@@ -58,12 +59,12 @@ class FileSystemMigrationProgressEndpointTest {
         val failedFileMigration = FailedFileMigration(testFile, testReason)
         val failedFilesCollection = hashSetOf<FailedFileMigration>()
         failedFilesCollection.add(failedFileMigration)
-        every { fsMigrationService.report } returns mockk {
+        every { fsMigrationService.getReport() } returns mockk {
             every { status } returns FilesystemMigrationStatus.RUNNING
-            every { numberOfCommencedFileUploads } returns 1L
-            every { numberOfFilesFound } returns 1L
-            every { failedFiles } returns failedFilesCollection
-            every { countOfMigratedFiles } returns 1L
+            every { getNumberOfCommencedFileUploads() } returns 1L
+            every { getNumberOfFilesFound() } returns 1L
+            every { getFailedFiles() } returns failedFilesCollection
+            every { getCountOfMigratedFiles() } returns 1L
             every { elapsedTime } returns Duration.ofMinutes(1)
         }
         val response = endpoint.getFilesystemMigrationStatus()
@@ -84,20 +85,20 @@ class FileSystemMigrationProgressEndpointTest {
 
     @Test
     fun shouldHandleVeryLargeReport() {
-        every { fsMigrationService.report } returns report
+        every { fsMigrationService.getReport() } returns report
         every { report.status } returns FilesystemMigrationStatus.RUNNING
         every { report.elapsedTime } returns Duration.ofMinutes(1)
-        every { report.numberOfFilesFound } returns 1000000L
-        every { report.numberOfCommencedFileUploads } returns 1000000L
-        val failedFiles: MutableSet<FailedFileMigration?> = HashSet()
+        every { report.getNumberOfFilesFound() } returns 1000000L
+        every { report.getNumberOfCommencedFileUploads() } returns 1000000L
+        val failedFiles: MutableSet<FailedFileMigration> = HashSet()
         val testReason = "test reason"
         val testFile = Paths.get("file")
         for (i in 0..99) {
             val failedFileMigration = FailedFileMigration(testFile, testReason)
             failedFiles.add(failedFileMigration)
         }
-        every { report.failedFiles } returns failedFiles
-        every { report.countOfMigratedFiles } returns 1000000L
+        every { report.getFailedFiles() } returns failedFiles
+        every { report.getCountOfMigratedFiles() } returns 1000000L
         val response = endpoint.getFilesystemMigrationStatus()
         val mapper = ObjectMapper()
         mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
@@ -116,7 +117,7 @@ class FileSystemMigrationProgressEndpointTest {
 
     @Test
     fun shouldReturnBadRequestWhenNoReportExists() {
-        every { fsMigrationService.report } returns null
+        every { fsMigrationService.getReport() } returns DefaultFileSystemMigrationReport()
         val response = endpoint.getFilesystemMigrationStatus()
         Assertions.assertEquals(Response.Status.BAD_REQUEST.statusCode, response.status)
         MatcherAssert.assertThat<String?>(response.entity.toString(), Matchers.containsString("no file system migration exists"))
@@ -126,8 +127,8 @@ class FileSystemMigrationProgressEndpointTest {
     fun shouldNotRunFileMigrationWhenExistingMigrationIsInProgress() {
         val reportMock = mockk<FileSystemMigrationReport>()
         every { reportMock.status } returns FilesystemMigrationStatus.RUNNING
-        every { fsMigrationService.isRunning } returns true
-        every { fsMigrationService.report } returns reportMock
+        every { fsMigrationService.isRunning() } returns true
+        every { fsMigrationService.getReport() } returns reportMock
         val response = endpoint.runFileMigration()
         Assertions.assertEquals(Response.Status.CONFLICT.statusCode, response.status)
         Assertions.assertEquals(FilesystemMigrationStatus.RUNNING, (response.entity as MutableMap<*, *>)["status"])
@@ -135,7 +136,7 @@ class FileSystemMigrationProgressEndpointTest {
 
     @Test
     fun shouldRunFileMigrationWhenNoOtherMigrationIsNotInProgress() {
-        every { fsMigrationService.isRunning } returns false
+        every { fsMigrationService.isRunning() } returns false
         every { fsMigrationService.scheduleMigration() } returns true
         val response = endpoint.runFileMigration()
         Assertions.assertEquals(Response.Status.ACCEPTED.statusCode, response.status)
@@ -145,7 +146,7 @@ class FileSystemMigrationProgressEndpointTest {
     @Test
     @Throws(Exception::class)
     fun shouldNotRunFileMigrationWhenWhenUnableToScheduleMigration() {
-        every { fsMigrationService.isRunning } returns false
+        every { fsMigrationService.isRunning() } returns false
         every { fsMigrationService.scheduleMigration() } returns false
         val response = endpoint.runFileMigration()
         Assertions.assertEquals(Response.Status.CONFLICT.statusCode, response.status)

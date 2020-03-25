@@ -34,12 +34,14 @@ class AWSGlobalInfrastructureEndpoint(private val globalInfrastructure: GlobalIn
     @Produces(MediaType.APPLICATION_JSON)
     fun getRegions(): Response {
         val regions = globalInfrastructure.regions
-                ?: return Response
-                        .serverError()
-                        .build()
-        return Response
-                .ok(regions)
-                .build()
+        return if (regions.isNotEmpty()) {
+            Response
+                    .ok(regions)
+                    .build()
+        } else {
+            Response
+                    .serverError()
+                    .build()
+        }
     }
-
 }

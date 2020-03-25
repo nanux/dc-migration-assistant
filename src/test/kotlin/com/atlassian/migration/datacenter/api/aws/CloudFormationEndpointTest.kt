@@ -65,7 +65,7 @@ internal class CloudFormationEndpointTest {
     @Test
     fun shouldGetCurrentProvisioningStatusForGivenStackId() {
         val expectedStatus = ApplicationDeploymentStatus.CREATE_IN_PROGRESS
-        every { deploymentService.deploymentStatus } returns expectedStatus
+        every { deploymentService.deploymentStatus() } returns expectedStatus
         val response = endpoint.infrastructureStatus()
         Assertions.assertEquals(Response.Status.OK.statusCode, response.status)
         Assertions.assertEquals(expectedStatus, (response.entity as Map<*, *>)["status"])
@@ -74,7 +74,7 @@ internal class CloudFormationEndpointTest {
     @Test
     fun shouldGetHandleErrorWhenStatusCannotBeRetrieved() {
         val expectedErrorMessage = "stack Id not found"
-        every {deploymentService.deploymentStatus} throws StackInstanceNotFoundException.builder().message(expectedErrorMessage).build()
+        every {deploymentService.deploymentStatus()} throws StackInstanceNotFoundException.builder().message(expectedErrorMessage).build()
         val response = endpoint.infrastructureStatus()
         Assertions.assertEquals(Response.Status.NOT_FOUND.statusCode, response.status)
         Assertions.assertEquals(expectedErrorMessage, (response.entity as Map<*, *>)["error"])
