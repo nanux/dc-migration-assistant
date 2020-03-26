@@ -20,6 +20,7 @@ import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.aws.auth.AtlassianPluginAWSCredentialsProvider;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloadManager;
+import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus;
@@ -125,6 +126,23 @@ class S3FilesystemMigrationServiceIT {
                 .build();
         HeadObjectResponse resp = s3AsyncClient.headObject(req).get();
         assertTrue(resp.sdkHttpResponse().isSuccessful());
+    }
+
+    @Test
+    void shouldUploadFilesReactively() throws Exception {
+        Path file = genRandFile();
+
+        S3UploadConfig s3UploadConfig = new S3UploadConfig(bucket, s3AsyncClient, dir);
+
+        FilesystemUploaderRx filesystemUploaderRx = new FilesystemUploaderRx(s3UploadConfig, new DefaultFileSystemMigrationReport());
+        filesystemUploaderRx.upload(dir);
+        HeadObjectRequest req = HeadObjectRequest.builder()
+                .bucket(bucket)
+                .key(file.getFileName().toString())
+                .build();
+        HeadObjectResponse resp = s3AsyncClient.headObject(req).get();
+        assertTrue(resp.sdkHttpResponse().isSuccessful());
+
 
     }
 }

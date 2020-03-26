@@ -67,7 +67,7 @@ public class S3Uploader implements Uploader {
         logger.info("Finished uploading files to S3");
     }
 
-    private void uploadFile(Path path) {
+    public void uploadFile(Path path) {
         if (responsesQueue.size() >= MAX_OPEN_CONNECTIONS) {
             logger.trace("Response queue greater than connection threshold. Acknowledging response queue");
             responsesQueue.forEach(this::handlePutObjectResponse);
@@ -94,7 +94,8 @@ public class S3Uploader implements Uploader {
                 final CompletableFuture<PutObjectResponse> response = config.getS3AsyncClient().putObject(putRequest, path);
                 final S3UploadOperation uploadOperation = new S3UploadOperation(path, response);
                 responsesQueue.add(uploadOperation);
-
+//                TODO: Remove this
+                handlePutObjectResponse(uploadOperation);
                 report.reportFileUploadCommenced();
             }
         } else {
