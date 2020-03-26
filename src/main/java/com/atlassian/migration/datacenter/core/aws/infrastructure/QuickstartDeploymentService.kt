@@ -23,13 +23,17 @@ import com.atlassian.migration.datacenter.spi.MigrationService
 import com.atlassian.migration.datacenter.spi.MigrationStage
 import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeploymentService
 import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeploymentService.ApplicationDeploymentStatus
-import org.slf4j.LoggerFactory
-import software.amazon.awssdk.services.cloudformation.model.StackStatus
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import org.slf4j.LoggerFactory
+import software.amazon.awssdk.services.cloudformation.model.StackStatus
 
-class QuickstartDeploymentService(private val ao: ActiveObjects, private val cfnApi: CfnApi, private val migrationService: MigrationService) : ApplicationDeploymentService {
+class QuickstartDeploymentService(
+    private val ao: ActiveObjects,
+    private val cfnApi: CfnApi,
+    private val migrationService: MigrationService
+) : ApplicationDeploymentService {
     private val logger = LoggerFactory.getLogger(QuickstartDeploymentService::class.java)
 
     /**
@@ -38,7 +42,7 @@ class QuickstartDeploymentService(private val ao: ActiveObjects, private val cfn
      * to an error. The migration will also transition to an error if the deployment takes longer than an hour.
      *
      * @param deploymentId the stack name
-     * @param params       the parameters for the cloudformation template. The key should be the parameter name and the value
+     * @param params the parameters for the cloudformation template. The key should be the parameter name and the value
      * should be the parameter value.
      */
     @Throws(InvalidMigrationStageError::class)
@@ -88,9 +92,16 @@ class QuickstartDeploymentService(private val ao: ActiveObjects, private val cfn
             val status = cfnApi.getStatus(deploymentId)
             if (status == StackStatus.CREATE_COMPLETE) {
                 try {
-                    migrationService.transition(MigrationStage.WAIT_PROVISION_APPLICATION, MigrationStage.PROVISION_MIGRATION_STACK)
+                    migrationService.transition(
+                        MigrationStage.WAIT_PROVISION_APPLICATION,
+                        MigrationStage.PROVISION_MIGRATION_STACK
+                    )
                 } catch (invalidMigrationStageError: InvalidMigrationStageError) {
-                    logger.error("tried to transition migration from {} but got error: {}.", MigrationStage.WAIT_PROVISION_APPLICATION, invalidMigrationStageError.message)
+                    logger.error(
+                        "tried to transition migration from {} but got error: {}.",
+                        MigrationStage.WAIT_PROVISION_APPLICATION,
+                        invalidMigrationStageError.message
+                    )
                 }
                 stackCompleteFuture.complete("")
             }
@@ -112,7 +123,7 @@ class QuickstartDeploymentService(private val ao: ActiveObjects, private val cfn
     }
 
     companion object {
-        private const val QUICKSTART_TEMPLATE_URL = "https://aws-quickstart.s3.amazonaws.com/quickstart-atlassian-jira/templates/quickstart-jira-dc-with-vpc.template.yaml"
+        private const val QUICKSTART_TEMPLATE_URL =
+            "https://aws-quickstart.s3.amazonaws.com/quickstart-atlassian-jira/templates/quickstart-jira-dc-with-vpc.template.yaml"
     }
-
 }

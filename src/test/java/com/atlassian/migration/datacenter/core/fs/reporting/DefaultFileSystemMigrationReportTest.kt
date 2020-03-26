@@ -19,6 +19,11 @@ import com.atlassian.migration.datacenter.spi.fs.reporting.FailedFileMigration
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress
 import com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus
+import java.nio.file.Paths
+import java.time.Clock
+import java.time.Duration
+import java.time.Instant
+import java.time.ZoneId
 import org.hamcrest.Matchers
 import org.junit.Assert
 import org.junit.jupiter.api.Assertions
@@ -30,11 +35,6 @@ import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.Mockito
 import org.mockito.Spy
 import org.mockito.junit.jupiter.MockitoExtension
-import java.nio.file.Paths
-import java.time.Clock
-import java.time.Duration
-import java.time.Instant
-import java.time.ZoneId
 
 @ExtendWith(MockitoExtension::class)
 class DefaultFileSystemMigrationReportTest {

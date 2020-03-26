@@ -46,19 +46,22 @@ internal class S3SyncFileSystemDownloaderTest {
     @Throws(CannotLaunchCommandException::class)
     fun shouldIssueCommandToInstance() {
         Mockito.`when`(mockSsmApi!!.getSSMCommand(ArgumentMatchers.any(), ArgumentMatchers.anyString())).thenReturn(
-                GetCommandInvocationResponse.builder()
-                        .status(CommandInvocationStatus.SUCCESS)
-                        .build())
+            GetCommandInvocationResponse.builder()
+                .status(CommandInvocationStatus.SUCCESS)
+                .build()
+        )
         sut!!.initiateFileSystemDownload()
-        Mockito.verify(mockSsmApi)?.runSSMDocument(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyMap())
+        Mockito.verify(mockSsmApi)
+            ?.runSSMDocument(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyMap())
     }
 
     @Test
     fun shouldNotThrowWhenCommandIsIssuedAndSucceeds() {
         Mockito.`when`(mockSsmApi!!.getSSMCommand(ArgumentMatchers.any(), ArgumentMatchers.anyString())).thenReturn(
-                GetCommandInvocationResponse.builder()
-                        .status(CommandInvocationStatus.SUCCESS)
-                        .build())
+            GetCommandInvocationResponse.builder()
+                .status(CommandInvocationStatus.SUCCESS)
+                .build()
+        )
         try {
             sut!!.initiateFileSystemDownload()
         } catch (e: CannotLaunchCommandException) {
@@ -69,9 +72,10 @@ internal class S3SyncFileSystemDownloaderTest {
     @Test
     fun shouldThrowWhenCommandDoesNotSucceedWithinTimeout() {
         Mockito.`when`(mockSsmApi!!.getSSMCommand(ArgumentMatchers.any(), ArgumentMatchers.anyString())).thenReturn(
-                GetCommandInvocationResponse.builder()
-                        .status(CommandInvocationStatus.DELAYED)
-                        .build())
+            GetCommandInvocationResponse.builder()
+                .status(CommandInvocationStatus.DELAYED)
+                .build()
+        )
         Assertions.assertThrows(CannotLaunchCommandException::class.java) { sut!!.initiateFileSystemDownload() }
     }
 
@@ -129,15 +133,22 @@ internal class S3SyncFileSystemDownloaderTest {
     }
 
     private fun givenSyncCommandIsRunning() {
-        Mockito.`when`(mockSsmApi!!.runSSMDocument(ArgumentMatchers.anyString(), ArgumentMatchers.anyString(), ArgumentMatchers.anyMap())).thenReturn("status-command-invocation")
+        Mockito.`when`(
+            mockSsmApi!!.runSSMDocument(
+                ArgumentMatchers.anyString(),
+                ArgumentMatchers.anyString(),
+                ArgumentMatchers.anyMap()
+            )
+        ).thenReturn("status-command-invocation")
     }
 
     private fun givenStatusCommandCompletesSuccessfullyWithOutput(syncStatusDeterminedPartial: String) {
         val mockStatusResponse = GetCommandInvocationResponse.builder()
-                .status(CommandInvocationStatus.SUCCESS)
-                .standardOutputContent(syncStatusDeterminedPartial)
-                .build()
-        Mockito.`when`(mockSsmApi!!.getSSMCommand(ArgumentMatchers.anyString(), ArgumentMatchers.anyString())).thenReturn(mockStatusResponse)
+            .status(CommandInvocationStatus.SUCCESS)
+            .standardOutputContent(syncStatusDeterminedPartial)
+            .build()
+        Mockito.`when`(mockSsmApi!!.getSSMCommand(ArgumentMatchers.anyString(), ArgumentMatchers.anyString()))
+            .thenReturn(mockStatusResponse)
     }
 
     @Throws(IndeterminateS3SyncStatusException::class)
@@ -147,8 +158,11 @@ internal class S3SyncFileSystemDownloaderTest {
 
     companion object {
         private const val SYNC_STATUS_SUCCESS_COMPLETE_JSON = "{\"finished\": true, \"code\": \"0\", \"status\": {}}\n"
-        private const val SYNC_STATUS_DETERMINED_PARTIAL_JSON = "{\"status\": {\"progress\": 49492787.2, \"files_remaining\": 528, \"total\": 451411968.0, \"isCalculating\": false}}\n"
-        private const val SYNC_STATUS_COMPLETE_ERROR_JSON = "{\"finished\": true, \"code\": \"1\", \"status\": {}, \"errors\": [\"fatal error: Unable to locate credentials\\n\"]}\n"
-        private const val SYNC_STATUS_PARTIAL_CALCULATING_WITH_ERROR_JSON = "{\"status\": {\"progress\": 4724464025.6, \"files_remaining\": 1004, \"total\": 4724464025.6, \"isCalculating\": true}, \"errors\": [\"Oh dang it broke\\n\"]}\n"
+        private const val SYNC_STATUS_DETERMINED_PARTIAL_JSON =
+            "{\"status\": {\"progress\": 49492787.2, \"files_remaining\": 528, \"total\": 451411968.0, \"isCalculating\": false}}\n"
+        private const val SYNC_STATUS_COMPLETE_ERROR_JSON =
+            "{\"finished\": true, \"code\": \"1\", \"status\": {}, \"errors\": [\"fatal error: Unable to locate credentials\\n\"]}\n"
+        private const val SYNC_STATUS_PARTIAL_CALCULATING_WITH_ERROR_JSON =
+            "{\"status\": {\"progress\": 4724464025.6, \"files_remaining\": 1004, \"total\": 4724464025.6, \"isCalculating\": true}, \"errors\": [\"Oh dang it broke\\n\"]}\n"
     }
 }

@@ -25,25 +25,29 @@ class SSMApi(private val clientFactory: Supplier<SsmClient>) {
     /**
      * Runs an SSM automatiom document against a specific EC2 instance with the specified parameters.
      *
-     * @param documentName        The name of the document to run. The latest version will be used.
+     * @param documentName The name of the document to run. The latest version will be used.
      * @param targetEc2InstanceId The instance ID of the EC2 instance to run this command on
-     * @param commandParameters   The parameters for the command. The key should be the parameter name and the value should
+     * @param commandParameters The parameters for the command. The key should be the parameter name and the value should
      * be a list filled with the lines to be used as the parameter value. If the parameter-type
      * is a plain string then the list only have one element in it.
      * @return the command ID of the invoked command.
      */
-    fun runSSMDocument(documentName: String?, targetEc2InstanceId: String?, commandParameters: Map<String?, List<String?>?>?): String {
+    fun runSSMDocument(
+        documentName: String?,
+        targetEc2InstanceId: String?,
+        commandParameters: Map<String?, List<String?>?>?
+    ): String {
         val client = clientFactory.get()
         val request = SendCommandRequest.builder()
-                .documentName(documentName)
-                .documentVersion("\$LATEST")
-                .instanceIds(targetEc2InstanceId)
-                .parameters(commandParameters)
-                .timeoutSeconds(600)
-                .comment("command run by Jira DC Migration Assistant") // FIXME: Pending migration stack
-                .outputS3BucketName(System.getProperty("ssmDocumentLoggingBucket", "migration-bucket"))
-                .outputS3KeyPrefix("trebuchet-ssm-document-logs") // END FIXME
-                .build()
+            .documentName(documentName)
+            .documentVersion("\$LATEST")
+            .instanceIds(targetEc2InstanceId)
+            .parameters(commandParameters)
+            .timeoutSeconds(600)
+            .comment("command run by Jira DC Migration Assistant") // FIXME: Pending migration stack
+            .outputS3BucketName(System.getProperty("ssmDocumentLoggingBucket", "migration-bucket"))
+            .outputS3KeyPrefix("trebuchet-ssm-document-logs") // END FIXME
+            .build()
         val response = client.sendCommand(request)
         return response.command().commandId()
     }
@@ -53,20 +57,19 @@ class SSMApi(private val clientFactory: Supplier<SsmClient>) {
      * to check the details of the command yourself. Noteworthy response fields include [GetCommandInvocationResponse.status],
      * [GetCommandInvocationResponse.standardOutputContent]
      *
-     * @param commandId           The id of the command from calling [SSMApi.runSSMDocument]
+     * @param commandId The id of the command from calling [SSMApi.runSSMDocument]
      * @param targetEc2InstanceId the EC2 instance the command is running on. Should be the same as the targetEc2InstanceId from calling [SSMApi.runSSMDocument]
      * @return The response from the AWS SDK v2
-     * @throws software.amazon.awssdk.services.ssm.model.InvalidCommandIdException       (RuntimeException) - when the command ID is not a valid SSM Command ID
+     * @throws software.amazon.awssdk.services.ssm.model.InvalidCommandIdException (RuntimeException) - when the command ID is not a valid SSM Command ID
      * @throws software.amazon.awssdk.services.ssm.model.InvocationDoesNotExistException (RuntimeException) - when the command invocation (combination of command ID and instance ID) does not exist
      * @see SsmClient.getCommandInvocation
      */
     fun getSSMCommand(commandId: String?, targetEc2InstanceId: String?): GetCommandInvocationResponse {
         val client = clientFactory.get()
         val request = GetCommandInvocationRequest.builder()
-                .commandId(commandId)
-                .instanceId(targetEc2InstanceId)
-                .build()
+            .commandId(commandId)
+            .instanceId(targetEc2InstanceId)
+            .build()
         return client.getCommandInvocation(request)
     }
-
 }

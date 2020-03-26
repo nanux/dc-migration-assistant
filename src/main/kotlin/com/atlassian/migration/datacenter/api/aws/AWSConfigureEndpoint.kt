@@ -50,5 +50,4 @@ class AWSConfigureEndpoint(private val awsConfigurationService: AWSConfiguration
         var secretAccessKey: String? = null
         var region: String? = null
     }
-
 }

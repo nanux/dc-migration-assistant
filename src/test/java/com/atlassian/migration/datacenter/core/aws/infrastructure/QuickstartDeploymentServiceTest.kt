@@ -22,6 +22,7 @@ import com.atlassian.migration.datacenter.dto.MigrationContext
 import com.atlassian.migration.datacenter.spi.MigrationService
 import com.atlassian.migration.datacenter.spi.MigrationStage
 import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeploymentService.ApplicationDeploymentStatus
+import java.util.HashMap
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -31,7 +32,6 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.junit.jupiter.MockitoExtension
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
-import java.util.*
 
 @ExtendWith(MockitoExtension::class)
 internal class QuickstartDeploymentServiceTest {
@@ -55,7 +55,11 @@ internal class QuickstartDeploymentServiceTest {
     fun shouldDeployQuickStart() {
         initialiseValidMigration()
         deploySimpleStack()
-        Mockito.verify(mockCfnApi).provisionStack("https://aws-quickstart.s3.amazonaws.com/quickstart-atlassian-jira/templates/quickstart-jira-dc-with-vpc.template.yaml", STACK_NAME, STACK_PARAMS)
+        Mockito.verify(mockCfnApi).provisionStack(
+            "https://aws-quickstart.s3.amazonaws.com/quickstart-atlassian-jira/templates/quickstart-jira-dc-with-vpc.template.yaml",
+            STACK_NAME,
+            STACK_PARAMS
+        )
     }
 
     @Test
@@ -75,7 +79,8 @@ internal class QuickstartDeploymentServiceTest {
         Mockito.`when`(mockCfnApi.getStatus(STACK_NAME)).thenReturn(StackStatus.CREATE_IN_PROGRESS)
         deploySimpleStack()
         Thread.sleep(100)
-        Mockito.verify(mockMigrationService).transition(MigrationStage.PROVISION_APPLICATION, MigrationStage.WAIT_PROVISION_APPLICATION)
+        Mockito.verify(mockMigrationService)
+            .transition(MigrationStage.PROVISION_APPLICATION, MigrationStage.WAIT_PROVISION_APPLICATION)
     }
 
     @Test
@@ -85,7 +90,8 @@ internal class QuickstartDeploymentServiceTest {
         Mockito.`when`(mockCfnApi.getStatus(STACK_NAME)).thenReturn(StackStatus.CREATE_COMPLETE)
         deploySimpleStack()
         Thread.sleep(100)
-        Mockito.verify(mockMigrationService).transition(MigrationStage.WAIT_PROVISION_APPLICATION, MigrationStage.PROVISION_MIGRATION_STACK)
+        Mockito.verify(mockMigrationService)
+            .transition(MigrationStage.WAIT_PROVISION_APPLICATION, MigrationStage.PROVISION_MIGRATION_STACK)
     }
 
     @Test
@@ -101,7 +107,10 @@ internal class QuickstartDeploymentServiceTest {
     @Test
     @Throws(InvalidMigrationStageError::class)
     fun shouldNotInitiateDeploymentIfNotInProvisionApplicationStage() {
-        Mockito.doThrow(InvalidMigrationStageError("")).`when`(mockMigrationService).transition(ArgumentMatchers.argThat { argument: MigrationStage -> argument == MigrationStage.PROVISION_APPLICATION }, ArgumentMatchers.any(MigrationStage::class.java))
+        Mockito.doThrow(InvalidMigrationStageError("")).`when`(mockMigrationService).transition(
+            ArgumentMatchers.argThat { argument: MigrationStage -> argument == MigrationStage.PROVISION_APPLICATION },
+            ArgumentMatchers.any(MigrationStage::class.java)
+        )
         Assertions.assertThrows(InvalidMigrationStageError::class.java) { deploySimpleStack() }
     }
 

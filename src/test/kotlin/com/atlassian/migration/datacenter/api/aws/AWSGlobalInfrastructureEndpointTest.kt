@@ -21,16 +21,17 @@ import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import javax.ws.rs.core.Response
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import javax.ws.rs.core.Response
 
 @ExtendWith(MockKExtension::class)
 class AWSGlobalInfrastructureEndpointTest {
     @MockK
     lateinit var mockGlobalInfrastructure: GlobalInfrastructure
+
     @InjectMockKs
     lateinit var sut: AWSGlobalInfrastructureEndpoint
 

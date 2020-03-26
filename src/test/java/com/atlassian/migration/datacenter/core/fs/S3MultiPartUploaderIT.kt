@@ -18,6 +18,10 @@ package com.atlassian.migration.datacenter.core.fs
 import cloud.localstack.TestUtils
 import cloud.localstack.docker.LocalstackDockerExtension
 import cloud.localstack.docker.annotation.LocalstackDockerProperties
+import java.io.IOException
+import java.net.URI
+import java.nio.file.Files
+import java.nio.file.Path
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
@@ -32,10 +36,6 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.model.S3Exception
-import java.io.IOException
-import java.net.URI
-import java.nio.file.Files
-import java.nio.file.Path
 
 @Tag("integration")
 @ExtendWith(LocalstackDockerExtension::class, MockitoExtension::class)
@@ -51,10 +51,10 @@ internal class S3MultiPartUploaderIT {
     @BeforeEach
     fun setup() {
         val localStackS3Client = S3AsyncClient.builder()
-                .credentialsProvider(mockCredentialsProvider)
-                .endpointOverride(URI.create(LOCALSTACK_S3_ENDPOINT))
-                .region(Region.US_EAST_1)
-                .build()
+            .credentialsProvider(mockCredentialsProvider)
+            .endpointOverride(URI.create(LOCALSTACK_S3_ENDPOINT))
+            .region(Region.US_EAST_1)
+            .build()
         config = S3UploadConfig(TREBUCHET_LOCALSTACK_BUCKET, localStackS3Client, tempDir!!)
         Mockito.`when`(mockCredentialsProvider!!.resolveCredentials()).thenReturn(object : AwsCredentials {
             override fun accessKeyId(): String {

@@ -15,17 +15,22 @@
  */
 package com.atlassian.migration.datacenter.core.fs
 
-import org.slf4j.LoggerFactory
-import software.amazon.awssdk.core.async.AsyncRequestBody
-import software.amazon.awssdk.services.s3.model.*
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.IOException
 import java.nio.ByteBuffer
-import java.util.*
+import java.util.ArrayList
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
+import org.slf4j.LoggerFactory
+import software.amazon.awssdk.core.async.AsyncRequestBody
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse
+import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload
+import software.amazon.awssdk.services.s3.model.CompletedPart
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest
+import software.amazon.awssdk.services.s3.model.UploadPartRequest
 
 /**
  * Uploads file to S3 in multiple parts.
@@ -46,6 +51,7 @@ class S3MultiPartUploader(private val config: S3UploadConfig, private val file: 
     private val completedParts: MutableList<CompletedPart> = ArrayList()
     private lateinit var buffer: ByteBuffer
     private var uploadPartNumber = 1
+
     @Throws(ExecutionException::class, InterruptedException::class)
     fun upload() { // lazily loaded to save memory
         buffer = ByteBuffer.allocate(getSizeToUpload())
@@ -98,9 +104,9 @@ class S3MultiPartUploader(private val config: S3UploadConfig, private val file: 
     @Throws(InterruptedException::class, ExecutionException::class)
     private fun initiateUpload(): String {
         val createMultipartUploadRequest = CreateMultipartUploadRequest.builder()
-                .bucket(config.getBucketName())
-                .key(key)
-                .build()
+            .bucket(config.getBucketName())
+            .key(key)
+            .build()
         val response = config.getS3AsyncClient().createMultipartUpload(createMultipartUploadRequest).get()
         return response.uploadId()
     }
@@ -108,47 +114,50 @@ class S3MultiPartUploader(private val config: S3UploadConfig, private val file: 
     @Throws(InterruptedException::class, ExecutionException::class)
     private fun uploadChunk(uploadId: String, uploadPartNumber: Int, readBytes: Int): String {
         val uploadPartRequest = UploadPartRequest.builder()
-                .bucket(config.getBucketName())
-                .key(key)
-                .uploadId(uploadId)
-                .partNumber(uploadPartNumber)
-                .build()
-        val body: AsyncRequestBody = if (readBytes < buffer.limit()) { // We need to limit the buffer if the rest of the file is smaller than the allocated size.
-// If don't do this, the size of the sent part will be always equal to the buffer size.
-            AsyncRequestBody.fromByteBuffer(buffer.limit(readBytes) as ByteBuffer)
-        } else {
-            AsyncRequestBody.fromByteBuffer(buffer)
-        }
+            .bucket(config.getBucketName())
+            .key(key)
+            .uploadId(uploadId)
+            .partNumber(uploadPartNumber)
+            .build()
+        val body: AsyncRequestBody =
+            when {
+                readBytes < buffer.limit() -> { // We need to limit the buffer if the rest of the file is smaller than the allocated size.
+                    // If don't do this, the size of the sent part will be always equal to the buffer size.
+                    AsyncRequestBody.fromByteBuffer(buffer.limit(readBytes) as ByteBuffer)
+                }
+                else -> {
+                    AsyncRequestBody.fromByteBuffer(buffer)
+                }
+            }
         return config.getS3AsyncClient()
-                .uploadPart(uploadPartRequest, body)
-                .get()
-                .eTag()
+            .uploadPart(uploadPartRequest, body)
+            .get()
+            .eTag()
     }
 
     private fun completePart(uploadPartNumber: Int, etag: String): Int {
         val part = CompletedPart.builder()
-                .partNumber(uploadPartNumber)
-                .eTag(etag)
-                .build()
+            .partNumber(uploadPartNumber)
+            .eTag(etag)
+            .build()
         completedParts.add(part)
         return uploadPartNumber + 1
     }
 
     private fun completeUpload(key: String, uploadId: String): CompletableFuture<CompleteMultipartUploadResponse> {
         val completedMultipartUpload = CompletedMultipartUpload.builder()
-                .parts(completedParts)
-                .build()
+            .parts(completedParts)
+            .build()
         val completeMultipartUploadRequest = CompleteMultipartUploadRequest.builder()
-                .bucket(config.getBucketName())
-                .key(key)
-                .uploadId(uploadId)
-                .multipartUpload(completedMultipartUpload)
-                .build()
+            .bucket(config.getBucketName())
+            .key(key)
+            .uploadId(uploadId)
+            .multipartUpload(completedMultipartUpload)
+            .build()
         return config.getS3AsyncClient().completeMultipartUpload(completeMultipartUploadRequest)
     }
 
     companion object {
         private val logger = LoggerFactory.getLogger(S3MultiPartUploader::class.java)
     }
-
 }

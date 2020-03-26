@@ -21,7 +21,10 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ec2.Ec2Client
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone
 
-class AvailabilityZoneManager(private val credentialsProvider: AwsCredentialsProvider, private val globalInfrastructure: GlobalInfrastructure) : AvailabilityZoneService {
+class AvailabilityZoneManager(
+    private val credentialsProvider: AwsCredentialsProvider,
+    private val globalInfrastructure: GlobalInfrastructure
+) : AvailabilityZoneService {
     /**
      * @param region
      * @return a list of [AvailabilityZone][software.amazon.awssdk.services.ec2.model.AvailabilityZone] for a region
@@ -44,9 +47,8 @@ class AvailabilityZoneManager(private val credentialsProvider: AwsCredentialsPro
 
     private fun isValidRegion(testRegion: String): Boolean {
         return globalInfrastructure
-                .regions
-                .stream()
-                .anyMatch { region: String? -> region == testRegion }
+            .regions
+            .stream()
+            .anyMatch { region: String? -> region == testRegion }
     }
-
 }

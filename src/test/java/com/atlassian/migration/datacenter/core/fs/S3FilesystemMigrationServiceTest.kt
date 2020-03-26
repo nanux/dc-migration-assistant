@@ -29,6 +29,8 @@ import com.atlassian.scheduler.config.JobId
 import com.atlassian.scheduler.config.JobRunnerKey
 import com.atlassian.scheduler.config.RunMode
 import com.atlassian.util.concurrent.Supplier
+import java.nio.file.Paths
+import java.util.UUID
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -39,8 +41,6 @@ import org.mockito.Mockito
 import org.mockito.internal.util.reflection.FieldSetter
 import org.mockito.junit.jupiter.MockitoExtension
 import software.amazon.awssdk.services.s3.S3AsyncClient
-import java.nio.file.Paths
-import java.util.*
 
 @ExtendWith(MockitoExtension::class)
 internal class S3FilesystemMigrationServiceTest {
@@ -69,7 +69,8 @@ internal class S3FilesystemMigrationServiceTest {
         Mockito.`when`(migrationService.currentStage).thenReturn(MigrationStage.FS_MIGRATION_COPY)
         Mockito.`when`(jiraHome.home).thenReturn(nonexistentDir.toFile())
         fsService.startMigration()
-        Mockito.verify(migrationService).transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY)
+        Mockito.verify(migrationService)
+            .transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY)
         Mockito.verify(migrationService).error()
     }
 
@@ -96,10 +97,14 @@ internal class S3FilesystemMigrationServiceTest {
         createStubMigration(MigrationStage.FS_MIGRATION_COPY)
         val isScheduled = fsService.scheduleMigration()
         Assertions.assertEquals(true, isScheduled)
-        Mockito.verify(schedulerService).registerJobRunner(ArgumentMatchers.argThat { x: JobRunnerKey -> x.compareTo(JobRunnerKey.of(S3UploadJobRunner.KEY)) == 0 }, ArgumentMatchers.any(S3UploadJobRunner::class.java))
+        Mockito.verify(schedulerService).registerJobRunner(ArgumentMatchers.argThat { x: JobRunnerKey ->
+            x.compareTo(
+                JobRunnerKey.of(S3UploadJobRunner.KEY)
+            ) == 0
+        }, ArgumentMatchers.any(S3UploadJobRunner::class.java))
         Mockito.verify(schedulerService).scheduleJob(
-                ArgumentMatchers.argThat { jobId: JobId -> jobId.compareTo(JobId.of(S3UploadJobRunner.KEY + 42)) == 0 },
-                ArgumentMatchers.argThat { jobConfig: JobConfig -> jobConfig.runMode == RunMode.RUN_ONCE_PER_CLUSTER }
+            ArgumentMatchers.argThat { jobId: JobId -> jobId.compareTo(JobId.of(S3UploadJobRunner.KEY + 42)) == 0 },
+            ArgumentMatchers.argThat { jobConfig: JobConfig -> jobConfig.runMode == RunMode.RUN_ONCE_PER_CLUSTER }
         )
     }
 
@@ -108,11 +113,12 @@ internal class S3FilesystemMigrationServiceTest {
     fun shouldUnsetScheduledJobWhenSchedulerExceptionIsRaised() {
         createStubMigration(MigrationStage.FS_MIGRATION_COPY)
         Mockito.doThrow(SchedulerServiceException::class.java)
-                .`when`(schedulerService)
-                .scheduleJob(ArgumentMatchers.any(), ArgumentMatchers.any())
+            .`when`(schedulerService)
+            .scheduleJob(ArgumentMatchers.any(), ArgumentMatchers.any())
         val isScheduled = fsService.scheduleMigration()
         Assertions.assertEquals(false, isScheduled)
-        Mockito.verify(schedulerService).unscheduleJob(ArgumentMatchers.argThat { jobId: JobId -> jobId.compareTo(JobId.of(S3UploadJobRunner.KEY + 42)) == 0 })
+        Mockito.verify(schedulerService)
+            .unscheduleJob(ArgumentMatchers.argThat { jobId: JobId -> jobId.compareTo(JobId.of(S3UploadJobRunner.KEY + 42)) == 0 })
         Mockito.verify(migrationService).error()
     }
 

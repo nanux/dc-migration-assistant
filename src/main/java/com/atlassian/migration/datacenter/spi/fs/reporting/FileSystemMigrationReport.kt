@@ -22,6 +22,7 @@ import java.time.Duration
 interface FileSystemMigrationReport : FileSystemMigrationErrorReport, FileSystemMigrationProgress {
     var status: FilesystemMigrationStatus
     val elapsedTime: Duration?
+
     /**
      * Text representation of filesystem migration report. This can be used to consume the report in the logs.
      *

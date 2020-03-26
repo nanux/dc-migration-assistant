@@ -25,7 +25,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.ssm.model.GetCommandInvocationResponse
 
-class UnmarshalS3SyncStatusSSMCommandConsumer(ssmApi: SSMApi, commandId: String?, instanceId: String?) : SuccessfulSSMCommandConsumer<S3SyncCommandStatus>(ssmApi, commandId, instanceId) {
+class UnmarshalS3SyncStatusSSMCommandConsumer(ssmApi: SSMApi, commandId: String?, instanceId: String?) :
+    SuccessfulSSMCommandConsumer<S3SyncCommandStatus>(ssmApi, commandId, instanceId) {
     @Throws(SSMCommandInvocationProcessingError::class)
     override fun handleSuccessfulCommand(commandInvocation: GetCommandInvocationResponse?): S3SyncCommandStatus {
         val mapper = ObjectMapper()

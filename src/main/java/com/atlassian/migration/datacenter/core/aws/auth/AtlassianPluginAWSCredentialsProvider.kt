@@ -19,7 +19,8 @@ import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 
-class AtlassianPluginAWSCredentialsProvider(private val readCredentialsService: ReadCredentialsService) : AwsCredentialsProvider {
+class AtlassianPluginAWSCredentialsProvider(private val readCredentialsService: ReadCredentialsService) :
+    AwsCredentialsProvider {
     private fun secretKeyIsDefined(): Boolean {
         return readCredentialsService.getSecretAccessKey() != ""
     }
@@ -46,5 +47,4 @@ class AtlassianPluginAWSCredentialsProvider(private val readCredentialsService: 
             }
         } else DefaultCredentialsProvider.create().resolveCredentials()
     }
-
 }

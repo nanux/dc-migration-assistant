@@ -15,12 +15,12 @@
  */
 package com.atlassian.migration.datacenter.core.aws
 
+import java.util.Arrays
+import java.util.stream.Collectors
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import software.amazon.awssdk.regions.Region
-import java.util.*
-import java.util.stream.Collectors
 
 class GlobalInfrastructureTest {
     var sut: GlobalInfrastructure? = null
@@ -33,10 +33,29 @@ class GlobalInfrastructureTest {
     @Test
     fun itShouldReturnAllRegions() {
         val regions: List<String?> = sut!!.regions
-        val supportedRegions = Arrays.asList(Region.AP_SOUTH_1, Region.EU_NORTH_1, Region.EU_WEST_3, Region.EU_WEST_2, Region.EU_WEST_1, Region.AP_NORTHEAST_2, Region.AP_NORTHEAST_1, Region.ME_SOUTH_1, Region.CA_CENTRAL_1, Region.SA_EAST_1, Region.AP_EAST_1, Region.AP_SOUTHEAST_1, Region.AP_SOUTHEAST_2, Region.EU_CENTRAL_1, Region.US_EAST_1, Region.US_EAST_2, Region.US_WEST_1, Region.US_WEST_2)
-                .stream()
-                .map { obj: Region -> obj.toString() }
-                .collect(Collectors.toList())
+        val supportedRegions = Arrays.asList(
+            Region.AP_SOUTH_1,
+            Region.EU_NORTH_1,
+            Region.EU_WEST_3,
+            Region.EU_WEST_2,
+            Region.EU_WEST_1,
+            Region.AP_NORTHEAST_2,
+            Region.AP_NORTHEAST_1,
+            Region.ME_SOUTH_1,
+            Region.CA_CENTRAL_1,
+            Region.SA_EAST_1,
+            Region.AP_EAST_1,
+            Region.AP_SOUTHEAST_1,
+            Region.AP_SOUTHEAST_2,
+            Region.EU_CENTRAL_1,
+            Region.US_EAST_1,
+            Region.US_EAST_2,
+            Region.US_WEST_1,
+            Region.US_WEST_2
+        )
+            .stream()
+            .map { obj: Region -> obj.toString() }
+            .collect(Collectors.toList())
         Assertions.assertIterableEquals(supportedRegions, regions)
     }
 }

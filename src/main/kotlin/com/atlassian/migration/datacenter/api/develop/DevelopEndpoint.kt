@@ -18,13 +18,13 @@ package com.atlassian.migration.datacenter.api.develop
 import com.atlassian.migration.datacenter.spi.MigrationService
 import com.atlassian.migration.datacenter.spi.MigrationStage
 import com.google.common.collect.ImmutableMap
-import org.slf4j.LoggerFactory
 import javax.ws.rs.Consumes
 import javax.ws.rs.PUT
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import org.slf4j.LoggerFactory
 
 @Path("/develop")
 class DevelopEndpoint(private val migrationService: MigrationService) {
@@ -52,5 +52,4 @@ class DevelopEndpoint(private val migrationService: MigrationService) {
                     .build()
         }
     }
-
 }

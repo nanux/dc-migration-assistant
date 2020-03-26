@@ -15,10 +15,10 @@
  */
 package com.atlassian.migration.datacenter.core.fs.reporting
 
+import java.util.stream.IntStream
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.util.stream.IntStream
 
 class DefaultFileSystemMigrationProgressTest {
     private var sut: DefaultFilesystemMigrationProgress? = null

@@ -17,16 +17,19 @@ package com.atlassian.migration.datacenter.api.aws
 
 import com.atlassian.migration.datacenter.core.aws.auth.ProbeAWSAuth
 import com.atlassian.migration.datacenter.core.aws.auth.WriteCredentialsService
-import org.springframework.beans.factory.annotation.Autowired
-import software.amazon.awssdk.services.cloudformation.model.CloudFormationException
 import javax.ws.rs.POST
 import javax.ws.rs.Path
 import javax.ws.rs.Produces
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import org.springframework.beans.factory.annotation.Autowired
+import software.amazon.awssdk.services.cloudformation.model.CloudFormationException
 
 @Path("aws/credentials")
-class TestAWSCredentialsEndpoint @Autowired constructor(private val writeCredentialsService: WriteCredentialsService, private val probe: ProbeAWSAuth) {
+class TestAWSCredentialsEndpoint @Autowired constructor(
+    private val writeCredentialsService: WriteCredentialsService,
+    private val probe: ProbeAWSAuth
+) {
     @POST
     @Path("/test")
     @Produces(MediaType.APPLICATION_JSON)
@@ -43,5 +46,4 @@ class TestAWSCredentialsEndpoint @Autowired constructor(private val writeCredent
             throw cfne
         }
     }
-
 }

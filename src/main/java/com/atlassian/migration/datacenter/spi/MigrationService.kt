@@ -48,7 +48,7 @@ interface MigrationService {
      * Tries to transition the migration state from one to another
      *
      * @param from the state you are expected to be in currently when beginning the transition
-     * @param to   the state you want to transition to
+     * @param to the state you want to transition to
      * @throws InvalidMigrationStageError when the transition is invalid
      */
     @Throws(InvalidMigrationStageError::class)

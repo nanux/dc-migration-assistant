@@ -19,13 +19,13 @@ import com.atlassian.migration.datacenter.core.util.UploadQueue
 import com.atlassian.migration.datacenter.spi.fs.reporting.FailedFileMigration
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport
 import com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus
-import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.nio.file.DirectoryStream
 import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 import java.nio.file.Path
 import java.util.function.Consumer
+import org.slf4j.LoggerFactory
 
 class DirectoryStreamCrawler(private val report: FileSystemMigrationReport) : Crawler {
     @Throws(IOException::class)
@@ -75,5 +75,4 @@ class DirectoryStreamCrawler(private val report: FileSystemMigrationReport) : Cr
     companion object {
         private val logger = LoggerFactory.getLogger(DirectoryStreamCrawler::class.java)
     }
-
 }

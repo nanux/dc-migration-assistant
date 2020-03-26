@@ -16,22 +16,27 @@
 package com.atlassian.migration.datacenter.core.aws.db
 
 import com.atlassian.migration.datacenter.core.application.ApplicationConfiguration
-import com.atlassian.migration.datacenter.core.aws.db.MigrationStatus
 import com.atlassian.migration.datacenter.core.db.DatabaseExtractorFactory
 import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure
-import com.atlassian.migration.datacenter.core.fs.*
+import com.atlassian.migration.datacenter.core.fs.Crawler
+import com.atlassian.migration.datacenter.core.fs.DirectoryStreamCrawler
+import com.atlassian.migration.datacenter.core.fs.FilesystemUploader
+import com.atlassian.migration.datacenter.core.fs.S3UploadConfig
+import com.atlassian.migration.datacenter.core.fs.S3Uploader
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport
 import com.atlassian.util.concurrent.Supplier
-import software.amazon.awssdk.services.s3.S3AsyncClient
 import java.nio.file.Path
 import java.util.concurrent.atomic.AtomicReference
 import javax.annotation.PostConstruct
+import software.amazon.awssdk.services.s3.S3AsyncClient
 
-class DatabaseMigrationService(private val applicationConfiguration: ApplicationConfiguration,
-                               private val tempDirectory: Path,
-                               private val s3AsyncClientSupplier: Supplier<S3AsyncClient>) {
+class DatabaseMigrationService(
+    private val applicationConfiguration: ApplicationConfiguration,
+    private val tempDirectory: Path,
+    private val s3AsyncClientSupplier: Supplier<S3AsyncClient>
+) {
     private lateinit var s3AsyncClient: S3AsyncClient
     private var extractorProcess: Process? = null
     private val status = AtomicReference<MigrationStatus>()

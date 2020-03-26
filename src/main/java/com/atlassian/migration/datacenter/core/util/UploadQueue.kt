@@ -15,12 +15,13 @@
  */
 package com.atlassian.migration.datacenter.core.util
 
-import java.util.*
+import java.util.Optional
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.LinkedBlockingQueue
 
 class UploadQueue<T>(max: Int?) {
     private val queue: BlockingQueue<Optional<T>>
+
     /**
      * Put a value on the queue to be consumed; blocks if the consumer is saturated.
      *

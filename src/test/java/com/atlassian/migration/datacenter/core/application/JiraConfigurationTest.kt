@@ -18,6 +18,10 @@ package com.atlassian.migration.datacenter.core.application
 import com.atlassian.jira.config.util.JiraHome
 import com.atlassian.migration.datacenter.core.exceptions.ConfigurationReadException
 import com.atlassian.migration.datacenter.core.exceptions.UnsupportedPasswordEncodingException
+import java.io.FileNotFoundException
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -26,10 +30,6 @@ import org.junit.jupiter.api.io.TempDir
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.junit.jupiter.MockitoExtension
-import java.io.FileNotFoundException
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Path
 
 @ExtendWith(MockitoExtension::class)
 internal class JiraConfigurationTest {
@@ -48,7 +48,8 @@ internal class JiraConfigurationTest {
 
     @Test
     fun shouldRaiseFileNotFoundExceptionWhenDatabaseFileIsNotFound() {
-        val e: Exception = Assertions.assertThrows(ConfigurationReadException::class.java) { jiraConfiguration!!.getDatabaseConfiguration() }
+        val e: Exception =
+            Assertions.assertThrows(ConfigurationReadException::class.java) { jiraConfiguration!!.getDatabaseConfiguration() }
         Assertions.assertEquals(FileNotFoundException::class.java, e.cause!!.javaClass)
     }
 
@@ -63,7 +64,8 @@ internal class JiraConfigurationTest {
     @Test
     @Throws(IOException::class)
     fun shouldRaiseAnExceptionWhenDbconfigFileIsMissingElements() {
-        val xml = "<jira-database-config><jdbc-datasource><username>jdbc_user</username><password>password</password></jdbc-datasource></jira-database-config>"
+        val xml =
+            "<jira-database-config><jdbc-datasource><username>jdbc_user</username><password>password</password></jdbc-datasource></jira-database-config>"
         val file = tempDir!!.resolve("dbconfig.xml")
         Files.write(file, xml.toByteArray())
         Assertions.assertThrows(ConfigurationReadException::class.java) { jiraConfiguration!!.getDatabaseConfiguration() }
@@ -73,7 +75,8 @@ internal class JiraConfigurationTest {
     @Throws(Exception::class)
     fun shouldBeValidWhenConfigurationFileIsComplete() {
         val url = "jdbc:postgresql://dbhost:9876/dbname"
-        val xml = "<jira-database-config><jdbc-datasource><url>$url</url><username>jdbc_user</username><password>password</password></jdbc-datasource></jira-database-config>"
+        val xml =
+            "<jira-database-config><jdbc-datasource><url>$url</url><username>jdbc_user</username><password>password</password></jdbc-datasource></jira-database-config>"
         val file = tempDir!!.resolve("dbconfig.xml")
         Files.write(file, xml.toByteArray())
         val config = jiraConfiguration!!.getDatabaseConfiguration()
@@ -89,7 +92,8 @@ internal class JiraConfigurationTest {
     @Throws(Exception::class)
     fun shouldBeValidWhenConfigurationDoesNotContainValueForPort() {
         val url = "jdbc:postgresql://dbhost/dbname"
-        val xml = "<jira-database-config><jdbc-datasource><url>$url</url><username>jdbc_user</username><password>password</password></jdbc-datasource></jira-database-config>"
+        val xml =
+            "<jira-database-config><jdbc-datasource><url>$url</url><username>jdbc_user</username><password>password</password></jdbc-datasource></jira-database-config>"
         val file = tempDir!!.resolve("dbconfig.xml")
         Files.write(file, xml.toByteArray())
         val config = jiraConfiguration!!.getDatabaseConfiguration()
@@ -105,11 +109,11 @@ internal class JiraConfigurationTest {
     fun shouldParseDatabaseConfigWithValidCipher() {
         val url = "jdbc:postgresql://dbhost:9876/dbname"
         val xml = "<jira-database-config><jdbc-datasource>" +
-                "<url>" + url + "</url>" +
-                "<username>jdbc_user</username>" +
-                "<atlassian-password-cipher-provider>com.atlassian.db.config.password.ciphers.base64.Base64Cipher</atlassian-password-cipher-provider>" +
-                "<password>cGFzc3dvcmQ=</password>" +
-                "</jdbc-datasource></jira-database-config>"
+            "<url>" + url + "</url>" +
+            "<username>jdbc_user</username>" +
+            "<atlassian-password-cipher-provider>com.atlassian.db.config.password.ciphers.base64.Base64Cipher</atlassian-password-cipher-provider>" +
+            "<password>cGFzc3dvcmQ=</password>" +
+            "</jdbc-datasource></jira-database-config>"
         val file = tempDir!!.resolve("dbconfig.xml")
         Files.write(file, xml.toByteArray())
         val databaseConfiguration = jiraConfiguration!!.getDatabaseConfiguration()
@@ -125,11 +129,11 @@ internal class JiraConfigurationTest {
     fun shouldNotParseDatabaseConfigWithInvalidCipher() {
         val url = "jdbc:postgresql://dbhost:9876/dbname"
         val xml = "<jira-database-config><jdbc-datasource>" +
-                "<url>" + url + "</url>" +
-                "<username>jdbc_user</username>" +
-                "<atlassian-password-cipher-provider>com.atlassian.db.config.password.ciphers.algorithm.AlgorithmCipher</atlassian-password-cipher-provider>" +
-                "<password>cGFzc3dvcmQ=</password>" +
-                "</jdbc-datasource></jira-database-config>"
+            "<url>" + url + "</url>" +
+            "<username>jdbc_user</username>" +
+            "<atlassian-password-cipher-provider>com.atlassian.db.config.password.ciphers.algorithm.AlgorithmCipher</atlassian-password-cipher-provider>" +
+            "<password>cGFzc3dvcmQ=</password>" +
+            "</jdbc-datasource></jira-database-config>"
         val file = tempDir!!.resolve("dbconfig.xml")
         Files.write(file, xml.toByteArray())
         Assertions.assertThrows(UnsupportedPasswordEncodingException::class.java) { jiraConfiguration!!.getDatabaseConfiguration() }

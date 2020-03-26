@@ -21,7 +21,7 @@ import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.*
+import java.util.Optional
 
 class PostgresExtractor(private val applicationConfiguration: ApplicationConfiguration) : DatabaseExtractor {
     private val pgdumpPath: Optional<String>
@@ -48,7 +48,7 @@ class PostgresExtractor(private val applicationConfiguration: ApplicationConfigu
      *  * stdio & stderr are redirected to the stderr of the calling process.
      *
      *
-     * @param target   - The directory to dump the compressed database export to.
+     * @param target - The directory to dump the compressed database export to.
      * @param parallel - Whether to use parallel dump strategy.
      * @return The underlying process object.
      * @throws DatabaseMigrationFailure on failure.
@@ -56,21 +56,23 @@ class PostgresExtractor(private val applicationConfiguration: ApplicationConfigu
     @Throws(DatabaseMigrationFailure::class)
     override fun startDatabaseDump(target: Path, parallel: Boolean): Process {
         val pgdump = pgdumpPath
-                .orElseThrow { DatabaseMigrationFailure("Failed to find appropriate pg_dump executable.") }
+            .orElseThrow { DatabaseMigrationFailure("Failed to find appropriate pg_dump executable.") }
         val numJobs = if (parallel) 4 else 1 // Common-case for now, could be tunable or num-CPUs.
         val config = applicationConfiguration.getDatabaseConfiguration()
-        val builder = ProcessBuilder(pgdump,
-                "--no-owner",
-                "--no-acl",
-                "--compress=9",
-                "--format=directory",
-                "--jobs", numJobs.toString(),
-                "--file", target.toString(),
-                "--dbname", config.getName(),
-                "--host", config.getHost(),
-                "--port", config.getPort().toString(),
-                "--username", config.getUsername())
-                .inheritIO()
+        val builder = ProcessBuilder(
+            pgdump,
+            "--no-owner",
+            "--no-acl",
+            "--compress=9",
+            "--format=directory",
+            "--jobs", numJobs.toString(),
+            "--file", target.toString(),
+            "--dbname", config.getName(),
+            "--host", config.getHost(),
+            "--port", config.getPort().toString(),
+            "--username", config.getUsername()
+        )
+            .inheritIO()
         builder.environment()["PGPASSWORD"] = config.getPassword()
         return try {
             builder.start()
@@ -103,5 +105,4 @@ class PostgresExtractor(private val applicationConfiguration: ApplicationConfigu
     companion object {
         private val pddumpPaths = arrayOf("/usr/bin/pg_dump", "/usr/local/bin/pg_dump")
     }
-
 }

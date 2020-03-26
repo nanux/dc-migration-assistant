@@ -1,13 +1,17 @@
 /*
- * Copyright (c) 2020.
+ * Copyright 2020 Atlassian
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the License.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *       http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- *  See the License for the specific language governing permissions and  limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package com.atlassian.migration.datacenter.core.application
 
@@ -16,10 +20,10 @@ import com.atlassian.migration.datacenter.core.exceptions.ConfigurationReadExcep
 import com.atlassian.migration.datacenter.core.exceptions.UnsupportedPasswordEncodingException
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement
-import org.apache.commons.lang3.StringUtils
 import java.net.URI
-import java.util.*
+import java.util.Base64
 import java.util.stream.Stream
+import org.apache.commons.lang3.StringUtils
 
 @JacksonXmlRootElement(localName = "jira-database-config")
 class DatabaseConfigurationXmlElement {
@@ -37,7 +41,7 @@ class DatabaseConfigurationXmlElement {
         val host = dbURI.host
         var port = dbURI.port
         if (port == -1) port = 5432
-        //TODO: handle connection param '?;
+        // TODO: handle connection param '?;
         val name = dbURI.path.substring(1) // Remove leading '/'
         return DatabaseConfiguration(type, host, port, name, userName, password)
     }
@@ -53,8 +57,10 @@ class DatabaseConfigurationXmlElement {
 
 internal class DbConfigXmlElement {
     private val url: String? = null
+
     @JacksonXmlProperty(localName = "username")
     private val userName: String? = null
+
     @JacksonXmlProperty(localName = "atlassian-password-cipher-provider")
     private val cipher: String? = null
     private val password: String? = null

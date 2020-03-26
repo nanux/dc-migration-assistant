@@ -17,14 +17,15 @@ package com.atlassian.migration.datacenter.core.fs
 
 import com.atlassian.migration.datacenter.core.exceptions.FileUploadException
 import com.atlassian.migration.datacenter.core.util.UploadQueue
-import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import org.slf4j.LoggerFactory
 
 class FilesystemUploader(private val crawler: Crawler, private val uploader: Uploader) {
-    private val pool: ExecutorService
+    private val pool: ExecutorService = Executors.newFixedThreadPool(2)
+
     @Throws(FileUploadException::class)
     fun uploadDirectory(dir: Path) {
         val queue = UploadQueue<Path>(uploader.maxConcurrent())
@@ -57,9 +58,5 @@ class FilesystemUploader(private val crawler: Crawler, private val uploader: Upl
 
     companion object {
         private val logger = LoggerFactory.getLogger(FilesystemUploader::class.java)
-    }
-
-    init {
-        pool = Executors.newFixedThreadPool(2)
     }
 }

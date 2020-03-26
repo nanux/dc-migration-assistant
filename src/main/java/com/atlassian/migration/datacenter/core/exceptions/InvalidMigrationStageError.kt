@@ -21,7 +21,11 @@ import org.apache.commons.lang3.StringUtils
 class InvalidMigrationStageError(message: String?) : Exception(message) {
     companion object {
         @JvmOverloads
-        fun errorWithMessage(expected: MigrationStage?, actual: MigrationStage?, prefix: String? = ""): InvalidMigrationStageError {
+        fun errorWithMessage(
+            expected: MigrationStage?,
+            actual: MigrationStage?,
+            prefix: String? = ""
+        ): InvalidMigrationStageError {
             var message = String.format("Expected migration stage to be in `%s` but was in `%s`", expected, actual)
             if (StringUtils.isNotBlank(prefix)) {
                 message = String.format("%s. %s", prefix, message)

@@ -15,12 +15,19 @@
  */
 package com.atlassian.migration.datacenter.core.fs.reporting
 
-import com.atlassian.migration.datacenter.spi.fs.reporting.*
+import com.atlassian.migration.datacenter.spi.fs.reporting.FailedFileMigration
+import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport
+import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress
+import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport
+import com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus
 import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 
-class DefaultFileSystemMigrationReport @JvmOverloads constructor(private val errorReport: FileSystemMigrationErrorReport = DefaultFileSystemMigrationErrorReport(), private val progress: FileSystemMigrationProgress = DefaultFilesystemMigrationProgress()) : FileSystemMigrationReport {
+class DefaultFileSystemMigrationReport @JvmOverloads constructor(
+    private val errorReport: FileSystemMigrationErrorReport = DefaultFileSystemMigrationErrorReport(),
+    private val progress: FileSystemMigrationProgress = DefaultFilesystemMigrationProgress()
+) : FileSystemMigrationReport {
     private var clock: Clock = Clock.systemUTC()
     private var startTime: Instant? = null
     private var completeTime: Instant? = null
@@ -63,10 +70,11 @@ class DefaultFileSystemMigrationReport @JvmOverloads constructor(private val err
     }
 
     override fun toString(): String {
-        return String.format("Filesystem migration report = { status: %s, migratedFiles: %d, erroredFiles: %d }",
-                status,
-                progress.getCountOfMigratedFiles(),
-                errorReport.getFailedFiles().size
+        return String.format(
+            "Filesystem migration report = { status: %s, migratedFiles: %d, erroredFiles: %d }",
+            status,
+            progress.getCountOfMigratedFiles(),
+            errorReport.getFailedFiles().size
         )
     }
 

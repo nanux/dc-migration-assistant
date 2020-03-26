@@ -86,7 +86,12 @@ class AWSMigrationServiceTest {
     fun shouldNotTransitionWhenSourceStageIsNotCurrentStage() {
         initializeAndCreateSingleMigrationWithStage(MigrationStage.AUTHENTICATION)
         Assertions.assertEquals(MigrationStage.AUTHENTICATION, sut!!.currentStage)
-        Assertions.assertThrows(InvalidMigrationStageError::class.java) { sut!!.transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.PROVISION_APPLICATION) }
+        Assertions.assertThrows(InvalidMigrationStageError::class.java) {
+            sut!!.transition(
+                MigrationStage.FS_MIGRATION_COPY,
+                MigrationStage.PROVISION_APPLICATION
+            )
+        }
         Assertions.assertEquals(sut!!.currentStage, MigrationStage.AUTHENTICATION)
     }
 
@@ -116,7 +121,11 @@ class AWSMigrationServiceTest {
         initializeAndCreateSingleMigrationWithStage(MigrationStage.WAIT_FS_MIGRATION_COPY)
         initializeAndCreateSingleMigrationWithStage(MigrationStage.ERROR)
         assertNumberOfMigrations(2)
-        Assertions.assertThrows(Exception::class.java, { sut!!.currentMigration }, "Invalid State - should only be 1 migration")
+        Assertions.assertThrows(
+            Exception::class.java,
+            { sut!!.currentMigration },
+            "Invalid State - should only be 1 migration"
+        )
     }
 
     @Test

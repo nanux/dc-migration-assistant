@@ -17,6 +17,7 @@ package com.atlassian.migration.datacenter.core.aws.region
 
 interface RegionService {
     fun getRegion(): String
+
     @Throws(InvalidAWSRegionException::class)
     fun storeRegion(region: String)
 }

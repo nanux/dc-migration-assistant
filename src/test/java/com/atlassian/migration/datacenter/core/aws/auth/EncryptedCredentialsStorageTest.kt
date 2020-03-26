@@ -19,6 +19,10 @@ import com.atlassian.jira.config.util.JiraHome
 import com.atlassian.sal.api.pluginsettings.PluginSettings
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
 import com.atlassian.util.concurrent.Supplier
+import java.io.File
+import java.lang.reflect.InvocationTargetException
+import java.util.HashMap
+import java.util.Random
 import org.apache.commons.lang3.RandomStringUtils
 import org.junit.Assert
 import org.junit.jupiter.api.AfterAll
@@ -28,9 +32,6 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.junit.jupiter.MockitoExtension
-import java.io.File
-import java.lang.reflect.InvocationTargetException
-import java.util.*
 
 @ExtendWith(MockitoExtension::class)
 class EncryptedCredentialsStorageTest {
@@ -66,9 +67,11 @@ class EncryptedCredentialsStorageTest {
     @Throws(NoSuchMethodException::class, InvocationTargetException::class, IllegalAccessException::class)
     fun testEncryption() {
         val testString = RandomStringUtils.randomAlphanumeric(Random().nextInt(50))
-        val encryptMethod = encryptedCredentialsStorage!!.javaClass.getDeclaredMethod("encryptString", String::class.java)
+        val encryptMethod =
+            encryptedCredentialsStorage!!.javaClass.getDeclaredMethod("encryptString", String::class.java)
         encryptMethod.isAccessible = true
-        val decryptMethod = encryptedCredentialsStorage!!.javaClass.getDeclaredMethod("decryptString", String::class.java)
+        val decryptMethod =
+            encryptedCredentialsStorage!!.javaClass.getDeclaredMethod("decryptString", String::class.java)
         decryptMethod.isAccessible = true
         val encrypted = encryptMethod.invoke(encryptedCredentialsStorage, testString) as String
         val decrypted = decryptMethod.invoke(encryptedCredentialsStorage, encrypted) as String

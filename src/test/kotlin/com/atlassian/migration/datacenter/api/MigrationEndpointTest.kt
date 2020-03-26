@@ -20,22 +20,29 @@ import com.atlassian.migration.datacenter.core.exceptions.MigrationAlreadyExists
 import com.atlassian.migration.datacenter.dto.Migration
 import com.atlassian.migration.datacenter.spi.MigrationService
 import com.atlassian.migration.datacenter.spi.MigrationStage
-import io.mockk.*
+import io.mockk.MockKAnnotations
+import io.mockk.Runs
+import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.just
+import io.mockk.mockk
+import io.mockk.runs
+import io.mockk.verify
+import javax.ws.rs.core.Response
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import javax.ws.rs.core.Response
 
 @ExtendWith(MockKExtension::class)
 class MigrationEndpointTest {
     @MockK
     lateinit var migrationService: MigrationService
+
     @InjectMockKs
     lateinit var sut: MigrationEndpoint
 
@@ -46,7 +53,10 @@ class MigrationEndpointTest {
     fun testOKAndMigrationStatusWhenMigrationExists() {
         every { migrationService.currentStage } returns MigrationStage.AUTHENTICATION
         val response = sut.getMigrationStatus()
-        MatcherAssert.assertThat<String?>(response.entity.toString(), Matchers.containsString(MigrationStage.AUTHENTICATION.toString()))
+        MatcherAssert.assertThat<String?>(
+            response.entity.toString(),
+            Matchers.containsString(MigrationStage.AUTHENTICATION.toString())
+        )
     }
 
     @Test
@@ -70,7 +80,12 @@ class MigrationEndpointTest {
     fun testBadRequestWhenCreatingMigrationAndOneExists() {
         val stubMigration = mockk<Migration>()
         every { migrationService.createMigration() } returns stubMigration
-        every { migrationService.transition(MigrationStage.NOT_STARTED, MigrationStage.AUTHENTICATION) } throws InvalidMigrationStageError("")
+        every {
+            migrationService.transition(
+                MigrationStage.NOT_STARTED,
+                MigrationStage.AUTHENTICATION
+            )
+        } throws InvalidMigrationStageError("")
         val response = sut.createMigration()
         Assertions.assertEquals(Response.Status.CONFLICT.statusCode, response.status)
         val entity = response.entity as MutableMap<*, *>

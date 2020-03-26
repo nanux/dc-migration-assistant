@@ -16,14 +16,14 @@
 package com.atlassian.migration.datacenter.core.aws.auth
 
 import com.atlassian.migration.datacenter.core.aws.region.RegionService
+import java.util.concurrent.ExecutionException
+import java.util.stream.Collectors
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.cloudformation.CloudFormationAsyncClient
 import software.amazon.awssdk.services.cloudformation.model.CloudFormationException
 import software.amazon.awssdk.services.cloudformation.model.Stack
-import java.util.concurrent.ExecutionException
-import java.util.stream.Collectors
 
 class ProbeAWSAuth(private val credentialsProvider: AwsCredentialsProvider, private val regionService: RegionService) {
     /**
@@ -34,18 +34,18 @@ class ProbeAWSAuth(private val credentialsProvider: AwsCredentialsProvider, priv
      */
     fun probeSDKV2(): List<String> {
         val client = CloudFormationAsyncClient
-                .builder()
-                .region(Region.of(regionService.getRegion()))
-                .credentialsProvider(credentialsProvider)
-                .build()
+            .builder()
+            .region(Region.of(regionService.getRegion()))
+            .credentialsProvider(credentialsProvider)
+            .build()
         val futureResponse = client.describeStacks()
         return try {
             val response = futureResponse.get()
             response
-                    .stacks()
-                    .stream()
-                    .map { obj: Stack -> obj.stackName() }
-                    .collect(Collectors.toList())
+                .stacks()
+                .stream()
+                .map { obj: Stack -> obj.stackName() }
+                .collect(Collectors.toList())
         } catch (e: InterruptedException) {
             if (e.cause is CloudFormationException) {
                 throw (e.cause as CloudFormationException?)!!
@@ -64,5 +64,4 @@ class ProbeAWSAuth(private val credentialsProvider: AwsCredentialsProvider, priv
     companion object {
         private val logger = LoggerFactory.getLogger(ProbeAWSAuth::class.java)
     }
-
 }

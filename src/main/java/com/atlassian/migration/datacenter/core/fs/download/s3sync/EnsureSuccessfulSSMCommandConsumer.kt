@@ -20,7 +20,8 @@ import com.atlassian.migration.datacenter.core.aws.ssm.SuccessfulSSMCommandConsu
 import com.atlassian.migration.datacenter.core.aws.ssm.SuccessfulSSMCommandConsumer.SSMCommandInvocationProcessingError
 import software.amazon.awssdk.services.ssm.model.GetCommandInvocationResponse
 
-class EnsureSuccessfulSSMCommandConsumer(ssmApi: SSMApi, commandId: String?, instanceId: String?) : SuccessfulSSMCommandConsumer<Void?>(ssmApi, commandId, instanceId) {
+class EnsureSuccessfulSSMCommandConsumer(ssmApi: SSMApi, commandId: String?, instanceId: String?) :
+    SuccessfulSSMCommandConsumer<Void?>(ssmApi, commandId, instanceId) {
     @Throws(SSMCommandInvocationProcessingError::class)
     override fun handleSuccessfulCommand(commandInvocation: GetCommandInvocationResponse?): Void? {
         return null

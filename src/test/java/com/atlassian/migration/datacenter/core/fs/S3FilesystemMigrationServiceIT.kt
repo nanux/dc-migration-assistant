@@ -25,6 +25,12 @@ import com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationSt
 import com.atlassian.migration.datacenter.util.AwsCredentialsProviderShim
 import com.atlassian.scheduler.SchedulerService
 import com.atlassian.util.concurrent.Supplier
+import java.io.IOException
+import java.net.URI
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Instant
+import java.util.UUID
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
@@ -41,12 +47,6 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest
-import java.io.IOException
-import java.net.URI
-import java.nio.file.Files
-import java.nio.file.Path
-import java.time.Instant
-import java.util.*
 
 @Tag("integration")
 @Testcontainers
@@ -76,22 +76,23 @@ internal class S3FilesystemMigrationServiceIT {
 
     @Container
     var s3 = LocalStackContainer()
-            .withServices(LocalStackContainer.Service.S3)
-            .withEnv("DEFAULT_REGION", Region.US_EAST_1.toString())
+        .withServices(LocalStackContainer.Service.S3)
+        .withEnv("DEFAULT_REGION", Region.US_EAST_1.toString())
     var credentialsProvider: AtlassianPluginAWSCredentialsProvider? = null
 
     @BeforeEach
     @Throws(Exception::class)
     fun setup() {
-        credentialsProvider = AtlassianPluginAWSCredentialsProvider(AwsCredentialsProviderShim(s3.defaultCredentialsProvider))
+        credentialsProvider =
+            AtlassianPluginAWSCredentialsProvider(AwsCredentialsProviderShim(s3.defaultCredentialsProvider))
         s3AsyncClient = S3AsyncClient.builder()
-                .endpointOverride(URI(s3.getEndpointConfiguration(LocalStackContainer.Service.S3).serviceEndpoint))
-                .credentialsProvider(AwsCredentialsProviderShim(s3.defaultCredentialsProvider))
-                .region(Region.US_EAST_1)
-                .build()
+            .endpointOverride(URI(s3.getEndpointConfiguration(LocalStackContainer.Service.S3).serviceEndpoint))
+            .credentialsProvider(AwsCredentialsProviderShim(s3.defaultCredentialsProvider))
+            .region(Region.US_EAST_1)
+            .build()
         val req = CreateBucketRequest.builder()
-                .bucket(bucket)
-                .build()
+            .bucket(bucket)
+            .build()
         val resp = s3AsyncClient.createBucket(req).get()
         Assertions.assertTrue(resp.sdkHttpResponse().isSuccessful)
     }
@@ -110,14 +111,20 @@ internal class S3FilesystemMigrationServiceIT {
         Mockito.`when`(jiraHome.home).thenReturn(dir.toFile())
         Mockito.`when`(migrationService.currentStage).thenReturn(MigrationStage.FS_MIGRATION_COPY)
         val file = genRandFile()
-        val fsService = S3FilesystemMigrationService(Supplier { s3AsyncClient }, jiraHome, fileSystemDownloader!!, migrationService, schedulerService)
+        val fsService = S3FilesystemMigrationService(
+            Supplier { s3AsyncClient },
+            jiraHome,
+            fileSystemDownloader!!,
+            migrationService,
+            schedulerService
+        )
         fsService.postConstruct()
         fsService.startMigration()
         Assertions.assertNotEquals(FilesystemMigrationStatus.FAILED, fsService.getReport().status)
         val req = HeadObjectRequest.builder()
-                .bucket(bucket)
-                .key(file.fileName.toString())
-                .build()
+            .bucket(bucket)
+            .key(file.fileName.toString())
+            .build()
         val resp = s3AsyncClient.headObject(req).get()
         Assertions.assertTrue(resp.sdkHttpResponse().isSuccessful)
     }

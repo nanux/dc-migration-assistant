@@ -19,16 +19,20 @@ import com.atlassian.migration.datacenter.core.aws.GlobalInfrastructure
 import com.atlassian.sal.api.pluginsettings.PluginSettings
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
 import com.atlassian.util.concurrent.Supplier
+import javax.annotation.PostConstruct
 import org.slf4j.LoggerFactory
 import software.amazon.awssdk.regions.Region
-import javax.annotation.PostConstruct
 
 /**
  * Manages the persistence and retrieval of the region used to make AWS SDK API calls.
  * The region is stored in the plugin settings of this app.
  */
-class PluginSettingsRegionManager(private val pluginSettingsFactorySupplier: Supplier<PluginSettingsFactory>, private val globalInfrastructure: GlobalInfrastructure) : RegionService {
+class PluginSettingsRegionManager(
+    private val pluginSettingsFactorySupplier: Supplier<PluginSettingsFactory>,
+    private val globalInfrastructure: GlobalInfrastructure
+) : RegionService {
     private var pluginSettings: PluginSettings? = null
+
     @PostConstruct // FIXME: I do not work
     fun postConstruct() {
         logger.debug("setting up plugin settings")
@@ -41,7 +45,8 @@ class PluginSettingsRegionManager(private val pluginSettingsFactorySupplier: Sup
      */
     override fun getRegion(): String { // FIXME: Need to find a way to inject without calling the supplier every time
         val pluginSettings = pluginSettingsFactorySupplier.get().createGlobalSettings()
-        val pluginSettingsRegion = pluginSettings[AWS_REGION_PLUGIN_STORAGE_KEY + REGION_PLUGIN_STORAGE_SUFFIX] as String
+        val pluginSettingsRegion =
+            pluginSettings[AWS_REGION_PLUGIN_STORAGE_KEY + REGION_PLUGIN_STORAGE_SUFFIX] as String
         return if ("" == pluginSettingsRegion) {
             Region.US_EAST_1.toString()
         } else pluginSettingsRegion
@@ -66,8 +71,8 @@ class PluginSettingsRegionManager(private val pluginSettingsFactorySupplier: Sup
 
     private fun isValidRegion(testRegion: String): Boolean {
         return globalInfrastructure.regions
-                .stream()
-                .anyMatch { region: String? -> region == testRegion }
+            .stream()
+            .anyMatch { region: String? -> region == testRegion }
     }
 
     companion object {
@@ -75,5 +80,4 @@ class PluginSettingsRegionManager(private val pluginSettingsFactorySupplier: Sup
         const val AWS_REGION_PLUGIN_STORAGE_KEY = "com.atlassian.migration.datacenter.core.aws.region"
         const val REGION_PLUGIN_STORAGE_SUFFIX = ".region"
     }
-
 }

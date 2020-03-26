@@ -22,6 +22,10 @@ import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMig
 import com.atlassian.migration.datacenter.core.util.UploadQueue
 import com.atlassian.migration.datacenter.spi.fs.reporting.FailedFileMigration
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport
+import java.io.IOException
+import java.net.URI
+import java.nio.file.Files
+import java.nio.file.Path
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
@@ -35,10 +39,6 @@ import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3AsyncClient
-import java.io.IOException
-import java.net.URI
-import java.nio.file.Files
-import java.nio.file.Path
 
 @Tag("integration")
 @ExtendWith(LocalstackDockerExtension::class, MockitoExtension::class)
@@ -57,10 +57,10 @@ internal class S3UploaderIT {
     @BeforeEach
     fun setup() {
         val localStackS3Client = S3AsyncClient.builder()
-                .credentialsProvider(mockCredentialsProvider)
-                .endpointOverride(URI.create(LOCALSTACK_S3_ENDPOINT))
-                .region(Region.US_EAST_1)
-                .build()
+            .credentialsProvider(mockCredentialsProvider)
+            .endpointOverride(URI.create(LOCALSTACK_S3_ENDPOINT))
+            .region(Region.US_EAST_1)
+            .build()
         val config = S3UploadConfig(TREBUCHET_LOCALSTACK_BUCKET, localStackS3Client, tempDir)
         Mockito.`when`(mockCredentialsProvider.resolveCredentials()).thenReturn(object : AwsCredentials {
             override fun accessKeyId(): String {
@@ -85,21 +85,25 @@ internal class S3UploaderIT {
         Assertions.assertTrue(queue.isEmpty())
         val objectSummaries = s3Client.listObjects(TREBUCHET_LOCALSTACK_BUCKET).objectSummaries
         Assertions.assertEquals(
-                report.getFailedFiles().size,
-                0, String.format(
+            report.getFailedFiles().size,
+            0, String.format(
                 "expected no upload errors but found %s",
                 report.getFailedFiles()
-                        .stream()
-                        .reduce("",
-                                { acc: String?, failedMigration: FailedFileMigration ->
-                                    String.format("%s%s: %s\n", acc, failedMigration.filePath.toString(),
-                                            failedMigration.reason)
-                                }, { acc: String, partial: String ->
+                    .stream()
+                    .reduce("",
+                        { acc: String?, failedMigration: FailedFileMigration ->
+                            String.format(
+                                "%s%s: %s\n", acc, failedMigration.filePath.toString(),
+                                failedMigration.reason
+                            )
+                        }, { acc: String, partial: String ->
                             """
      $acc
      $partial
      """.trimIndent()
-                        })))
+                        })
+            )
+        )
         Assertions.assertEquals(objectSummaries.size, 1)
         Assertions.assertEquals(objectSummaries[0].key, tempDir.relativize(file).toString())
         Assertions.assertEquals(1, report.getCountOfMigratedFiles())

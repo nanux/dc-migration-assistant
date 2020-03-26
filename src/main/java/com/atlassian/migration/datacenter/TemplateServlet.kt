@@ -18,29 +18,37 @@ package com.atlassian.migration.datacenter
 import com.atlassian.sal.api.auth.LoginUriProvider
 import com.atlassian.sal.api.permission.PermissionEnforcer
 import com.atlassian.soy.renderer.SoyTemplateRenderer
-import org.slf4j.LoggerFactory
 import java.io.IOException
 import java.net.URI
 import javax.servlet.http.HttpServlet
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 import javax.ws.rs.core.MediaType
+import org.slf4j.LoggerFactory
 
 /**
  * Creates the servlet which renders the soy template containing the frontend SPA bundle.
  */
-class TemplateServlet(private val templateRenderer: SoyTemplateRenderer,
-                      private val permissionEnforcer: PermissionEnforcer,
-                      private val loginUriProvider: LoginUriProvider) : HttpServlet() {
+class TemplateServlet(
+    private val templateRenderer: SoyTemplateRenderer,
+    private val permissionEnforcer: PermissionEnforcer,
+    private val loginUriProvider: LoginUriProvider
+) : HttpServlet() {
     @Throws(IOException::class)
     public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
         try {
-            if (permissionEnforcer.isSystemAdmin) {
-                render(response)
-            } else if (permissionEnforcer.isAuthenticated) {
-                response.sendError(HttpServletResponse.SC_FORBIDDEN)
-            } else {
-                response.sendRedirect(loginUriProvider.getLoginUri(URI.create(request.requestURL.toString())).toASCIIString())
+            when {
+                permissionEnforcer.isSystemAdmin -> {
+                    render(response)
+                }
+                permissionEnforcer.isAuthenticated -> {
+                    response.sendError(HttpServletResponse.SC_FORBIDDEN)
+                }
+                else -> {
+                    response.sendRedirect(
+                        loginUriProvider.getLoginUri(URI.create(request.requestURL.toString())).toASCIIString()
+                    )
+                }
             }
         } catch (exception: IOException) {
             logger.error("Unable to render template", exception)
@@ -52,13 +60,13 @@ class TemplateServlet(private val templateRenderer: SoyTemplateRenderer,
     private fun render(response: HttpServletResponse) {
         response.contentType = MediaType.TEXT_HTML
         templateRenderer.render(
-                response.writer,
-                "com.atlassian.migration.datacenter.dc-migration-assistant:dc-migration-assistant-templates",
-                "dcmigration.init", emptyMap())
+            response.writer,
+            "com.atlassian.migration.datacenter.dc-migration-assistant:dc-migration-assistant-templates",
+            "dcmigration.init", emptyMap()
+        )
     }
 
     companion object {
         private val logger = LoggerFactory.getLogger(TemplateServlet::class.java)
     }
-
 }

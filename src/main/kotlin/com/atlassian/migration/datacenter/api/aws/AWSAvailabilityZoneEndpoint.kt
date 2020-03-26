@@ -18,16 +18,19 @@ package com.atlassian.migration.datacenter.api.aws
 import com.atlassian.migration.datacenter.core.aws.region.AvailabilityZoneService
 import com.atlassian.migration.datacenter.core.aws.region.InvalidAWSRegionException
 import com.atlassian.migration.datacenter.core.aws.region.RegionService
-import software.amazon.awssdk.regions.Region
 import javax.ws.rs.GET
 import javax.ws.rs.Path
 import javax.ws.rs.PathParam
 import javax.ws.rs.Produces
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import software.amazon.awssdk.regions.Region
 
 @Path("aws/availabilityZones")
-class AWSAvailabilityZoneEndpoint(private val availabilityZoneService: AvailabilityZoneService, private val regionService: RegionService) {
+class AWSAvailabilityZoneEndpoint(
+    private val availabilityZoneService: AvailabilityZoneService,
+    private val regionService: RegionService
+) {
     @Produces(MediaType.APPLICATION_JSON)
     @GET
     fun getAvailabilityZoneList(): Response {

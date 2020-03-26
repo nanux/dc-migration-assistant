@@ -29,23 +29,25 @@ import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
+import java.nio.file.Paths
+import java.time.Duration
+import java.util.HashSet
+import javax.ws.rs.core.Response
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
-import java.nio.file.Paths
-import java.time.Duration
-import java.util.*
-import javax.ws.rs.core.Response
 
 @ExtendWith(MockKExtension::class)
 class FileSystemMigrationProgressEndpointTest {
     @MockK
     lateinit var fsMigrationService: FilesystemMigrationService
+
     @MockK
     lateinit var report: FileSystemMigrationReport
+
     @InjectMockKs
     lateinit var endpoint: FileSystemMigrationEndpoint
 
@@ -120,7 +122,10 @@ class FileSystemMigrationProgressEndpointTest {
         every { fsMigrationService.getReport() } returns DefaultFileSystemMigrationReport()
         val response = endpoint.getFilesystemMigrationStatus()
         Assertions.assertEquals(Response.Status.BAD_REQUEST.statusCode, response.status)
-        MatcherAssert.assertThat<String?>(response.entity.toString(), Matchers.containsString("no file system migration exists"))
+        MatcherAssert.assertThat<String?>(
+            response.entity.toString(),
+            Matchers.containsString("no file system migration exists")
+        )
     }
 
     @Test

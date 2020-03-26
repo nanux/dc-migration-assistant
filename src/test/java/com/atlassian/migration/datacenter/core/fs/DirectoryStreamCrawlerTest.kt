@@ -18,18 +18,18 @@ package com.atlassian.migration.datacenter.core.fs
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport
 import com.atlassian.migration.datacenter.core.util.UploadQueue
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport
-import org.junit.jupiter.api.Assertions
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Disabled
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 import java.io.IOException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.nio.file.attribute.PosixFilePermissions
-import java.util.*
+import java.util.HashSet
 import java.util.function.Consumer
+import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 internal class DirectoryStreamCrawlerTest {
     @TempDir
@@ -45,19 +45,34 @@ internal class DirectoryStreamCrawlerTest {
         directoryStreamCrawler = DirectoryStreamCrawler(report)
         expectedPaths.add(Files.write(tempDir.resolve("newfile.txt"), "newfile content".toByteArray()))
         val subdirectory = Files.createDirectory(tempDir.resolve("subdirectory"))
-        expectedPaths.add(Files.write(subdirectory.resolve("subfile.txt"), "subfile content in the subdirectory".toByteArray()))
+        expectedPaths.add(
+            Files.write(
+                subdirectory.resolve("subfile.txt"),
+                "subfile content in the subdirectory".toByteArray()
+            )
+        )
     }
 
     @Test
     @Throws(Exception::class)
     fun shouldListAllSubdirectories() {
         directoryStreamCrawler.crawlDirectory(tempDir, queue)
-        expectedPaths.forEach(Consumer { path: Path -> Assertions.assertTrue(queue.contains(path), String.format("Expected %s is absent from crawler queue", path)) })
+        expectedPaths.forEach(Consumer { path: Path ->
+            Assertions.assertTrue(
+                queue.contains(path),
+                String.format("Expected %s is absent from crawler queue", path)
+            )
+        })
     }
 
     @Test
     fun incorrectStartDirectoryShouldReport() {
-        Assertions.assertThrows(IOException::class.java) { directoryStreamCrawler.crawlDirectory(Paths.get("nonexistent-directory-2010"), queue) }
+        Assertions.assertThrows(IOException::class.java) {
+            directoryStreamCrawler.crawlDirectory(
+                Paths.get("nonexistent-directory-2010"),
+                queue
+            )
+        }
     }
 
     @Test
@@ -71,8 +86,10 @@ internal class DirectoryStreamCrawlerTest {
     @Disabled("Simulating AccessDenied permission proved complicated in an unit test")
     @Throws(IOException::class)
     fun inaccessibleSubdirectoryIsReportedAsFailed() {
-        Files.createDirectory(tempDir.resolve("non-readable-subdir"),
-                PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("-wx-wx-wx")))
+        Files.createDirectory(
+            tempDir.resolve("non-readable-subdir"),
+            PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("-wx-wx-wx"))
+        )
         directoryStreamCrawler.crawlDirectory(tempDir, queue)
         Assertions.assertEquals(report.getFailedFiles().size, 1)
     }

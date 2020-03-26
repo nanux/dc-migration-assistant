@@ -15,13 +15,17 @@
  */
 package com.atlassian.migration.datacenter.core.fs
 
-import software.amazon.awssdk.services.s3.S3AsyncClient
 import java.nio.file.Path
+import software.amazon.awssdk.services.s3.S3AsyncClient
 
 /**
  * Contains configuration for S3 upload calls
  */
-class S3UploadConfig(private val bucketName: String, private val s3AsyncClient: S3AsyncClient, private val sharedHome: Path) {
+class S3UploadConfig(
+    private val bucketName: String,
+    private val s3AsyncClient: S3AsyncClient,
+    private val sharedHome: Path
+) {
     /**
      * Destination S3 bucket name where to upload files
      *
@@ -48,5 +52,4 @@ class S3UploadConfig(private val bucketName: String, private val s3AsyncClient: 
     fun getSharedHome(): Path {
         return sharedHome
     }
-
 }

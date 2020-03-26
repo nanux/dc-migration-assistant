@@ -15,21 +15,32 @@
  */
 package com.atlassian.migration.datacenter.core.fs
 
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.concurrent.CompletableFuture
 import org.hamcrest.Matchers
 import org.junit.Assume
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
-import org.mockito.*
+import org.mockito.ArgumentCaptor
+import org.mockito.ArgumentMatchers
+import org.mockito.Captor
+import org.mockito.Mock
+import org.mockito.Mockito
 import org.mockito.junit.jupiter.MockitoExtension
 import software.amazon.awssdk.core.async.AsyncRequestBody
 import software.amazon.awssdk.services.s3.S3AsyncClient
-import software.amazon.awssdk.services.s3.model.*
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Path
-import java.util.concurrent.CompletableFuture
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadRequest
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse
+import software.amazon.awssdk.services.s3.model.CompletedMultipartUpload
+import software.amazon.awssdk.services.s3.model.CompletedPart
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadRequest
+import software.amazon.awssdk.services.s3.model.CreateMultipartUploadResponse
+import software.amazon.awssdk.services.s3.model.UploadPartRequest
+import software.amazon.awssdk.services.s3.model.UploadPartResponse
 
 @ExtendWith(MockitoExtension::class)
 internal class S3MultiPartUploaderTest {
@@ -53,21 +64,30 @@ internal class S3MultiPartUploaderTest {
         val uploader = S3MultiPartUploader(config, file, key)
         val createRequest = CreateMultipartUploadRequest.builder().key(key).bucket(bucket).build()
         Mockito.`when`(client.createMultipartUpload(createRequest))
-                .thenReturn(CompletableFuture.completedFuture(CreateMultipartUploadResponse.builder().build()))
-        Mockito.`when`(client.uploadPart(ArgumentMatchers.any(UploadPartRequest::class.java), ArgumentMatchers.any(AsyncRequestBody::class.java)))
-                .thenReturn(CompletableFuture.completedFuture(UploadPartResponse.builder().build()))
+            .thenReturn(CompletableFuture.completedFuture(CreateMultipartUploadResponse.builder().build()))
+        Mockito.`when`(
+            client.uploadPart(
+                ArgumentMatchers.any(UploadPartRequest::class.java),
+                ArgumentMatchers.any(AsyncRequestBody::class.java)
+            )
+        )
+            .thenReturn(CompletableFuture.completedFuture(UploadPartResponse.builder().build()))
         val completeRequest = CompleteMultipartUploadRequest
-                .builder()
-                .bucket(bucket)
-                .multipartUpload(
-                        CompletedMultipartUpload.builder().parts(CompletedPart.builder().partNumber(1).build()).build())
-                .key(key)
-                .build()
+            .builder()
+            .bucket(bucket)
+            .multipartUpload(
+                CompletedMultipartUpload.builder().parts(CompletedPart.builder().partNumber(1).build()).build()
+            )
+            .key(key)
+            .build()
         Mockito.`when`(client.completeMultipartUpload(completeRequest))
-                .thenReturn(CompletableFuture.completedFuture(CompleteMultipartUploadResponse.builder().build()))
+            .thenReturn(CompletableFuture.completedFuture(CompleteMultipartUploadResponse.builder().build()))
         uploader.upload()
         Mockito.verify(client).createMultipartUpload(createRequest)
-        Mockito.verify(client).uploadPart(ArgumentMatchers.any(UploadPartRequest::class.java), ArgumentMatchers.any(AsyncRequestBody::class.java))
+        Mockito.verify(client).uploadPart(
+            ArgumentMatchers.any(UploadPartRequest::class.java),
+            ArgumentMatchers.any(AsyncRequestBody::class.java)
+        )
         Mockito.verify(client).completeMultipartUpload(completeRequest)
     }
 
@@ -81,13 +101,19 @@ internal class S3MultiPartUploaderTest {
         uploader.setSizeToUpload(chunkSize) // use 2 bytes chunks
         Assume.assumeThat(content.length % chunkSize, Matchers.greaterThan(0))
         Mockito.`when`(client.createMultipartUpload(ArgumentMatchers.any(CreateMultipartUploadRequest::class.java)))
-                .thenReturn(CompletableFuture.completedFuture(CreateMultipartUploadResponse.builder().build()))
-        Mockito.`when`(client.uploadPart(ArgumentMatchers.any(UploadPartRequest::class.java), ArgumentMatchers.any(AsyncRequestBody::class.java)))
-                .thenReturn(CompletableFuture.completedFuture(UploadPartResponse.builder().build()))
+            .thenReturn(CompletableFuture.completedFuture(CreateMultipartUploadResponse.builder().build()))
+        Mockito.`when`(
+            client.uploadPart(
+                ArgumentMatchers.any(UploadPartRequest::class.java),
+                ArgumentMatchers.any(AsyncRequestBody::class.java)
+            )
+        )
+            .thenReturn(CompletableFuture.completedFuture(UploadPartResponse.builder().build()))
         Mockito.`when`(client.completeMultipartUpload(ArgumentMatchers.any(CompleteMultipartUploadRequest::class.java)))
-                .thenReturn(CompletableFuture.completedFuture(CompleteMultipartUploadResponse.builder().build()))
+            .thenReturn(CompletableFuture.completedFuture(CompleteMultipartUploadResponse.builder().build()))
         uploader.upload()
-        Mockito.verify(client, Mockito.times(2)).uploadPart(ArgumentMatchers.any(UploadPartRequest::class.java), valueCaptor!!.capture())
+        Mockito.verify(client, Mockito.times(2))
+            .uploadPart(ArgumentMatchers.any(UploadPartRequest::class.java), valueCaptor!!.capture())
         val allValues = valueCaptor!!.allValues
         Assertions.assertEquals(2, allValues[0].contentLength().get())
         Assertions.assertEquals(1, allValues[1].contentLength().get())

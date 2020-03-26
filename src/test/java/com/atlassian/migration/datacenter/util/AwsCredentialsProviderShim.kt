@@ -20,7 +20,8 @@ import com.atlassian.migration.datacenter.core.aws.auth.ReadCredentialsService
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 
-class AwsCredentialsProviderShim(private val v1Creds: AWSCredentialsProvider) : AwsCredentialsProvider, AwsCredentials, ReadCredentialsService {
+class AwsCredentialsProviderShim(private val v1Creds: AWSCredentialsProvider) : AwsCredentialsProvider, AwsCredentials,
+    ReadCredentialsService {
     override fun resolveCredentials(): AwsCredentials {
         return this
     }
@@ -40,5 +41,4 @@ class AwsCredentialsProviderShim(private val v1Creds: AWSCredentialsProvider) : 
     override fun getSecretAccessKey(): String? {
         return v1Creds.credentials.awsSecretKey
     }
-
 }

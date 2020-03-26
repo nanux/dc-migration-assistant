@@ -19,10 +19,10 @@ import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageE
 import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeploymentService
 import com.atlassian.migration.datacenter.spi.infrastructure.ProvisioningConfig
 import com.google.common.collect.ImmutableMap
-import org.slf4j.LoggerFactory
 import javax.ws.rs.*
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
+import org.slf4j.LoggerFactory
 
 /**
  * REST API Endpoint for managing AWS provisioning.
@@ -41,7 +41,7 @@ class CloudFormationEndpoint(private val deploymentService: ApplicationDeploymen
         return try {
             val stackName = provisioningConfig.stackName
             deploymentService.deployApplication(stackName, provisioningConfig.params)
-            //Should be updated to URI location after get stack details Endpoint is built
+            // Should be updated to URI location after get stack details Endpoint is built
             Response.status(Response.Status.ACCEPTED).entity(stackName).build()
         } catch (e: InvalidMigrationStageError) {
             log.error("Migration stage is not valid.", e)
@@ -64,5 +64,4 @@ class CloudFormationEndpoint(private val deploymentService: ApplicationDeploymen
             Response.status(Response.Status.NOT_FOUND).entity(ImmutableMap.of("error", e.message)).build()
         }
     }
-
 }

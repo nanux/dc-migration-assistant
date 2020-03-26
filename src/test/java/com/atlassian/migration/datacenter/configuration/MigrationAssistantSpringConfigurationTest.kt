@@ -15,10 +15,10 @@
  */
 package com.atlassian.migration.datacenter.configuration
 
+import java.lang.reflect.Modifier
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import org.springframework.context.annotation.Bean
-import java.lang.reflect.Modifier
 
 internal class MigrationAssistantSpringConfigurationTest {
     @Test
@@ -27,7 +27,11 @@ internal class MigrationAssistantSpringConfigurationTest {
         for (method in declaredMethods) {
             if (Modifier.isPublic(method.modifiers)) {
                 val declaredAnnotationsByType = method.getDeclaredAnnotationsByType(Bean::class.java)
-                Assertions.assertEquals(1, declaredAnnotationsByType.size, "Method " + method.name + " does not have a Bean annotation")
+                Assertions.assertEquals(
+                    1,
+                    declaredAnnotationsByType.size,
+                    "Method " + method.name + " does not have a Bean annotation"
+                )
             }
         }
     }
@@ -38,7 +42,11 @@ internal class MigrationAssistantSpringConfigurationTest {
         for (method in declaredMethods) {
             if (Modifier.isPublic(method.modifiers)) {
                 val declaredAnnotationsByType = method.getDeclaredAnnotationsByType(Bean::class.java)
-                Assertions.assertEquals(1, declaredAnnotationsByType.size, "Method " + method.name + " does not have a Bean annotation")
+                Assertions.assertEquals(
+                    1,
+                    declaredAnnotationsByType.size,
+                    "Method " + method.name + " does not have a Bean annotation"
+                )
             }
         }
     }

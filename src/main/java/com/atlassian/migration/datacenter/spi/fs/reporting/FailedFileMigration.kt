@@ -25,7 +25,7 @@ class FailedFileMigration {
     var reason: String? = null
         private set
 
-    constructor() {}
+    constructor()
     constructor(filePath: Path?, reason: String?) {
         this.filePath = filePath
         this.reason = reason

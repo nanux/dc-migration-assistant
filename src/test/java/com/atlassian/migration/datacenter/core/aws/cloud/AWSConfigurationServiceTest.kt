@@ -67,7 +67,13 @@ internal class AWSConfigurationServiceTest {
     @Test
     fun shouldStoreCredentialsOnlyWhenStateIsAuthentication() {
         Mockito.`when`(mockMigrationService!!.currentStage).thenReturn(MigrationStage.WAIT_FS_MIGRATION_COPY)
-        Assertions.assertThrows(InvalidMigrationStageError::class.java) { sut!!.configureCloudProvider("garbage", "garbage", "garbage") }
+        Assertions.assertThrows(InvalidMigrationStageError::class.java) {
+            sut!!.configureCloudProvider(
+                "garbage",
+                "garbage",
+                "garbage"
+            )
+        }
     }
 
     private fun mockValidMigration() {
@@ -79,7 +85,8 @@ internal class AWSConfigurationServiceTest {
     fun shouldTransitionToProvisionApplicationStageWhenSuccessful() {
         mockValidMigration()
         sut!!.configureCloudProvider("garbage", "garbage", "garbage")
-        Mockito.verify(mockMigrationService)?.transition(MigrationStage.AUTHENTICATION, MigrationStage.PROVISION_APPLICATION)
+        Mockito.verify(mockMigrationService)
+            ?.transition(MigrationStage.AUTHENTICATION, MigrationStage.PROVISION_APPLICATION)
     }
 
     @Test
@@ -93,7 +100,8 @@ internal class AWSConfigurationServiceTest {
             Assertions.fail<Any>()
         } catch (rte: RuntimeException) {
             Assertions.assertEquals(InvalidAWSRegionException::class.java, rte.cause!!.javaClass)
-            Mockito.verify(mockMigrationService, Mockito.never())?.transition(ArgumentMatchers.any(), ArgumentMatchers.any())
+            Mockito.verify(mockMigrationService, Mockito.never())
+                ?.transition(ArgumentMatchers.any(), ArgumentMatchers.any())
         }
     }
 }

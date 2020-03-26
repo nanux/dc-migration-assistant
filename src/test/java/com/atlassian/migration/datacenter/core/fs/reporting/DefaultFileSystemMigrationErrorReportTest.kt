@@ -16,10 +16,10 @@
 package com.atlassian.migration.datacenter.core.fs.reporting
 
 import com.atlassian.migration.datacenter.spi.fs.reporting.FailedFileMigration
+import java.nio.file.Paths
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import java.nio.file.Paths
 
 class DefaultFileSystemMigrationErrorReportTest {
     private var sut: DefaultFileSystemMigrationErrorReport? = null

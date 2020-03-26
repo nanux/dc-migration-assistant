@@ -25,17 +25,18 @@ import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.verify
+import javax.ws.rs.core.Response
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import software.amazon.awssdk.services.cloudformation.model.StackInstanceNotFoundException
-import javax.ws.rs.core.Response
 
 @ExtendWith(MockKExtension::class)
 internal class CloudFormationEndpointTest {
     @MockK(relaxUnitFun = true)
     lateinit var deploymentService: ApplicationDeploymentService
+
     @InjectMockKs
     lateinit var endpoint: CloudFormationEndpoint
 
@@ -56,7 +57,12 @@ internal class CloudFormationEndpointTest {
     fun shouldBeConflictWhenCurrentMigrationStageIsNotValid() {
         val provisioningConfig = ProvisioningConfig("url", "stack-name", HashMap())
         val errorMessage = "migration status is FUBAR"
-        every { deploymentService.deployApplication(provisioningConfig.stackName, provisioningConfig.params) } throws InvalidMigrationStageError(errorMessage)
+        every {
+            deploymentService.deployApplication(
+                provisioningConfig.stackName,
+                provisioningConfig.params
+            )
+        } throws InvalidMigrationStageError(errorMessage)
         val response = endpoint.provisionInfrastructure(provisioningConfig)
         Assertions.assertEquals(Response.Status.CONFLICT.statusCode, response.status)
         Assertions.assertEquals(errorMessage, (response.entity as Map<*, *>)["error"])
@@ -74,7 +80,8 @@ internal class CloudFormationEndpointTest {
     @Test
     fun shouldGetHandleErrorWhenStatusCannotBeRetrieved() {
         val expectedErrorMessage = "stack Id not found"
-        every {deploymentService.deploymentStatus()} throws StackInstanceNotFoundException.builder().message(expectedErrorMessage).build()
+        every { deploymentService.deploymentStatus() } throws StackInstanceNotFoundException.builder()
+            .message(expectedErrorMessage).build()
         val response = endpoint.infrastructureStatus()
         Assertions.assertEquals(Response.Status.NOT_FOUND.statusCode, response.status)
         Assertions.assertEquals(expectedErrorMessage, (response.entity as Map<*, *>)["error"])

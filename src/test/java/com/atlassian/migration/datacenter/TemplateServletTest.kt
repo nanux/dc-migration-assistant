@@ -18,6 +18,11 @@ package com.atlassian.migration.datacenter
 import com.atlassian.sal.api.auth.LoginUriProvider
 import com.atlassian.sal.api.permission.PermissionEnforcer
 import com.atlassian.soy.renderer.SoyTemplateRenderer
+import java.io.IOException
+import java.net.URI
+import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
+import javax.ws.rs.core.MediaType
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -26,11 +31,6 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.Spy
 import org.mockito.junit.jupiter.MockitoExtension
-import java.io.IOException
-import java.net.URI
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
-import javax.ws.rs.core.MediaType
 
 @ExtendWith(MockitoExtension::class)
 class TemplateServletTest {

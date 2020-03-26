@@ -520,31 +520,6 @@
                     </dependency>
                 </dependencies>
             </plugin>
-<!--            <plugin>-->
-<!--                <groupId>com.github.gantsign.maven</groupId>-->
-<!--                <artifactId>ktlint-maven-plugin</artifactId>-->
-<!--                <version>1.4.0</version>-->
-<!--                <configuration>-->
-<!--                    <sourceRoots>${project.basedir}/src</sourceRoots>-->
-<!--                </configuration>-->
-<!--                <executions>-->
-<!--                    <execution>-->
-<!--                        <id>check</id>-->
-<!--                        <phase>validate</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>check</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                    <execution>-->
-<!--                        <id>format-kotlin</id>-->
-<!--                        &lt;!&ndash; only run this manually with `mvn com.github.gantsign.maven:ktlint-maven-plugin:format@format-kotlin` &ndash;&gt;-->
-<!--                        <phase>none</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>format</goal>-->
-<!--                        </goals>-->
-<!--                    </execution>-->
-<!--                </executions>-->
-<!--            </plugin>-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>

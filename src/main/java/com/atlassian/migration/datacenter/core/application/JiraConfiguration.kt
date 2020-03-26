@@ -20,7 +20,7 @@ import com.atlassian.migration.datacenter.core.exceptions.ConfigurationReadExcep
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
 import java.io.IOException
 import java.nio.file.Paths
-import java.util.*
+import java.util.Optional
 
 class JiraConfiguration(private val jiraHome: JiraHome) : ApplicationConfiguration {
     private val xmlMapper: XmlMapper = XmlMapper()
@@ -44,5 +44,4 @@ class JiraConfiguration(private val jiraHome: JiraHome) : ApplicationConfigurati
             throw ConfigurationReadException("Unable to parse database configuration XML file", e)
         }
     }
-
 }

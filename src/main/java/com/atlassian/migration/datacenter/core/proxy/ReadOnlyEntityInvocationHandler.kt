@@ -15,9 +15,9 @@
  */
 package com.atlassian.migration.datacenter.core.proxy
 
-import net.java.ao.Entity
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
+import net.java.ao.Entity
 
 class ReadOnlyEntityInvocationHandler<T : Entity>(private val entity: T) : InvocationHandler {
     @Throws(Throwable::class)
@@ -28,5 +28,4 @@ class ReadOnlyEntityInvocationHandler<T : Entity>(private val entity: T) : Invoc
         }
         return method.invoke(entity, *args)
     }
-
 }

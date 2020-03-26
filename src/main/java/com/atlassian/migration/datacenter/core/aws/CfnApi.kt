@@ -16,23 +16,33 @@
 package com.atlassian.migration.datacenter.core.aws
 
 import com.atlassian.migration.datacenter.core.aws.region.RegionService
-import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
-import software.amazon.awssdk.regions.Region
-import software.amazon.awssdk.services.cloudformation.CloudFormationAsyncClient
-import software.amazon.awssdk.services.cloudformation.model.*
-import software.amazon.awssdk.services.cloudformation.model.Stack
-import java.util.*
+import java.util.Optional
 import java.util.Optional.of
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CompletionException
 import java.util.concurrent.ExecutionException
 import java.util.stream.Collectors
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
+import software.amazon.awssdk.regions.Region
+import software.amazon.awssdk.services.cloudformation.CloudFormationAsyncClient
+import software.amazon.awssdk.services.cloudformation.model.CreateStackRequest
+import software.amazon.awssdk.services.cloudformation.model.CreateStackResponse
+import software.amazon.awssdk.services.cloudformation.model.DescribeStacksRequest
+import software.amazon.awssdk.services.cloudformation.model.Parameter
+import software.amazon.awssdk.services.cloudformation.model.Stack
+import software.amazon.awssdk.services.cloudformation.model.StackInstanceNotFoundException
+import software.amazon.awssdk.services.cloudformation.model.StackStatus
+import software.amazon.awssdk.services.cloudformation.model.Tag
 
 class CfnApi(val credentialsProvider: AwsCredentialsProvider, val regionManager: RegionService) {
 
     private var client: Optional<CloudFormationAsyncClient> = Optional.empty()
 
-    constructor(client: CloudFormationAsyncClient, credentialsProvider: AwsCredentialsProvider, regionManager: RegionService) : this(credentialsProvider, regionManager) {
+    constructor(
+        client: CloudFormationAsyncClient,
+        credentialsProvider: AwsCredentialsProvider,
+        regionManager: RegionService
+    ) : this(credentialsProvider, regionManager) {
         this.client = of(client)
     }
 
@@ -44,9 +54,9 @@ class CfnApi(val credentialsProvider: AwsCredentialsProvider, val regionManager:
             return client.get()
         }
         val constructedClient = CloudFormationAsyncClient.builder()
-                .credentialsProvider(credentialsProvider)
-                .region(Region.of(regionManager.getRegion()))
-                .build()
+            .credentialsProvider(credentialsProvider)
+            .region(Region.of(regionManager.getRegion()))
+            .build()
         this.client = of(constructedClient)
         return constructedClient
     }
@@ -55,33 +65,35 @@ class CfnApi(val credentialsProvider: AwsCredentialsProvider, val regionManager:
         val stack = getStack(stackName)
         if (!stack.isPresent) {
             throw StackInstanceNotFoundException
-                    .builder()
-                    .message(String.format("Stack with name %s not found", stackName))
-                    .build()
+                .builder()
+                .message(String.format("Stack with name %s not found", stackName))
+                .build()
         }
         return stack.get().stackStatus()
     }
 
     fun provisionStack(templateUrl: String, stackName: String, params: Map<String, String>): Optional<String> {
         val parameters = params.entries
-                .stream()
-                .map { e: Map.Entry<String, String> -> Parameter.builder().parameterKey(e.key).parameterValue(e.value).build() }
-                .collect(Collectors.toSet())
+            .stream()
+            .map { e: Map.Entry<String, String> ->
+                Parameter.builder().parameterKey(e.key).parameterValue(e.value).build()
+            }
+            .collect(Collectors.toSet())
         val tag = Tag.builder()
-                .key("created_by")
-                .value("atlassian-dcmigration")
-                .build()
+            .key("created_by")
+            .value("atlassian-dcmigration")
+            .build()
         val createStackRequest = CreateStackRequest.builder()
-                .templateURL(templateUrl)
-                .stackName(stackName)
-                .parameters(parameters)
-                .tags(tag)
-                .build()
+            .templateURL(templateUrl)
+            .stackName(stackName)
+            .parameters(parameters)
+            .tags(tag)
+            .build()
         return try {
             val stackId = getClient()
-                    .createStack(createStackRequest)
-                    .thenApply { obj: CreateStackResponse -> obj.stackId() }
-                    .get()
+                .createStack(createStackRequest)
+                .thenApply { obj: CreateStackResponse -> obj.stackId() }
+                .get()
             Optional.ofNullable(stackId)
         } catch (e: InterruptedException) {
             Optional.empty()
@@ -92,10 +104,10 @@ class CfnApi(val credentialsProvider: AwsCredentialsProvider, val regionManager:
 
     fun getStack(stackName: String?): Optional<Stack> {
         val request = DescribeStacksRequest.builder()
-                .stackName(stackName)
-                .build()
+            .stackName(stackName)
+            .build()
         val asyncResponse = getClient()
-                .describeStacks(request)
+            .describeStacks(request)
         return try {
             val response = asyncResponse.join()
             val stack = response.stacks()[0]

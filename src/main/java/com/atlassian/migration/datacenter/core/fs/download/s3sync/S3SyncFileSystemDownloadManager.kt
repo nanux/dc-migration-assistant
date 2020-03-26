@@ -17,10 +17,10 @@ package com.atlassian.migration.datacenter.core.fs.download.s3sync
 
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloader.CannotLaunchCommandException
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloader.IndeterminateS3SyncStatusException
-import org.slf4j.LoggerFactory
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import org.slf4j.LoggerFactory
 
 class S3SyncFileSystemDownloadManager(private val downloader: S3SyncFileSystemDownloader) {
     @Throws(CannotLaunchCommandException::class)
@@ -46,5 +46,4 @@ class S3SyncFileSystemDownloadManager(private val downloader: S3SyncFileSystemDo
     companion object {
         private val logger = LoggerFactory.getLogger(S3SyncFileSystemDownloadManager::class.java)
     }
-
 }

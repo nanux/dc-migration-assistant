@@ -19,5 +19,6 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.regions.RegionMetadata
 
 class GlobalInfrastructure {
-    val regions = Region.regions().filter { it -> RegionMetadata.of(it).partition().id() == "aws" }.map { toString() }.toList()
+    val regions =
+        Region.regions().filter { it -> RegionMetadata.of(it).partition().id() == "aws" }.map { toString() }.toList()
 }

@@ -20,6 +20,7 @@ import com.atlassian.migration.datacenter.core.aws.GlobalInfrastructure
 import com.atlassian.sal.api.pluginsettings.PluginSettings
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
 import com.atlassian.util.concurrent.Supplier
+import java.util.ArrayList
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -29,7 +30,6 @@ import org.mockito.Mock
 import org.mockito.Mockito
 import org.mockito.junit.jupiter.MockitoExtension
 import software.amazon.awssdk.regions.Region
-import java.util.*
 
 @ExtendWith(MockitoExtension::class)
 internal class PluginSettingsRegionManagerTest {
@@ -44,11 +44,13 @@ internal class PluginSettingsRegionManagerTest {
     @Mock
     lateinit var pluginSettings: PluginSettings
 
-    private val pluginSettingsRegionKey = PluginSettingsRegionManager.AWS_REGION_PLUGIN_STORAGE_KEY + PluginSettingsRegionManager.REGION_PLUGIN_STORAGE_SUFFIX
+    private val pluginSettingsRegionKey =
+        PluginSettingsRegionManager.AWS_REGION_PLUGIN_STORAGE_KEY + PluginSettingsRegionManager.REGION_PLUGIN_STORAGE_SUFFIX
 
     @BeforeEach
     fun setUp() {
-        pluginSettingsRegionManager = PluginSettingsRegionManager(Supplier { pluginSettingsFactory }, globalInfrastructure)
+        pluginSettingsRegionManager =
+            PluginSettingsRegionManager(Supplier { pluginSettingsFactory }, globalInfrastructure)
         Mockito.`when`(pluginSettingsFactory.createGlobalSettings()).thenReturn(pluginSettings)
         pluginSettingsRegionManager.postConstruct()
     }
@@ -86,7 +88,11 @@ internal class PluginSettingsRegionManagerTest {
     fun shouldThrowExceptionWhenTryingToStoreAnInvalidRegion() {
         val invalidRegion = "area-53"
         Mockito.`when`(globalInfrastructure.regions).thenReturn(ArrayList())
-        Assertions.assertThrows(InvalidAWSRegionException::class.java) { pluginSettingsRegionManager.storeRegion(invalidRegion) }
+        Assertions.assertThrows(InvalidAWSRegionException::class.java) {
+            pluginSettingsRegionManager.storeRegion(
+                invalidRegion
+            )
+        }
         Mockito.verify(pluginSettings, Mockito.never()).put(ArgumentMatchers.anyString(), ArgumentMatchers.anyString())
     }
 }

@@ -22,7 +22,11 @@ import com.atlassian.migration.datacenter.core.application.JiraConfiguration
 import com.atlassian.migration.datacenter.core.aws.AWSMigrationService
 import com.atlassian.migration.datacenter.core.aws.CfnApi
 import com.atlassian.migration.datacenter.core.aws.GlobalInfrastructure
-import com.atlassian.migration.datacenter.core.aws.auth.*
+import com.atlassian.migration.datacenter.core.aws.auth.AtlassianPluginAWSCredentialsProvider
+import com.atlassian.migration.datacenter.core.aws.auth.EncryptedCredentialsStorage
+import com.atlassian.migration.datacenter.core.aws.auth.ProbeAWSAuth
+import com.atlassian.migration.datacenter.core.aws.auth.ReadCredentialsService
+import com.atlassian.migration.datacenter.core.aws.auth.WriteCredentialsService
 import com.atlassian.migration.datacenter.core.aws.cloud.AWSConfigurationService
 import com.atlassian.migration.datacenter.core.aws.db.DatabaseMigrationService
 import com.atlassian.migration.datacenter.core.aws.infrastructure.QuickstartDeploymentService
@@ -38,6 +42,7 @@ import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory
 import com.atlassian.scheduler.SchedulerService
 import com.atlassian.util.concurrent.Supplier
+import java.nio.file.Paths
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
@@ -45,18 +50,20 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.ssm.SsmClient
-import java.nio.file.Paths
 
 @Configuration
 @ComponentScan
 class MigrationAssistantBeanConfiguration {
     @Bean
-    fun s3AsyncClientSupplier(credentialsProvider: AwsCredentialsProvider, regionService: RegionService): Supplier<S3AsyncClient> {
+    fun s3AsyncClientSupplier(
+        credentialsProvider: AwsCredentialsProvider,
+        regionService: RegionService
+    ): Supplier<S3AsyncClient> {
         return Supplier {
             S3AsyncClient.builder()
-                    .credentialsProvider(credentialsProvider)
-                    .region(Region.of(regionService.getRegion()))
-                    .build()
+                .credentialsProvider(credentialsProvider)
+                .region(Region.of(regionService.getRegion()))
+                .build()
         }
     }
 
@@ -64,9 +71,9 @@ class MigrationAssistantBeanConfiguration {
     fun ssmClient(credentialsProvider: AwsCredentialsProvider?, regionService: RegionService): Supplier<SsmClient> {
         return Supplier {
             SsmClient.builder()
-                    .credentialsProvider(credentialsProvider)
-                    .region(Region.of(regionService.getRegion()))
-                    .build()
+                .credentialsProvider(credentialsProvider)
+                .region(Region.of(regionService.getRegion()))
+                .build()
         }
     }
 
@@ -76,12 +83,18 @@ class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    fun readCredentialsService(pluginSettingsFactorySupplier: Supplier<PluginSettingsFactory>, jiraHome: JiraHome?): EncryptedCredentialsStorage {
+    fun readCredentialsService(
+        pluginSettingsFactorySupplier: Supplier<PluginSettingsFactory>,
+        jiraHome: JiraHome?
+    ): EncryptedCredentialsStorage {
         return EncryptedCredentialsStorage(pluginSettingsFactorySupplier, jiraHome)
     }
 
     @Bean
-    fun regionService(pluginSettingsFactorySupplier: Supplier<PluginSettingsFactory>, globalInfrastructure: GlobalInfrastructure): RegionService {
+    fun regionService(
+        pluginSettingsFactorySupplier: Supplier<PluginSettingsFactory>,
+        globalInfrastructure: GlobalInfrastructure
+    ): RegionService {
         return PluginSettingsRegionManager(pluginSettingsFactorySupplier, globalInfrastructure)
     }
 
@@ -101,7 +114,10 @@ class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    fun databaseMigrationService(jiraConfiguration: ApplicationConfiguration, s3AsyncClient: Supplier<S3AsyncClient>): DatabaseMigrationService {
+    fun databaseMigrationService(
+        jiraConfiguration: ApplicationConfiguration,
+        s3AsyncClient: Supplier<S3AsyncClient>
+    ): DatabaseMigrationService {
         val tempDirectoryPath = System.getProperty("java.io.tmpdir")
         return DatabaseMigrationService(jiraConfiguration, Paths.get(tempDirectoryPath), s3AsyncClient)
     }
@@ -122,12 +138,19 @@ class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    fun availabilityZoneManager(awsCredentialsProvider: AwsCredentialsProvider, globalInfrastructure: GlobalInfrastructure): AvailabilityZoneManager {
+    fun availabilityZoneManager(
+        awsCredentialsProvider: AwsCredentialsProvider,
+        globalInfrastructure: GlobalInfrastructure
+    ): AvailabilityZoneManager {
         return AvailabilityZoneManager(awsCredentialsProvider, globalInfrastructure)
     }
 
     @Bean
-    fun awsConfigurationService(writeCredentialsService: WriteCredentialsService, regionService: RegionService, migrationService: MigrationService): AWSConfigurationService {
+    fun awsConfigurationService(
+        writeCredentialsService: WriteCredentialsService,
+        regionService: RegionService,
+        migrationService: MigrationService
+    ): AWSConfigurationService {
         return AWSConfigurationService(writeCredentialsService, regionService, migrationService)
     }
 
@@ -137,8 +160,20 @@ class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    fun filesystemMigrationService(clientSupplier: Supplier<S3AsyncClient>, jiraHome: JiraHome, downloadManager: S3SyncFileSystemDownloadManager, migrationService: MigrationService, schedulerService: SchedulerService): FilesystemMigrationService {
-        return S3FilesystemMigrationService(clientSupplier, jiraHome, downloadManager, migrationService, schedulerService)
+    fun filesystemMigrationService(
+        clientSupplier: Supplier<S3AsyncClient>,
+        jiraHome: JiraHome,
+        downloadManager: S3SyncFileSystemDownloadManager,
+        migrationService: MigrationService,
+        schedulerService: SchedulerService
+    ): FilesystemMigrationService {
+        return S3FilesystemMigrationService(
+            clientSupplier,
+            jiraHome,
+            downloadManager,
+            migrationService,
+            schedulerService
+        )
     }
 
     @Bean
@@ -147,7 +182,11 @@ class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    fun quickstartDeploymentService(ao: ActiveObjects, cfnApi: CfnApi, migrationService: MigrationService): QuickstartDeploymentService {
+    fun quickstartDeploymentService(
+        ao: ActiveObjects,
+        cfnApi: CfnApi,
+        migrationService: MigrationService
+    ): QuickstartDeploymentService {
         return QuickstartDeploymentService(ao, cfnApi, migrationService)
     }
 }

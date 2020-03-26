@@ -15,7 +15,14 @@
  */
 package com.atlassian.migration.datacenter.core.application
 
-class DatabaseConfiguration(private val type: DBType, private val host: String, private val port: Int, private val name: String, private val username: String?, private val password: String?) {
+class DatabaseConfiguration(
+    private val type: DBType,
+    private val host: String,
+    private val port: Int,
+    private val name: String,
+    private val username: String?,
+    private val password: String?
+) {
     enum class DBType {
         POSTGRESQL, MYSQL, SQLSERVER, ORACLE
     }
@@ -43,5 +50,4 @@ class DatabaseConfiguration(private val type: DBType, private val host: String, 
     fun getType(): DBType {
         return type
     }
-
 }

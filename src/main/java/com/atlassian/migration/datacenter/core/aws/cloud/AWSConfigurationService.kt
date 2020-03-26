@@ -24,12 +24,16 @@ import com.atlassian.migration.datacenter.spi.MigrationStage
 import com.atlassian.migration.datacenter.spi.cloud.CloudProviderConfigurationService
 import org.slf4j.LoggerFactory
 
-class AWSConfigurationService(private val writeCredentialsService: WriteCredentialsService, private val regionService: RegionService, private val migrationService: MigrationService) : CloudProviderConfigurationService {
+class AWSConfigurationService(
+    private val writeCredentialsService: WriteCredentialsService,
+    private val regionService: RegionService,
+    private val migrationService: MigrationService
+) : CloudProviderConfigurationService {
     /**
      * Configures the app to be able to authenticate with AWS.
      *
-     * @param entity    the AWS access key ID
-     * @param secret    the AWS secret access key
+     * @param entity the AWS access key ID
+     * @param secret the AWS secret access key
      * @param geography the AWS region
      * @throws InvalidMigrationStageError when not in [MigrationStage.AUTHENTICATION]
      */
@@ -56,5 +60,4 @@ class AWSConfigurationService(private val writeCredentialsService: WriteCredenti
     companion object {
         private val logger = LoggerFactory.getLogger(AWSConfigurationService::class.java)
     }
-
 }

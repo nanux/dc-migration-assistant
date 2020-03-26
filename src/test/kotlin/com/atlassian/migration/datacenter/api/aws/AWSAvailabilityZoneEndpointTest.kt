@@ -23,21 +23,23 @@ import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import java.util.ArrayList
+import javax.ws.rs.core.Response
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone
-import java.util.*
-import javax.ws.rs.core.Response
 
 @ExtendWith(MockKExtension::class)
 class AWSAvailabilityZoneEndpointTest {
     @MockK
     lateinit var availabilityZoneService: AvailabilityZoneService
+
     @MockK
     lateinit var regionService: RegionService
+
     @InjectMockKs
     lateinit var availabilityZoneEndpoint: AWSAvailabilityZoneEndpoint
 

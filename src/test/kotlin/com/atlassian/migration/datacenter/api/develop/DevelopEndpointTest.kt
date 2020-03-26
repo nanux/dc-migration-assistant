@@ -49,7 +49,8 @@ class DevelopEndpointTest {
         every { migrationService.currentStage } returns initialStage
         every { migrationService.transition(any(), any()) } just Runs
         val objectMapper = ObjectMapper()
-        val migrationStage: MigrationStage = objectMapper.readValue<MigrationStage>("\"FS_MIGRATION_COPY\"", MigrationStage::class.java)
+        val migrationStage: MigrationStage =
+            objectMapper.readValue<MigrationStage>("\"FS_MIGRATION_COPY\"", MigrationStage::class.java)
         endpoint.setMigrationStage(migrationStage)
         verify { migrationService.transition(initialStage, MigrationStage.FS_MIGRATION_COPY) }
     }

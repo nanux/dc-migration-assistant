@@ -17,6 +17,15 @@ package com.atlassian.migration.datacenter.core.db
 
 import com.atlassian.migration.datacenter.core.application.ApplicationConfiguration
 import com.atlassian.migration.datacenter.core.application.DatabaseConfiguration
+import java.io.FileInputStream
+import java.io.IOException
+import java.io.InputStream
+import java.nio.file.Files
+import java.nio.file.Path
+import java.sql.DriverManager
+import java.sql.SQLException
+import java.util.Properties
+import java.util.zip.GZIPInputStream
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
@@ -31,15 +40,6 @@ import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import org.testcontainers.shaded.org.apache.commons.io.IOUtils
 import org.testcontainers.utility.MountableFile
-import java.io.FileInputStream
-import java.io.IOException
-import java.io.InputStream
-import java.nio.file.Files
-import java.nio.file.Path
-import java.sql.DriverManager
-import java.sql.SQLException
-import java.util.*
-import java.util.zip.GZIPInputStream
 
 @Testcontainers
 @ExtendWith(MockitoExtension::class)
@@ -53,12 +53,16 @@ internal class PostgresExtractorIT {
     @BeforeEach
     fun setUp() {
         Mockito.`when`(configuration!!.getDatabaseConfiguration())
-                .thenReturn(DatabaseConfiguration(DatabaseConfiguration.DBType.POSTGRESQL,
-                        postgres.containerIpAddress,
-                        postgres.getMappedPort(5432),
-                        postgres.databaseName,
-                        postgres.username,
-                        postgres.password))
+            .thenReturn(
+                DatabaseConfiguration(
+                    DatabaseConfiguration.DBType.POSTGRESQL,
+                    postgres.containerIpAddress,
+                    postgres.getMappedPort(5432),
+                    postgres.databaseName,
+                    postgres.username,
+                    postgres.password
+                )
+            )
     }
 
     @AfterEach
@@ -108,7 +112,10 @@ internal class PostgresExtractorIT {
         @Container
         var postgres = PostgreSQLContainer<Nothing>("postgres:9.6").apply {
             withDatabaseName("jira")
-            withCopyFileToContainer(MountableFile.forClasspathResource("db/jira.sql"), "/docker-entrypoint-initdb.d/jira.sql") as PostgreSQLContainer<*>
+            withCopyFileToContainer(
+                MountableFile.forClasspathResource("db/jira.sql"),
+                "/docker-entrypoint-initdb.d/jira.sql"
+            ) as PostgreSQLContainer<*>
         }
     }
 }

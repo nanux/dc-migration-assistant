@@ -29,6 +29,7 @@ interface FileSystemMigrationProgress {
     fun getNumberOfFilesFound(): Long
 
     fun reportFileFound()
+
     /**
      * Gets the number of files which have had their upload commenced
      */
@@ -36,6 +37,7 @@ interface FileSystemMigrationProgress {
     fun getNumberOfCommencedFileUploads(): Long
 
     fun reportFileUploadCommenced()
+
     /**
      * Gets the number of files which have been successfully migrated
      */

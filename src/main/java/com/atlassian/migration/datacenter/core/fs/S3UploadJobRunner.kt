@@ -52,5 +52,4 @@ class S3UploadJobRunner(private val fsMigrationService: FilesystemMigrationServi
         var KEY = "com.atlassian.migration.datacenter.fs.S3UploadJobRunner"
         private val log = LoggerFactory.getLogger(S3UploadJobRunner::class.java)
     }
-
 }

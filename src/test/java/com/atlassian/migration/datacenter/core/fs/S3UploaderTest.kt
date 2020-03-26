@@ -18,6 +18,12 @@ package com.atlassian.migration.datacenter.core.fs
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport
 import com.atlassian.migration.datacenter.core.util.UploadQueue
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport
+import java.io.IOException
+import java.nio.file.Files
+import java.nio.file.Path
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.Executors
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -31,12 +37,6 @@ import software.amazon.awssdk.http.SdkHttpResponse
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectResponse
-import java.io.IOException
-import java.nio.file.Files
-import java.nio.file.Path
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ExecutionException
-import java.util.concurrent.Executors
 
 @ExtendWith(MockitoExtension::class)
 internal class S3UploaderTest {
@@ -65,10 +65,16 @@ internal class S3UploaderTest {
     @Test
     @Throws(IOException::class, InterruptedException::class, ExecutionException::class)
     fun uploadShouldConsumePathsWhileCrawlingIsRunning() {
-        val putObjectResponse = PutObjectResponse.builder().sdkHttpResponse(sdkHttpResponse).build() as PutObjectResponse
+        val putObjectResponse =
+            PutObjectResponse.builder().sdkHttpResponse(sdkHttpResponse).build() as PutObjectResponse
         Mockito.`when`(sdkHttpResponse.isSuccessful).thenReturn(true)
         Mockito.`when`(s3response.get()).thenReturn(putObjectResponse)
-        Mockito.`when`(s3AsyncClient.putObject(ArgumentMatchers.any(PutObjectRequest::class.java), ArgumentMatchers.any(Path::class.java))).thenReturn(s3response)
+        Mockito.`when`(
+            s3AsyncClient.putObject(
+                ArgumentMatchers.any(PutObjectRequest::class.java),
+                ArgumentMatchers.any(Path::class.java)
+            )
+        ).thenReturn(s3response)
         addFileToQueue("file1")
         val submit = Executors.newFixedThreadPool(1).submit { uploader.upload(queue) }
 
@@ -93,10 +99,16 @@ internal class S3UploaderTest {
     @Test
     @Throws(IOException::class, ExecutionException::class, InterruptedException::class)
     fun uploadShouldReportFileAsMigrated() {
-        val putObjectResponse = PutObjectResponse.builder().sdkHttpResponse(sdkHttpResponse).build() as PutObjectResponse
+        val putObjectResponse =
+            PutObjectResponse.builder().sdkHttpResponse(sdkHttpResponse).build() as PutObjectResponse
         Mockito.`when`(sdkHttpResponse.isSuccessful).thenReturn(true)
         Mockito.`when`(s3response.get()).thenReturn(putObjectResponse)
-        Mockito.`when`(s3AsyncClient.putObject(ArgumentMatchers.any(PutObjectRequest::class.java), ArgumentMatchers.any(Path::class.java))).thenReturn(s3response)
+        Mockito.`when`(
+            s3AsyncClient.putObject(
+                ArgumentMatchers.any(PutObjectRequest::class.java),
+                ArgumentMatchers.any(Path::class.java)
+            )
+        ).thenReturn(s3response)
         addFileToQueue("file1")
         queue.finish()
         val submit = Executors.newFixedThreadPool(1).submit { uploader.upload(queue) }
@@ -117,10 +129,16 @@ internal class S3UploaderTest {
     @Test
     @Throws(Exception::class)
     fun shouldReportFileAsInFlightWhenUploadStarts() {
-        val putObjectResponse = PutObjectResponse.builder().sdkHttpResponse(sdkHttpResponse).build() as PutObjectResponse
+        val putObjectResponse =
+            PutObjectResponse.builder().sdkHttpResponse(sdkHttpResponse).build() as PutObjectResponse
         Mockito.`when`(sdkHttpResponse.isSuccessful).thenReturn(true)
         Mockito.`when`(s3response.get()).thenReturn(putObjectResponse)
-        Mockito.`when`(s3AsyncClient.putObject(ArgumentMatchers.any(PutObjectRequest::class.java), ArgumentMatchers.any(Path::class.java))).thenReturn(s3response)
+        Mockito.`when`(
+            s3AsyncClient.putObject(
+                ArgumentMatchers.any(PutObjectRequest::class.java),
+                ArgumentMatchers.any(Path::class.java)
+            )
+        ).thenReturn(s3response)
         addFileToQueue("file1")
         val submit = Executors.newFixedThreadPool(1).submit { uploader.upload(queue) }
         Thread.sleep(100)

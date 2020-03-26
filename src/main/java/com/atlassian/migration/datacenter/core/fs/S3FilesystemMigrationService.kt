@@ -39,11 +39,13 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import javax.annotation.PostConstruct
 
-class S3FilesystemMigrationService(private val s3AsyncClientSupplier: Supplier<S3AsyncClient>,
-                                   private val jiraHome: JiraHome,
-                                   private val fileSystemDownloadManager: S3SyncFileSystemDownloadManager,
-                                   private val migrationService: MigrationService,
-                                   private val schedulerService: SchedulerService) : FilesystemMigrationService {
+class S3FilesystemMigrationService(
+    private val s3AsyncClientSupplier: Supplier<S3AsyncClient>,
+    private val jiraHome: JiraHome,
+    private val fileSystemDownloadManager: S3SyncFileSystemDownloadManager,
+    private val migrationService: MigrationService,
+    private val schedulerService: SchedulerService
+) : FilesystemMigrationService {
     private var s3AsyncClient: S3AsyncClient? = null
     private var report: FileSystemMigrationReport = DefaultFileSystemMigrationReport()
     private var fsUploader: FilesystemUploader? = null
@@ -65,9 +67,10 @@ class S3FilesystemMigrationService(private val s3AsyncClientSupplier: Supplier<S
     override fun scheduleMigration(): Boolean {
         val currentMigration = migrationService.currentMigration
         if (currentMigration.stage != MigrationStage.FS_MIGRATION_COPY) {
-            throw InvalidMigrationStageError(String.format(
-                    "Cannot start filesystem migration as the system is not ready. Required state should be %s but is %s", MigrationStage.FS_MIGRATION_COPY,
-                    currentMigration.stage))
+            throw InvalidMigrationStageError(
+                "Cannot start filesystem migration as the system is not ready. " +
+                    "Required state should be ${MigrationStage.FS_MIGRATION_COPY} but is ${currentMigration.stage}"
+            )
         }
         val runnerKey = JobRunnerKey.of(S3UploadJobRunner.Companion.KEY)
         val jobId = getScheduledJobId()
@@ -76,12 +79,12 @@ class S3FilesystemMigrationService(private val s3AsyncClientSupplier: Supplier<S
             logger.warn("Tried to schedule file system migration while job already exists")
             return false
         }
-        //TODO: Can the job runner be injected? It has no state
+        // TODO: Can the job runner be injected? It has no state
         schedulerService.registerJobRunner(runnerKey, S3UploadJobRunner(this))
         logger.info("Registered new job runner for S3")
         val jobConfig = JobConfig.forJobRunnerKey(runnerKey)
-                .withSchedule(null) // run now
-                .withRunMode(RunMode.RUN_ONCE_PER_CLUSTER)
+            .withSchedule(null) // run now
+            .withRunMode(RunMode.RUN_ONCE_PER_CLUSTER)
         try {
             logger.info("Scheduling new job for S3 upload runner")
             schedulerService.scheduleJob(jobId, jobConfig)
@@ -100,7 +103,11 @@ class S3FilesystemMigrationService(private val s3AsyncClientSupplier: Supplier<S
      */
     @Throws(InvalidMigrationStageError::class)
     override fun startMigration() {
-        logger.trace("Beginning migration. Uploading shared home dir {} to S3 bucket {}", getSharedHomeDir(), getS3Bucket())
+        logger.trace(
+            "Beginning migration. Uploading shared home dir {} to S3 bucket {}",
+            getSharedHomeDir(),
+            getS3Bucket()
+        )
         if (isRunning()) {
             logger.warn("Filesystem migration is currently in progress, aborting new execution.")
             return
@@ -146,7 +153,12 @@ class S3FilesystemMigrationService(private val s3AsyncClientSupplier: Supplier<S
             logger.info("Removed scheduled filesystem migration job")
         }
         if (!isRunning() || fsUploader == null) {
-            throw InvalidMigrationStageError(String.format("Invalid migration stage when cancelling filesystem migration: %s", migrationService.currentStage))
+            throw InvalidMigrationStageError(
+                String.format(
+                    "Invalid migration stage when cancelling filesystem migration: %s",
+                    migrationService.currentStage
+                )
+            )
         }
         logger.warn("Aborting running filesystem migration")
         fsUploader!!.abort()
@@ -170,7 +182,8 @@ class S3FilesystemMigrationService(private val s3AsyncClientSupplier: Supplier<S
 
     companion object {
         private val logger = LoggerFactory.getLogger(S3FilesystemMigrationService::class.java)
-        private val OVERRIDE_UPLOAD_DIRECTORY = System.getProperty("com.atlassian.migration.datacenter.fs.overrideJiraHome", "")
+        private val OVERRIDE_UPLOAD_DIRECTORY =
+            System.getProperty("com.atlassian.migration.datacenter.fs.overrideJiraHome", "")
         private val BUCKET_NAME = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing")
     }
 }

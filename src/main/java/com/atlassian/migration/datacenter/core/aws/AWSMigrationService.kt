@@ -35,7 +35,12 @@ class AWSMigrationService(val ao: ActiveObjects) : MigrationService {
         if (migration.stage == MigrationStage.NOT_STARTED) {
             return migration
         }
-        throw MigrationAlreadyExistsException(String.format("Found existing migration in Stage - `%s`", migration.stage))
+        throw MigrationAlreadyExistsException(
+            String.format(
+                "Found existing migration in Stage - `%s`",
+                migration.stage
+            )
+        )
     }
 
     override val currentStage: MigrationStage = findFirstOrCreateMigration().stage

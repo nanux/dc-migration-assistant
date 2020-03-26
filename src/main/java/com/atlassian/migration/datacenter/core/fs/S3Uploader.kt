@@ -25,12 +25,16 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import software.amazon.awssdk.services.s3.model.PutObjectResponse
 import java.nio.file.Files
 import java.nio.file.Path
-import java.util.*
+import java.util.LinkedList
+import java.util.Queue
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
 import java.util.function.Consumer
 
-class S3Uploader(private val config: S3UploadConfig, private val report: FileSystemMigrationReport) : Uploader {
+class S3Uploader(
+    private val config: S3UploadConfig,
+    private val report: FileSystemMigrationReport
+) : Uploader {
     private val responsesQueue: Queue<S3UploadOperation> = LinkedList()
     override fun maxConcurrent(): Int {
         return MAX_OPEN_CONNECTIONS
@@ -62,7 +66,11 @@ class S3Uploader(private val config: S3UploadConfig, private val report: FileSys
             logger.trace("Consuming {} from upload queue", path)
             val key = config.getSharedHome().relativize(path).toString()
             if (path.toFile().length() > MAXIMUM_FILE_SIZE_TO_UPLOAD) {
-                logger.debug("File {} is larger than {}, running multipart upload", path, FileUtils.byteCountToDisplaySize(MAXIMUM_FILE_SIZE_TO_UPLOAD))
+                logger.debug(
+                    "File {} is larger than {}, running multipart upload",
+                    path,
+                    FileUtils.byteCountToDisplaySize(MAXIMUM_FILE_SIZE_TO_UPLOAD)
+                )
                 val multiPartUploader = S3MultiPartUploader(config, path.toFile(), key)
                 try {
                     multiPartUploader.upload()
@@ -74,9 +82,9 @@ class S3Uploader(private val config: S3UploadConfig, private val report: FileSys
             } else {
                 logger.trace("uploading file {}", path)
                 val putRequest = PutObjectRequest.builder()
-                        .bucket(config.getBucketName())
-                        .key(key)
-                        .build()
+                    .bucket(config.getBucketName())
+                    .key(key)
+                    .build()
                 val response = config.getS3AsyncClient().putObject(putRequest, path)
                 val uploadOperation = S3UploadOperation(path, response)
                 responsesQueue.add(uploadOperation)
@@ -93,9 +101,10 @@ class S3Uploader(private val config: S3UploadConfig, private val report: FileSys
             val evaluatedResponse = operation.response.get()
             if (!evaluatedResponse.sdkHttpResponse().isSuccessful) {
                 val errorMessage = String.format(
-                        "Error when uploading %s to S3, %s",
-                        operation.path,
-                        evaluatedResponse.sdkHttpResponse().statusText())
+                    "Error when uploading %s to S3, %s",
+                    operation.path,
+                    evaluatedResponse.sdkHttpResponse().statusText()
+                )
                 logger.warn("error uploading {} to S3 - {}", operation.path, evaluatedResponse)
                 addFailedFile(operation.path, errorMessage)
             } else {
@@ -114,12 +123,15 @@ class S3Uploader(private val config: S3UploadConfig, private val report: FileSys
         logger.error("File {} wasn't uploaded. Reason: {}", path, reason)
     }
 
-    private class S3UploadOperation internal constructor(var path: Path, var response: CompletableFuture<PutObjectResponse>)
+    private class S3UploadOperation internal constructor(
+        var path: Path,
+        var response: CompletableFuture<PutObjectResponse>
+    )
 
     companion object {
         private val logger = LoggerFactory.getLogger(S3Uploader::class.java)
         const val MAX_OPEN_CONNECTIONS = 50
-        private const val MAXIMUM_FILE_SIZE_TO_UPLOAD = 5 * 1024 * 1024 * 1024L // 5GB  https://docs.aws.amazon.com/AmazonS3/latest/dev/UploadingObjects.html
+        private const val MAXIMUM_FILE_SIZE_TO_UPLOAD =
+            5 * 1024 * 1024 * 1024L // 5GB  https://docs.aws.amazon.com/AmazonS3/latest/dev/UploadingObjects.html
     }
-
 }

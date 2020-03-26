@@ -15,7 +15,7 @@
  */
 package com.atlassian.migration.datacenter.core.aws.db
 
-import java.util.*
+import java.util.Optional
 
 class MigrationStatus {
     enum class State {

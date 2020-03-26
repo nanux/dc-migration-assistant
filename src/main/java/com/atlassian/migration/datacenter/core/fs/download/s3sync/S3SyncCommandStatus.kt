@@ -83,13 +83,13 @@ class S3SyncCommandStatus {
 
     override fun toString(): String {
         return "S3SyncCommandStatus{" +
-                "finished=" + finished +
-                ", code=" + code +
-                ", progress=" + progress +
-                ", total=" + total +
-                ", filesRemaining=" + filesRemaining +
-                ", calculating=" + isCalculating +
-                ", errors=" + errors.toTypedArray().contentToString() +
-                '}'
+            "finished=" + finished +
+            ", code=" + code +
+            ", progress=" + progress +
+            ", total=" + total +
+            ", filesRemaining=" + filesRemaining +
+            ", calculating=" + isCalculating +
+            ", errors=" + errors.toTypedArray().contentToString() +
+            '}'
     }
 }

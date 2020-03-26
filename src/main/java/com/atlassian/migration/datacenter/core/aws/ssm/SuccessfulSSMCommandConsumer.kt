@@ -21,7 +21,11 @@ import org.slf4j.LoggerFactory
 import software.amazon.awssdk.services.ssm.model.CommandInvocationStatus
 import software.amazon.awssdk.services.ssm.model.GetCommandInvocationResponse
 
-abstract class SuccessfulSSMCommandConsumer<T> protected constructor(private val ssmApi: SSMApi, private val commandId: String?, private val instanceId: String?) {
+abstract class SuccessfulSSMCommandConsumer<T> protected constructor(
+    private val ssmApi: SSMApi,
+    private val commandId: String?,
+    private val instanceId: String?
+) {
     @Throws(UnsuccessfulSSMCommandInvocationException::class, SSMCommandInvocationProcessingError::class)
     fun handleCommandOutput(maxCommandStatusRetries: Int): T {
         var command: GetCommandInvocationResponse? = null
@@ -39,24 +43,25 @@ abstract class SuccessfulSSMCommandConsumer<T> protected constructor(private val
                 throw UnsuccessfulSSMCommandInvocationException("Interrupted while waiting to check command status", e)
             }
         }
-        throw UnsuccessfulSSMCommandInvocationException("Command never completed successfully. Latest status is: " + command!!.status().toString())
+        throw UnsuccessfulSSMCommandInvocationException(
+            "Command never completed successfully. Latest status is: " + command!!.status().toString()
+        )
     }
 
     @Throws(SSMCommandInvocationProcessingError::class)
     protected abstract fun handleSuccessfulCommand(commandInvocation: GetCommandInvocationResponse?): T
 
     class UnsuccessfulSSMCommandInvocationException : Exception {
-        constructor(message: String?) : super(message) {}
-        constructor(message: String?, cause: Throwable?) : super(message, cause) {}
+        constructor(message: String?) : super(message)
+        constructor(message: String?, cause: Throwable?) : super(message, cause)
     }
 
     class SSMCommandInvocationProcessingError : Exception {
-        constructor(message: String?) : super(message) {}
-        constructor(message: String?, cause: Throwable?) : super(message, cause) {}
+        constructor(message: String?) : super(message)
+        constructor(message: String?, cause: Throwable?) : super(message, cause)
     }
 
     companion object {
         private val logger = LoggerFactory.getLogger(SuccessfulSSMCommandConsumer::class.java)
     }
-
 }

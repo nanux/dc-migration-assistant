@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class DefaultFileSystemMigrationErrorReport : FileSystemMigrationErrorReport {
     private val failedMigrations: MutableSet<FailedFileMigration>
+
     /**
      * tries to report a failed file migration. If 100 files have failed already the report will be dropped to save memory.
      * In this scenario it is likely the migration will fail and that the lost errors will have the same cause.
