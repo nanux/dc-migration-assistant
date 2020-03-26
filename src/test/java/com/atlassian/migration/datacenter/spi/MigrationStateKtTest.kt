@@ -16,6 +16,7 @@
 
 package com.atlassian.migration.datacenter.spi
 
+import com.atlassian.migration.datacenter.api.ErrorHandler
 import com.atlassian.migration.datacenter.core.AuthenticationService
 import io.mockk.spyk
 import io.mockk.verify
@@ -25,8 +26,11 @@ import org.junit.jupiter.api.Assertions.assertEquals
 internal class MigrationStateKtTest {
 
     val authenticationService = spyk<AuthenticationService>()
+    val errorHandler = spyk<ErrorHandler>()
+    class MyError : Throwable()
+    val myError = MyError()
 
-    val migrationState = MigrationState(authenticationService)
+    val migrationState = MigrationState(authenticationService, errorHandler)
 
     @Test
     fun testStartState() {
@@ -36,9 +40,25 @@ internal class MigrationStateKtTest {
     @Test
     fun assertAuthenticationAction() {
         migrationState.stateMachine.transition(Event.Authenticating)
-        //every { authenticationService.authenticate() } returns
         verify {
             authenticationService.authenticate()
         }
+        assertEquals(migrationState.stateMachine.state, State.Authentication)
     }
+
+    @Test
+    fun canTransitionToError() {
+        migrationState.stateMachine.transition(Event.Authenticating)
+        verify {
+            authenticationService.authenticate()
+        }
+        assertEquals(migrationState.stateMachine.state, State.Authentication)
+
+        migrationState.stateMachine.transition(Event.ErrorDetected(myError))
+        verify {
+            errorHandler.onError(myError)
+        }
+        assertEquals(migrationState.stateMachine.state, State.Error(myError))
+    }
+
 }

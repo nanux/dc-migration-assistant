@@ -16,9 +16,11 @@
 
 package com.atlassian.migration.datacenter.spi
 
+import com.atlassian.migration.datacenter.api.ErrorHandler
 import com.atlassian.migration.datacenter.core.AuthenticationService
 import com.atlassian.migration.datacenter.core.aws.db.DatabaseArchivalService
 import com.tinder.StateMachine
+import com.tinder.StateMachine.Matcher.Companion.any;
 
 sealed class State {
     object NotStarted : State()
@@ -39,7 +41,7 @@ sealed class State {
     object Validate : State()
     object Cutover : State()
     object Finished : State()
-    object Error : State()
+    data class Error(val error: Throwable) : State()
 }
 
 sealed class Event {
@@ -54,7 +56,8 @@ sealed class Event {
     object Validation : Event()
     object Cutover : Event()
     object Finished : Event()
-    object ErrorDetected : Event()
+
+    data class ErrorDetected(val error: Throwable) : Event()
 }
 
 sealed class Action {
@@ -67,36 +70,48 @@ sealed class Action {
     object ImportData : Action()
     object Validate: Action()
     object Finish: Action()
-    object Error: Action()
+    data class Error(val error: Throwable) : Action()
 }
 
 class MigrationState(
-        private val authenticationService: AuthenticationService
+        private val authenticationService: AuthenticationService,
+        private val errorHandler: ErrorHandler
 )
 {
 
-    val stateMachine =
-        StateMachine.create<State, Event, Action> {
-            initialState(State.NotStarted)
+    val stateMachine = StateMachine.create<State, Event, Action> {
+        initialState(State.NotStarted)
 
-            state<State.NotStarted> {
-                on<Event.Authenticating> {
-                    transitionTo(State.Authentication, Action.Authenticate)
-                }
+        state<State.NotStarted> {
+            on<Event.Authenticating> {
+                transitionTo(State.Authentication, Action.Authenticate)
             }
-
-            state<State.Authentication> {
-                on<Event.Authenticated> {
-                    transitionTo(State.ProvisionApplication, Action.ProvisionApplication)
-                }
-            }
-
-            onTransition {
-                val validTransition = it as? StateMachine.Transition.Valid ?: return@onTransition
-                when (validTransition.sideEffect) {
-                    Action.Authenticate -> authenticationService.authenticate()
-                }
+            on<Event.ErrorDetected> {
+                transitionTo(State.Error(error = Throwable()), Action.Error(it.error))
             }
         }
+
+        state<State.Authentication> {
+            onEnter {
+                authenticationService.authenticate()
+            }
+            on<Event.Authenticated> {
+                transitionTo(State.ProvisionApplication, Action.ProvisionApplication)
+            }
+            on<Event.ErrorDetected> {
+                transitionTo(State.Error(it.error), Action.Error(it.error))
+            }
+        }
+
+        state<State.Error> {
+            onEnter {
+                errorHandler.onError(this.error)
+            }
+        }
+
+        onTransition {
+            val validTransition = it as? StateMachine.Transition.Valid ?: return@onTransition
+        }
+    }
 
 }
