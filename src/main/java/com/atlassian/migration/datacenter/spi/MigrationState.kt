@@ -18,9 +18,9 @@ package com.atlassian.migration.datacenter.spi
 
 import com.atlassian.migration.datacenter.api.ErrorHandler
 import com.atlassian.migration.datacenter.core.AuthenticationService
-import com.atlassian.migration.datacenter.core.aws.db.DatabaseArchivalService
+import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError
 import com.tinder.StateMachine
-import com.tinder.StateMachine.Matcher.Companion.any;
+import java.lang.RuntimeException
 
 sealed class State {
     object NotStarted : State()
@@ -73,6 +73,12 @@ sealed class Action {
     data class Error(val error: Throwable) : Action()
 }
 
+class InvalidTransitionException : RuntimeException
+{
+    constructor(msg: String) : super(msg)
+    constructor(msg: String, error: Throwable) : super(msg, error)
+}
+
 class MigrationState(
         private val authenticationService: AuthenticationService,
         private val errorHandler: ErrorHandler
@@ -110,7 +116,9 @@ class MigrationState(
         }
 
         onTransition {
-            val validTransition = it as? StateMachine.Transition.Valid ?: return@onTransition
+            if (it is StateMachine.Transition.Invalid) {
+                throw InvalidTransitionException(it.toString())
+            }
         }
     }
 

@@ -22,6 +22,7 @@ import io.mockk.spyk
 import io.mockk.verify
 import org.junit.Test
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.assertThrows
 
 internal class MigrationStateKtTest {
 
@@ -61,4 +62,19 @@ internal class MigrationStateKtTest {
         assertEquals(migrationState.stateMachine.state, State.Error(myError))
     }
 
+    @Test
+    fun cannotTransitionOutOfError() {
+        migrationState.stateMachine.transition(Event.Authenticating)
+        verify {
+            authenticationService.authenticate()
+        }
+        assertEquals(migrationState.stateMachine.state, State.Authentication)
+
+        migrationState.stateMachine.transition(Event.ErrorDetected(myError))
+        verify {
+            errorHandler.onError(myError)
+        }
+        
+        assertThrows<InvalidTransitionException> { migrationState.stateMachine.transition(Event.Authenticating) }
+    }
 }
