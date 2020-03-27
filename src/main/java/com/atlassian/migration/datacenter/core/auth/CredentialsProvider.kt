@@ -16,8 +16,5 @@
 
 package com.atlassian.migration.datacenter.core.auth
 
-import com.atlassian.migration.datacenter.core.auth.AuthToken
-
-interface AuthenticationService {
-    fun authenticate(creds: CredentialsProvider) : AuthToken<Any>
+interface CredentialsProvider {
 }

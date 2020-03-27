@@ -19,6 +19,7 @@ package com.atlassian.migration.datacenter.spi
 import com.atlassian.migration.datacenter.api.ErrorHandler
 import com.atlassian.migration.datacenter.core.auth.AuthToken
 import com.atlassian.migration.datacenter.core.auth.AuthenticationService
+import com.atlassian.migration.datacenter.core.auth.CredentialsProvider
 import io.mockk.every
 import io.mockk.spyk
 import io.mockk.verify
@@ -29,9 +30,10 @@ import org.junit.jupiter.api.assertThrows
 internal class MigrationStateKtTest {
 
     val authenticationService = spyk<AuthenticationService>()
-    val token = spyk<AuthToken>()
+    val creds = spyk<CredentialsProvider>()
+    val token = spyk<AuthToken<Any>>()
     init {
-        every { authenticationService.authenticate() } returns token
+        every { authenticationService.authenticate(creds) } returns token
     }
 
     val errorHandler = spyk<ErrorHandler>()
@@ -47,20 +49,20 @@ internal class MigrationStateKtTest {
 
     @Test
     fun assertAuthenticationAction() {
-        migrationState.start()
+        migrationState.start(creds)
         verify {
-            authenticationService.authenticate()
+            authenticationService.authenticate(creds)
         }
-        assertEquals(migrationState.stateMachine.state, State.Authenticating)
+        assertEquals(migrationState.stateMachine.state, State.Authenticating(creds))
     }
 
     @Test
     fun canTransitionToError() {
-        migrationState.stateMachine.transition(Event.Authenticating)
+        migrationState.stateMachine.transition(Event.Authenticate(creds))
         verify {
-            authenticationService.authenticate()
+            authenticationService.authenticate(creds)
         }
-        assertEquals(migrationState.stateMachine.state, State.Authenticating)
+        assertEquals(migrationState.stateMachine.state, State.Authenticating(creds))
 
         migrationState.stateMachine.transition(Event.ErrorDetected(myError))
         verify {
@@ -71,17 +73,17 @@ internal class MigrationStateKtTest {
 
     @Test
     fun cannotTransitionOutOfError() {
-        migrationState.stateMachine.transition(Event.Authenticating)
+        migrationState.stateMachine.transition(Event.Authenticate(creds))
         verify {
-            authenticationService.authenticate()
+            authenticationService.authenticate(creds)
         }
-        assertEquals(migrationState.stateMachine.state, State.Authenticating)
+        assertEquals(migrationState.stateMachine.state, State.Authenticating(creds))
 
         migrationState.stateMachine.transition(Event.ErrorDetected(myError))
         verify {
             errorHandler.onError(myError)
         }
 
-        assertThrows<InvalidTransitionException> { migrationState.stateMachine.transition(Event.Authenticating) }
+        assertThrows<InvalidTransitionException> { migrationState.stateMachine.transition(Event.Authenticate(creds)) }
     }
 }

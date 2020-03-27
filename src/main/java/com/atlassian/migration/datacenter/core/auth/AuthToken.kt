@@ -16,6 +16,6 @@
 
 package com.atlassian.migration.datacenter.core.auth
 
-interface AuthToken {
-    val token: String;
+interface AuthToken<out T> {
+    val token: T;
 }

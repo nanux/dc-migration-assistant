@@ -19,13 +19,14 @@ package com.atlassian.migration.datacenter.spi
 import com.atlassian.migration.datacenter.api.ErrorHandler
 import com.atlassian.migration.datacenter.core.auth.AuthToken
 import com.atlassian.migration.datacenter.core.auth.AuthenticationService
+import com.atlassian.migration.datacenter.core.auth.CredentialsProvider
 import com.tinder.StateMachine
 
 sealed class State {
     object NotStarted : State()
-    object Authenticating : State()
-    data class Authenticated(val token: AuthToken): State()
-    data class ProvisionApplication(val token: AuthToken): State()
+    data class Authenticating(val creds: CredentialsProvider) : State()
+    data class Authenticated(val token: AuthToken<Any>): State()
+    data class ProvisionApplication(val token: AuthToken<Any>): State()
     object ProvisionApplicationWait : State()
     object ProvisionMigrationStack : State()
     object ProvisionMigrationStackWait : State()
@@ -45,7 +46,7 @@ sealed class State {
 }
 
 sealed class Event {
-    object Authenticating : Event()
+    data class Authenticate(val creds: CredentialsProvider) : Event()
     object Authenticated : Event()
     object ProvisioningApplication : Event()
     object ProvisioningStack : Event()
@@ -68,16 +69,16 @@ class MigrationState(
         private val errorHandler: ErrorHandler
 )
 {
-    fun start() {
-        stateMachine.transition(Event.Authenticating)
+    fun start(creds: CredentialsProvider) {
+        stateMachine.transition(Event.Authenticate(creds))
     }
 
     val stateMachine = StateMachine.create<State, Event, Action> {
         initialState(State.NotStarted)
 
         state<State.NotStarted> {
-            on<Event.Authenticating> {
-                transitionTo(State.Authenticating)
+            on<Event.Authenticate> {
+                transitionTo(State.Authenticating(it.creds))
             }
             on<Event.ErrorDetected> {
                 transitionTo(State.Error(error = Throwable()))
@@ -87,7 +88,7 @@ class MigrationState(
         state<State.Authenticating> {
             onEnter {
                 try {
-                    val token = authenticationService.authenticate()
+                    val token = authenticationService.authenticate(creds)
                     transitionTo(State.Authenticated(token))
                 } catch (e: Throwable) {
                     transitionTo(State.Error(e))
