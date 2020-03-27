@@ -14,8 +14,12 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.core
+package com.atlassian.migration.datacenter.spi
 
-interface AuthenticationService {
-    fun authenticate()
+import java.lang.RuntimeException
+
+class InvalidTransitionException : RuntimeException
+{
+    constructor(msg: String) : super(msg)
+    constructor(msg: String, error: Throwable) : super(msg, error)
 }

@@ -17,7 +17,9 @@
 package com.atlassian.migration.datacenter.spi
 
 import com.atlassian.migration.datacenter.api.ErrorHandler
-import com.atlassian.migration.datacenter.core.AuthenticationService
+import com.atlassian.migration.datacenter.core.auth.AuthToken
+import com.atlassian.migration.datacenter.core.auth.AuthenticationService
+import io.mockk.every
 import io.mockk.spyk
 import io.mockk.verify
 import org.junit.Test
@@ -27,6 +29,11 @@ import org.junit.jupiter.api.assertThrows
 internal class MigrationStateKtTest {
 
     val authenticationService = spyk<AuthenticationService>()
+    val token = spyk<AuthToken>()
+    init {
+        every { authenticationService.authenticate() } returns token
+    }
+
     val errorHandler = spyk<ErrorHandler>()
     class MyError : Throwable()
     val myError = MyError()
@@ -40,11 +47,11 @@ internal class MigrationStateKtTest {
 
     @Test
     fun assertAuthenticationAction() {
-        migrationState.stateMachine.transition(Event.Authenticating)
+        migrationState.start()
         verify {
             authenticationService.authenticate()
         }
-        assertEquals(migrationState.stateMachine.state, State.Authentication)
+        assertEquals(migrationState.stateMachine.state, State.Authenticating)
     }
 
     @Test
@@ -53,7 +60,7 @@ internal class MigrationStateKtTest {
         verify {
             authenticationService.authenticate()
         }
-        assertEquals(migrationState.stateMachine.state, State.Authentication)
+        assertEquals(migrationState.stateMachine.state, State.Authenticating)
 
         migrationState.stateMachine.transition(Event.ErrorDetected(myError))
         verify {
@@ -68,13 +75,13 @@ internal class MigrationStateKtTest {
         verify {
             authenticationService.authenticate()
         }
-        assertEquals(migrationState.stateMachine.state, State.Authentication)
+        assertEquals(migrationState.stateMachine.state, State.Authenticating)
 
         migrationState.stateMachine.transition(Event.ErrorDetected(myError))
         verify {
             errorHandler.onError(myError)
         }
-        
+
         assertThrows<InvalidTransitionException> { migrationState.stateMachine.transition(Event.Authenticating) }
     }
 }

@@ -17,15 +17,15 @@
 package com.atlassian.migration.datacenter.spi
 
 import com.atlassian.migration.datacenter.api.ErrorHandler
-import com.atlassian.migration.datacenter.core.AuthenticationService
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError
+import com.atlassian.migration.datacenter.core.auth.AuthToken
+import com.atlassian.migration.datacenter.core.auth.AuthenticationService
 import com.tinder.StateMachine
-import java.lang.RuntimeException
 
 sealed class State {
     object NotStarted : State()
-    object Authentication : State()
-    object ProvisionApplication : State()
+    object Authenticating : State()
+    data class Authenticated(val token: AuthToken): State()
+    data class ProvisionApplication(val token: AuthToken): State()
     object ProvisionApplicationWait : State()
     object ProvisionMigrationStack : State()
     object ProvisionMigrationStackWait : State()
@@ -60,52 +60,41 @@ sealed class Event {
     data class ErrorDetected(val error: Throwable) : Event()
 }
 
-sealed class Action {
-    object Authenticate : Action()
-    object ProvisionApplication : Action()
-    object ProvisionStack : Action()
-    object CopyFilesystem : Action()
-    object ExportDatabase : Action()
-    object UploadDatabase : Action()
-    object ImportData : Action()
-    object Validate: Action()
-    object Finish: Action()
-    data class Error(val error: Throwable) : Action()
-}
-
-class InvalidTransitionException : RuntimeException
-{
-    constructor(msg: String) : super(msg)
-    constructor(msg: String, error: Throwable) : super(msg, error)
-}
+// TODO: Currently unused; do we really need this?
+sealed class Action
 
 class MigrationState(
         private val authenticationService: AuthenticationService,
         private val errorHandler: ErrorHandler
 )
 {
+    fun start() {
+        stateMachine.transition(Event.Authenticating)
+    }
 
     val stateMachine = StateMachine.create<State, Event, Action> {
         initialState(State.NotStarted)
 
         state<State.NotStarted> {
             on<Event.Authenticating> {
-                transitionTo(State.Authentication, Action.Authenticate)
+                transitionTo(State.Authenticating)
             }
             on<Event.ErrorDetected> {
-                transitionTo(State.Error(error = Throwable()), Action.Error(it.error))
+                transitionTo(State.Error(error = Throwable()))
             }
         }
 
-        state<State.Authentication> {
+        state<State.Authenticating> {
             onEnter {
-                authenticationService.authenticate()
-            }
-            on<Event.Authenticated> {
-                transitionTo(State.ProvisionApplication, Action.ProvisionApplication)
+                try {
+                    val token = authenticationService.authenticate()
+                    transitionTo(State.Authenticated(token))
+                } catch (e: Throwable) {
+                    transitionTo(State.Error(e))
+                }
             }
             on<Event.ErrorDetected> {
-                transitionTo(State.Error(it.error), Action.Error(it.error))
+                transitionTo(State.Error(it.error))
             }
         }
 
