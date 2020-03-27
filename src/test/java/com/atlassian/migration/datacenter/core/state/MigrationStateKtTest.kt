@@ -33,7 +33,7 @@ internal class MigrationStateKtTest {
     val applicationProvisioner = spyk<ApplicationProvisioner>()
     val creds = spyk<CredentialsProvider>()
     val token = spyk<AuthToken<Any>>()
-    val handle = spyk<ProvisioningHandle>()
+    val handle = spyk<StackHandle>()
     init {
         every { authenticationService.authenticate(creds) } returns token
     }

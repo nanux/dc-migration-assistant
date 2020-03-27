@@ -26,29 +26,26 @@ sealed class State {
     data class Authenticating(val creds: CredentialsProvider) : State()
     data class Authenticated(val token: AuthToken<Any>): State()
     data class ProvisionStack(val token: AuthToken<Any>) : State()
-    data class ProvisionApplication(val handle: ProvisioningHandle): State()
-    data class Finished(val handle: ProvisioningHandle) : State()
+    data class ProvisionApplication(val handle: StackHandle): State()
+    data class Finished(val handle: StackHandle) : State()
     data class Error(val error: Throwable) : State()
 }
 
 sealed class Event {
     data class Authenticate(val creds: CredentialsProvider) : Event()
-    object Authenticated : Event()
-    object ProvisioningApplication : Event()
-    object ProvisioningStack : Event()
-    object FSCopy : Event()
-    object DBExport : Event()
-    object DBUpload : Event()
-    object DBImport : Event()
-    object Validation : Event()
-    object Cutover : Event()
-    object Finished : Event()
-
+    data class Authenticated(val token: AuthToken<Any>) : Event()
+    data class ProvisionStack(val token: AuthToken<Any>) : Event()
+    data class StackProvisioned(val handle: StackHandle) : Event()
+    data class ProvisionApplication(val handle: StackHandle) : Event()
+    data class ApplicationProvision(val handle: ApplicationHandle) : Event()
+    data class Finished(val handle: ApplicationHandle) : Event()
     data class ErrorDetected(val error: Throwable) : Event()
 }
 
 // TODO: Currently unused; do we really need this?
-sealed class Action
+sealed class Action {
+    object Authenticate : Action()
+}
 
 class MigrationState(
         private val authenticationService: AuthenticationService,
@@ -63,7 +60,6 @@ class MigrationState(
 
     val stateMachine = StateMachine.create<State, Event, Action> {
         initialState(State.NotStarted)
-
         state<State.NotStarted> {
             on<Event.Authenticate> {
                 transitionTo(State.Authenticating(it.creds))
@@ -91,6 +87,9 @@ class MigrationState(
             onEnter {
                 transitionTo(State.ProvisionStack(this.token))
             }
+            on<Event.ErrorDetected> {
+                transitionTo(State.Error(it.error))
+            }
         }
 
         state<State.ProvisionStack> {
@@ -98,12 +97,18 @@ class MigrationState(
                 val handle = stackProvisioner.provision(this.token)
                 transitionTo(State.ProvisionApplication(handle))
             }
+            on<Event.ErrorDetected> {
+                transitionTo(State.Error(it.error))
+            }
         }
 
         state<State.ProvisionApplication> {
             onEnter {
                 applicationProvisioner.provisionApplication(this.handle)
                 transitionTo(State.Finished(this.handle))
+            }
+            on<Event.ErrorDetected> {
+                transitionTo(State.Error(it.error))
             }
         }
 

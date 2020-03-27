@@ -16,6 +16,5 @@
 
 package com.atlassian.migration.datacenter.core.provisioning
 
-interface ApplicationProvisioner {
-    fun provisionApplication(handle: StackHandle)
+interface ApplicationHandle {
 }

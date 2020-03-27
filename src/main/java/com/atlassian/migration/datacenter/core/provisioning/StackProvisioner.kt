@@ -17,5 +17,5 @@
 package com.atlassian.migration.datacenter.core.provisioning
 
 interface StackProvisioner {
-    fun provision(token: AuthToken<Any>): ProvisioningHandle
+    fun provision(token: AuthToken<Any>): StackHandle
 }

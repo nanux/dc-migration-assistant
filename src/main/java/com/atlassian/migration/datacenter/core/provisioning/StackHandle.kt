@@ -16,5 +16,5 @@
 
 package com.atlassian.migration.datacenter.core.provisioning
 
-interface ProvisioningHandle {
+interface StackHandle {
 }
