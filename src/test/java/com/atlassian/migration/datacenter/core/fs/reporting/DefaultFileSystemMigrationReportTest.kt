@@ -33,33 +33,35 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import org.mockito.Mockito
+import org.mockito.MockitoAnnotations
 import org.mockito.Spy
 import org.mockito.junit.jupiter.MockitoExtension
 
 @ExtendWith(MockitoExtension::class)
 class DefaultFileSystemMigrationReportTest {
-    private var sut: DefaultFileSystemMigrationReport? = null
+    lateinit var sut: DefaultFileSystemMigrationReport
 
     @Spy
-    var progress: FileSystemMigrationProgress? = null
+    lateinit var progress: FileSystemMigrationProgress
 
     @Spy
-    var errors: FileSystemMigrationErrorReport? = null
+    lateinit var errors: FileSystemMigrationErrorReport
 
     @BeforeEach
     fun setUp() {
-        sut = DefaultFileSystemMigrationReport(errors!!, progress!!)
+        MockitoAnnotations.initMocks(this)
+        sut = DefaultFileSystemMigrationReport(errors, progress)
     }
 
     @Test
     fun testStatusInitiallyNotStarted() {
-        Assertions.assertEquals(FilesystemMigrationStatus.NOT_STARTED, sut!!.status)
+        Assertions.assertEquals(FilesystemMigrationStatus.NOT_STARTED, sut.status)
     }
 
     @Test
     fun testSetsStatus() {
-        sut!!.status = FilesystemMigrationStatus.FAILED
-        Assertions.assertEquals(FilesystemMigrationStatus.FAILED, sut!!.status)
+        sut.status = FilesystemMigrationStatus.FAILED
+        Assertions.assertEquals(FilesystemMigrationStatus.FAILED, sut.status)
     }
 
     @Test
@@ -67,66 +69,66 @@ class DefaultFileSystemMigrationReportTest {
         val testFile = Paths.get("file")
         val testReason = "test"
         val failedFileMigration = FailedFileMigration(testFile, testReason)
-        sut!!.reportFileNotMigrated(failedFileMigration)
+        sut.reportFileNotMigrated(failedFileMigration)
         Mockito.verify(errors)?.reportFileNotMigrated(failedFileMigration)
-        sut!!.getFailedFiles()
+        sut.getFailedFiles()
         Mockito.verify(errors)?.getFailedFiles()
     }
 
     @Test
     fun shouldDelegateToWrappedProgress() {
         val path = Paths.get("file")
-        sut!!.reportFileMigrated()
+        sut.reportFileMigrated()
         Mockito.verify(progress)?.reportFileMigrated()
-        sut!!.getCountOfMigratedFiles()
+        sut.getCountOfMigratedFiles()
         Mockito.verify(progress)?.getCountOfMigratedFiles()
     }
 
     @Test
     fun shouldGiveDurationBetweenStartedAndGetElapsedTime() {
         val testClock = Clock.fixed(Instant.ofEpochMilli(0), ZoneId.systemDefault())
-        sut!!.setClock(testClock)
-        sut!!.status = FilesystemMigrationStatus.RUNNING
-        Assertions.assertEquals(Duration.ZERO, sut!!.elapsedTime)
-        sut!!.setClock(Clock.offset(testClock, Duration.ofDays(1).plusSeconds(5)))
-        Assertions.assertEquals(1L, sut!!.elapsedTime.toDays())
+        sut.setClock(testClock)
+        sut.status = FilesystemMigrationStatus.RUNNING
+        Assertions.assertEquals(Duration.ZERO, sut.elapsedTime)
+        sut.setClock(Clock.offset(testClock, Duration.ofDays(1).plusSeconds(5)))
+        Assertions.assertEquals(1L, sut.elapsedTime.toDays())
     }
 
     @Test
     fun shouldNotRestartTimerWhenTransitioningFromRunningToRunning() {
         val testClock = Clock.fixed(Instant.ofEpochMilli(0), ZoneId.systemDefault())
-        sut!!.setClock(testClock)
-        sut!!.status = FilesystemMigrationStatus.RUNNING
-        sut!!.setClock(Clock.offset(testClock, Duration.ofSeconds(10)))
-        Assertions.assertEquals(10L, sut!!.elapsedTime.seconds)
-        sut!!.status = FilesystemMigrationStatus.RUNNING
-        Assertions.assertEquals(10L, sut!!.elapsedTime.seconds)
-        sut!!.setClock(Clock.offset(testClock, Duration.ofSeconds(20)))
-        Assertions.assertEquals(20L, sut!!.elapsedTime.seconds)
+        sut.setClock(testClock)
+        sut.status = FilesystemMigrationStatus.RUNNING
+        sut.setClock(Clock.offset(testClock, Duration.ofSeconds(10)))
+        Assertions.assertEquals(10L, sut.elapsedTime.seconds)
+        sut.status = FilesystemMigrationStatus.RUNNING
+        Assertions.assertEquals(10L, sut.elapsedTime.seconds)
+        sut.setClock(Clock.offset(testClock, Duration.ofSeconds(20)))
+        Assertions.assertEquals(20L, sut.elapsedTime.seconds)
     }
 
     @ParameterizedTest
     @EnumSource(value = FilesystemMigrationStatus::class, names = ["DONE", "FAILED"])
     fun shouldNotIncrementElapsedTimeAfterMigrationEnds(status: FilesystemMigrationStatus?) {
         val testClock = Clock.fixed(Instant.ofEpochMilli(0), ZoneId.systemDefault())
-        sut!!.setClock(testClock)
-        sut!!.status = FilesystemMigrationStatus.RUNNING
-        sut!!.setClock(Clock.offset(testClock, Duration.ofSeconds(10)))
-        Assertions.assertEquals(10L, sut!!.elapsedTime.seconds)
-        sut!!.status = status!!
-        sut!!.setClock(Clock.offset(testClock, Duration.ofSeconds(20)))
-        Assertions.assertEquals(10L, sut!!.elapsedTime.seconds)
+        sut.setClock(testClock)
+        sut.status = FilesystemMigrationStatus.RUNNING
+        sut.setClock(Clock.offset(testClock, Duration.ofSeconds(10)))
+        Assertions.assertEquals(10L, sut.elapsedTime.seconds)
+        sut.status = status!!
+        sut.setClock(Clock.offset(testClock, Duration.ofSeconds(20)))
+        Assertions.assertEquals(10L, sut.elapsedTime.seconds)
     }
 
     @Test
     fun testToString() {
         val successfullyMigrated = 888L
         val failedFiles = 666
-        Mockito.`when`(progress!!.getCountOfMigratedFiles()).thenReturn(successfullyMigrated)
+        Mockito.`when`(progress.getCountOfMigratedFiles()).thenReturn(successfullyMigrated)
         val errorList = setOf<FailedFileMigration>()
         Mockito.`when`(errorList.size).thenReturn(failedFiles)
-        Mockito.`when`(errors!!.getFailedFiles()).thenReturn(errorList)
-        sut!!.status = FilesystemMigrationStatus.DONE
+        Mockito.`when`(errors.getFailedFiles()).thenReturn(errorList)
+        sut.status = FilesystemMigrationStatus.DONE
         val text = sut.toString()
         Assert.assertThat(text, Matchers.containsString("DONE"))
         Assert.assertThat(text, Matchers.containsString(successfullyMigrated.toString()))

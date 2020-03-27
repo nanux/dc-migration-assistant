@@ -32,12 +32,13 @@ import org.mockito.Mockito
 import org.mockito.junit.jupiter.MockitoExtension
 
 @ExtendWith(MockitoExtension::class)
-internal class JiraConfigurationTest {
+class JiraConfigurationTest {
     @Mock
     var jiraHome: JiraHome? = null
 
     @TempDir
-    var tempDir: Path? = null
+    lateinit var tempDir: Path
+
     var jiraConfiguration: JiraConfiguration? = null
 
     @BeforeEach
@@ -66,7 +67,7 @@ internal class JiraConfigurationTest {
     fun shouldRaiseAnExceptionWhenDbconfigFileIsMissingElements() {
         val xml =
             "<jira-database-config><jdbc-datasource><username>jdbc_user</username><password>password</password></jdbc-datasource></jira-database-config>"
-        val file = tempDir!!.resolve("dbconfig.xml")
+        val file = tempDir.resolve("dbconfig.xml")
         Files.write(file, xml.toByteArray())
         Assertions.assertThrows(ConfigurationReadException::class.java) { jiraConfiguration!!.getDatabaseConfiguration() }
     }

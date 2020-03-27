@@ -24,17 +24,19 @@ import com.atlassian.migration.datacenter.spi.MigrationStage
 import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeploymentService.ApplicationDeploymentStatus
 import java.util.HashMap
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.mockito.ArgumentMatchers
 import org.mockito.InjectMocks
 import org.mockito.Mock
 import org.mockito.Mockito
+import org.mockito.MockitoAnnotations
 import org.mockito.junit.jupiter.MockitoExtension
 import software.amazon.awssdk.services.cloudformation.model.StackStatus
 
 @ExtendWith(MockitoExtension::class)
-internal class QuickstartDeploymentServiceTest {
+class QuickstartDeploymentServiceTest {
     @Mock
     lateinit var mockCfnApi: CfnApi
 
@@ -47,11 +49,18 @@ internal class QuickstartDeploymentServiceTest {
     @InjectMocks
     lateinit var deploymentService: QuickstartDeploymentService
 
+    @BeforeEach
+    fun init() = MockitoAnnotations.initMocks(this)
+
+    companion object {
+        const val STACK_NAME = "my-stack"
+        val STACK_PARAMS: HashMap<String, String> = hashMapOf(Pair("parameter", "value"))
+    }
+
     @Mock
     lateinit var mockContext: MigrationContext
 
     @Test
-    @Throws(InvalidMigrationStageError::class)
     fun shouldDeployQuickStart() {
         initialiseValidMigration()
         deploySimpleStack()
@@ -63,7 +72,6 @@ internal class QuickstartDeploymentServiceTest {
     }
 
     @Test
-    @Throws(InvalidMigrationStageError::class)
     fun shouldReturnInProgressWhileDeploying() {
         initialiseValidMigration()
         Mockito.`when`(mockContext.applicationDeploymentId).thenReturn(STACK_NAME)
@@ -73,7 +81,6 @@ internal class QuickstartDeploymentServiceTest {
     }
 
     @Test
-    @Throws(InvalidMigrationStageError::class, InterruptedException::class)
     fun shouldTransitionToWaitingForDeploymentWhileDeploymentIsCompleting() {
         initialiseValidMigration()
         Mockito.`when`(mockCfnApi.getStatus(STACK_NAME)).thenReturn(StackStatus.CREATE_IN_PROGRESS)
@@ -121,14 +128,5 @@ internal class QuickstartDeploymentServiceTest {
 
     private fun initialiseValidMigration() {
         Mockito.`when`(mockAo.find(MigrationContext::class.java)).thenReturn(arrayOf(mockContext))
-    }
-
-    companion object {
-        const val STACK_NAME = "my-stack"
-        val STACK_PARAMS: HashMap<String, String> = object : HashMap<String, String>() {
-            init {
-                put("parameter", "value")
-            }
-        }
     }
 }
