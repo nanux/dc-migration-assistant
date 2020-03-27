@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.core.auth
+package com.atlassian.migration.datacenter.core.provisioning
 
-interface AuthToken<out T> {
-    val token: T;
+interface StackProvisioner {
+    fun provision(token: AuthToken<Any>): ProvisioningHandle
 }

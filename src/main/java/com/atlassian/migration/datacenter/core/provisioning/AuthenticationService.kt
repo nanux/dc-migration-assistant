@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.core.auth
+package com.atlassian.migration.datacenter.core.provisioning
 
-interface CredentialsProvider {
+interface AuthenticationService {
+    fun authenticate(creds: CredentialsProvider) : AuthToken<Any>
 }

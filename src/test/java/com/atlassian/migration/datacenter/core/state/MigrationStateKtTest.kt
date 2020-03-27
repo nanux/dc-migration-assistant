@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.spi
+package com.atlassian.migration.datacenter.core.state
 
 import com.atlassian.migration.datacenter.api.ErrorHandler
-import com.atlassian.migration.datacenter.core.auth.AuthToken
-import com.atlassian.migration.datacenter.core.auth.AuthenticationService
-import com.atlassian.migration.datacenter.core.auth.CredentialsProvider
+import com.atlassian.migration.datacenter.core.provisioning.*
+import com.atlassian.migration.datacenter.spi.InvalidTransitionException
 import io.mockk.every
 import io.mockk.spyk
 import io.mockk.verify
@@ -30,8 +29,11 @@ import org.junit.jupiter.api.assertThrows
 internal class MigrationStateKtTest {
 
     val authenticationService = spyk<AuthenticationService>()
+    val stackProvisioner = spyk<StackProvisioner>()
+    val applicationProvisioner = spyk<ApplicationProvisioner>()
     val creds = spyk<CredentialsProvider>()
     val token = spyk<AuthToken<Any>>()
+    val handle = spyk<ProvisioningHandle>()
     init {
         every { authenticationService.authenticate(creds) } returns token
     }
@@ -40,11 +42,23 @@ internal class MigrationStateKtTest {
     class MyError : Throwable()
     val myError = MyError()
 
-    val migrationState = MigrationState(authenticationService, errorHandler)
+    val migrationState = MigrationState(authenticationService, stackProvisioner, applicationProvisioner, errorHandler)
 
     @Test
     fun testStartState() {
         assertEquals(migrationState.stateMachine.state, State.NotStarted)
+    }
+
+    @Test
+    fun fullRun() {
+        migrationState.start(creds)
+
+        assertEquals(State.Finished(handle), migrationState.stateMachine.state)
+        verify {
+            authenticationService.authenticate(creds)
+            stackProvisioner.provision(token)
+            applicationProvisioner.provisionApplication(handle)
+        }
     }
 
     @Test

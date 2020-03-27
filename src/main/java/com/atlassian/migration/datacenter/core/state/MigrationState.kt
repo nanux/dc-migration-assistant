@@ -14,34 +14,20 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.spi
+package com.atlassian.migration.datacenter.core.state
 
 import com.atlassian.migration.datacenter.api.ErrorHandler
-import com.atlassian.migration.datacenter.core.auth.AuthToken
-import com.atlassian.migration.datacenter.core.auth.AuthenticationService
-import com.atlassian.migration.datacenter.core.auth.CredentialsProvider
+import com.atlassian.migration.datacenter.core.provisioning.*
+import com.atlassian.migration.datacenter.spi.InvalidTransitionException
 import com.tinder.StateMachine
 
 sealed class State {
     object NotStarted : State()
     data class Authenticating(val creds: CredentialsProvider) : State()
     data class Authenticated(val token: AuthToken<Any>): State()
-    data class ProvisionApplication(val token: AuthToken<Any>): State()
-    object ProvisionApplicationWait : State()
-    object ProvisionMigrationStack : State()
-    object ProvisionMigrationStackWait : State()
-    object FsMigrationCopy : State()
-    object FsMigrationCopyWait : State()
-    object OfflineWarning : State()
-    object DbMigrationExport : State()
-    object DbMigrationExportWait : State()
-    object DbMigrationUpload : State()
-    object DbMigrationUploadWait : State()
-    object DataMigrationImport : State()
-    object DataMigrationImportWait : State()
-    object Validate : State()
-    object Cutover : State()
-    object Finished : State()
+    data class ProvisionStack(val token: AuthToken<Any>) : State()
+    data class ProvisionApplication(val handle: ProvisioningHandle): State()
+    data class Finished(val handle: ProvisioningHandle) : State()
     data class Error(val error: Throwable) : State()
 }
 
@@ -66,6 +52,8 @@ sealed class Action
 
 class MigrationState(
         private val authenticationService: AuthenticationService,
+        private val stackProvisioner: StackProvisioner,
+        private val applicationProvisioner: ApplicationProvisioner,
         private val errorHandler: ErrorHandler
 )
 {
@@ -96,6 +84,26 @@ class MigrationState(
             }
             on<Event.ErrorDetected> {
                 transitionTo(State.Error(it.error))
+            }
+        }
+
+        state<State.Authenticated> {
+            onEnter {
+                transitionTo(State.ProvisionStack(this.token))
+            }
+        }
+
+        state<State.ProvisionStack> {
+            onEnter {
+                val handle = stackProvisioner.provision(this.token)
+                transitionTo(State.ProvisionApplication(handle))
+            }
+        }
+
+        state<State.ProvisionApplication> {
+            onEnter {
+                applicationProvisioner.provisionApplication(this.handle)
+                transitionTo(State.Finished(this.handle))
             }
         }
 
