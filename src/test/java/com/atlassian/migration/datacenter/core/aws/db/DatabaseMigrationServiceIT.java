@@ -18,11 +18,13 @@ package com.atlassian.migration.datacenter.core.aws.db;
 
 import com.atlassian.migration.datacenter.core.application.ApplicationConfiguration;
 import com.atlassian.migration.datacenter.core.application.DatabaseConfiguration;
+import com.atlassian.migration.datacenter.core.aws.db.restore.DatabaseRestoreStageTransitionCallback;
 import com.atlassian.migration.datacenter.core.aws.db.restore.SsmPsqlDatabaseRestoreService;
 import com.atlassian.migration.datacenter.core.aws.ssm.SSMApi;
 import com.atlassian.migration.datacenter.core.db.DatabaseExtractorFactory;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.MigrationService;
+import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.util.AwsCredentialsProviderShim;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
@@ -42,12 +44,18 @@ import software.amazon.awssdk.services.s3.model.CreateBucketRequest;
 import software.amazon.awssdk.services.s3.model.CreateBucketResponse;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.ssm.model.CommandInvocationStatus;
+import software.amazon.awssdk.services.ssm.model.GetCommandInvocationResponse;
 
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.concurrent.ExecutionException;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.testcontainers.containers.localstack.LocalStackContainer.Service.S3;
 
@@ -114,12 +122,14 @@ class DatabaseMigrationServiceIT
         s3UploadService.postConstruct();
         DatabaseUploadStageTransitionCallback uploadStageTransitionCallback = new DatabaseUploadStageTransitionCallback(this.migrationService);
 
+        when(ssmApi.runSSMDocument(anyString(), anyString(), anyMap())).thenReturn("my-commnd");
+        when(ssmApi.getSSMCommand(anyString(), anyString())).thenReturn(GetCommandInvocationResponse.builder().status(CommandInvocationStatus.SUCCESS).build());
         SsmPsqlDatabaseRestoreService restoreService = new SsmPsqlDatabaseRestoreService(ssmApi);
-        //TODO FINISH MOCKING
+        DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback  = new DatabaseRestoreStageTransitionCallback(this.migrationService);
 
         DatabaseMigrationService service = new DatabaseMigrationService(tempDir, databaseArchivalService, archiveStageTransitionCallback, s3UploadService, uploadStageTransitionCallback, restoreService, restoreStageTransitionCallback);
 
-        service.performMigration();
+        FileSystemMigrationErrorReport report = service.performMigration();
 
         HeadObjectRequest req = HeadObjectRequest.builder()
             .bucket(bucket)
@@ -127,5 +137,7 @@ class DatabaseMigrationServiceIT
             .build();
         HeadObjectResponse resp = s3client.headObject(req).get();
         assertTrue(resp.sdkHttpResponse().isSuccessful());
+
+        assertEquals(0, report.getFailedFiles().size());
     }
 }
