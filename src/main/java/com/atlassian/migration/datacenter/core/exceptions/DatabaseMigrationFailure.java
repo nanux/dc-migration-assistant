@@ -16,15 +16,12 @@
 
 package com.atlassian.migration.datacenter.core.exceptions;
 
-public class DatabaseMigrationFailure extends RuntimeException
-{
-    public DatabaseMigrationFailure(String message)
-    {
+public class DatabaseMigrationFailure extends RuntimeException {
+    public DatabaseMigrationFailure(String message) {
         super(message);
     }
 
-    public DatabaseMigrationFailure(String message, Throwable cause)
-    {
+    public DatabaseMigrationFailure(String message, Throwable cause) {
         super(message, cause);
     }
 }

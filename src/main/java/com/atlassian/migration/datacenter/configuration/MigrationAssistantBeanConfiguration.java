@@ -123,7 +123,7 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public DatabaseUploadStageTransitionCallback databaseUploadStageTransitionCallback(MigrationService migrationService){
+    public DatabaseUploadStageTransitionCallback databaseUploadStageTransitionCallback(MigrationService migrationService) {
         return new DatabaseUploadStageTransitionCallback(migrationService);
     }
 
@@ -172,6 +172,7 @@ public class MigrationAssistantBeanConfiguration {
     public DatabaseArchivalService databaseArchivalService(DatabaseExtractor databaseExtractor) {
         return new DatabaseArchivalService(databaseExtractor);
     }
+
     @Bean
     public S3SyncFileSystemDownloadManager s3SyncFileSystemDownloadManager(S3SyncFileSystemDownloader downloader) {
         return new S3SyncFileSystemDownloadManager(downloader);

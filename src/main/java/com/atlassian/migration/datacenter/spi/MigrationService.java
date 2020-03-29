@@ -28,6 +28,7 @@ public interface MigrationService {
     /**
      * Creates a new migration in the initial stage. Using this method will create just one migration object in the database
      * <b>or</b> find the existing migration object and return it.
+     *
      * @throws {@link MigrationAlreadyExistsException} when a migration object already exists.
      */
     Migration createMigration() throws MigrationAlreadyExistsException;
@@ -48,6 +49,7 @@ public interface MigrationService {
 
     /**
      * Tries to transition the migration state from one to another
+     *
      * @param to the state you want to transition to
      * @throws InvalidMigrationStageError when the transition is invalid
      */
@@ -55,6 +57,7 @@ public interface MigrationService {
 
     /**
      * Moves the migration into an error stage
+     *
      * @see MigrationStage#ERROR
      */
     void error();

@@ -23,7 +23,7 @@ public class DatabaseArchivalService {
 
     private DatabaseExtractor databaseExtractor;
 
-    public DatabaseArchivalService(DatabaseExtractor databaseExtractor){
+    public DatabaseArchivalService(DatabaseExtractor databaseExtractor) {
         this.databaseExtractor = databaseExtractor;
     }
 

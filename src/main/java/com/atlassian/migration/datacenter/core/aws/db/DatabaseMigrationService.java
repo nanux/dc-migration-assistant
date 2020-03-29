@@ -20,6 +20,7 @@ import com.atlassian.migration.datacenter.core.aws.db.restore.DatabaseRestoreSta
 import com.atlassian.migration.datacenter.core.aws.db.restore.SsmPsqlDatabaseRestoreService;
 import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.core.fs.FilesystemUploader;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
 
@@ -28,8 +29,7 @@ import java.nio.file.Path;
 /**
  * Copyright Atlassian: 10/03/2020
  */
-public class DatabaseMigrationService
-{
+public class DatabaseMigrationService {
     private static final String TARGET_BUCKET_NAME = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
 
     private final Path tempDirectory;
@@ -58,7 +58,14 @@ public class DatabaseMigrationService
      */
     public FileSystemMigrationErrorReport performMigration() throws DatabaseMigrationFailure, InvalidMigrationStageError {
         Path pathToDatabaseFile = databaseArchivalService.archiveDatabase(tempDirectory, stageTransitionCallback);
-        final FileSystemMigrationReport report = s3UploadService.upload(pathToDatabaseFile, TARGET_BUCKET_NAME, this.uploadStageTransitionCallback);
+
+        FileSystemMigrationErrorReport report;
+
+        try {
+            report = s3UploadService.upload(pathToDatabaseFile, TARGET_BUCKET_NAME, this.uploadStageTransitionCallback);
+        } catch (FilesystemUploader.FileUploadException e) {
+            throw new DatabaseMigrationFailure("Error when uploading database dump to S3", e);
+        }
         restoreService.restoreDatabase(restoreStageTransitionCallback);
         return report;
     }

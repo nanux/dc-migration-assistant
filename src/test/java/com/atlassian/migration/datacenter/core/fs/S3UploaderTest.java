@@ -16,11 +16,8 @@
 
 package com.atlassian.migration.datacenter.core.fs;
 
-import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
-import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFilesystemMigrationProgress;
 import com.atlassian.migration.datacenter.core.util.UploadQueue;
-import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,7 +33,10 @@ import software.amazon.awssdk.services.s3.model.PutObjectResponse;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.concurrent.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -82,7 +82,11 @@ class S3UploaderTest {
         addFileToQueue("file1");
 
         final Future<?> submit = Executors.newFixedThreadPool(1).submit(() -> {
-            uploader.upload(queue);
+            try {
+                uploader.upload(queue);
+            } catch (FilesystemUploader.FileUploadException e) {
+                throw new RuntimeException(e);
+            }
         });
 
         // verify consumption of the first path
@@ -114,7 +118,11 @@ class S3UploaderTest {
         queue.finish();
 
         final Future<?> submit = Executors.newFixedThreadPool(1).submit(() -> {
-            uploader.upload(queue);
+            try {
+                uploader.upload(queue);
+            } catch (FilesystemUploader.FileUploadException e) {
+                throw new RuntimeException(e);
+            }
         });
 
         submit.get();
@@ -122,7 +130,7 @@ class S3UploaderTest {
     }
 
     @Test
-    void uploadNonExistentDirectoryShouldReturnFailedCollection() throws InterruptedException {
+    void uploadNonExistentDirectoryShouldReturnFailedCollection() throws InterruptedException, FilesystemUploader.FileUploadException {
         final Path nonExistentFile = tempDir.resolve("non-existent");
         queue.put(nonExistentFile);
         queue.finish();
@@ -142,7 +150,11 @@ class S3UploaderTest {
         addFileToQueue("file1");
 
         final Future<?> submit = Executors.newFixedThreadPool(1).submit(() -> {
-            uploader.upload(queue);
+            try {
+                uploader.upload(queue);
+            } catch (FilesystemUploader.FileUploadException e) {
+                throw new RuntimeException(e);
+            }
         });
 
         Thread.sleep(100);

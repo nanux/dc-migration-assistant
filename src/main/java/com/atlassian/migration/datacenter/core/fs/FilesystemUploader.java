@@ -16,28 +16,32 @@
 
 package com.atlassian.migration.datacenter.core.fs;
 
-import com.atlassian.migration.datacenter.core.exceptions.FileUploadException;
+import com.atlassian.migration.datacenter.core.exceptions.FileSystemMigrationFailure;
 import com.atlassian.migration.datacenter.core.util.UploadQueue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-public class FilesystemUploader
-{
+public class FilesystemUploader {
+    private static final Logger logger = LoggerFactory.getLogger(FilesystemUploader.class);
+
     private Uploader uploader;
     private Crawler crawler;
+    private final ExecutorService pool;
 
-    public FilesystemUploader(Crawler crawler, Uploader uploader)
-    {
+    public FilesystemUploader(Crawler crawler, Uploader uploader) {
         this.uploader = uploader;
         this.crawler = crawler;
+        this.pool = Executors.newFixedThreadPool(2);
     }
 
-    public void uploadDirectory(Path dir) throws FileUploadException
-    {
+    public void uploadDirectory(Path dir) throws FileUploadException {
         ExecutorService pool = Executors.newFixedThreadPool(2);
         UploadQueue<Path> queue = new UploadQueue<>(uploader.maxConcurrent());
 
@@ -54,11 +58,30 @@ public class FilesystemUploader
             crawlFuture.get();
             uploadFuture.get();
         } catch (InterruptedException e) {
-            throw new FileUploadException("Failed to traverse/upload filesystem: "+dir,e);
+            throw new FileUploadException("Failed to traverse/upload filesystem: " + dir, e);
         } catch (ExecutionException e) {
-            throw new FileUploadException("Failed to traverse/upload filesystem: "+dir,e.getCause());
+            throw new FileUploadException("Failed to traverse/upload filesystem: " + dir, e.getCause());
         }
 
         pool.shutdown();
     }
+
+    /**
+     * Abort the migration process and shuts down all executor services in the pool
+     */
+    public void abort() {
+        final List<Runnable> runnables = pool.shutdownNow();
+        logger.warn("Shut down executors, list of task not commenced: {}", runnables);
+    }
+
+    public static class FileUploadException extends FileSystemMigrationFailure {
+        public FileUploadException(String message) {
+            super(message);
+        }
+
+        public FileUploadException(String message, Throwable cause) {
+            super(message, cause);
+        }
+    }
+
 }
