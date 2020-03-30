@@ -15,7 +15,7 @@ package com.atlassian.migration.datacenter.core.aws;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 
 public interface MigrationStageCallback {
-    void transitionToServiceStartStage() throws InvalidMigrationStageError;
+    void assertInStartingStage() throws InvalidMigrationStageError;
 
     void transitionToServiceWaitStage() throws InvalidMigrationStageError;
 
