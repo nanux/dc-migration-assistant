@@ -27,4 +27,12 @@ public interface MigrationContext extends Entity {
     String getApplicationDeploymentId();
 
     void setApplicationDeploymentId(String id);
+
+    String getTargetDatabasePasswordEncrypted();
+
+    void setTargetDatabasePasswordEncrypted(String encryptedPassword);
+
+    String getTargetDatabaseUsername();
+
+    void setTargetDatabaseUsername(String username);
 }
