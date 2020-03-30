@@ -18,10 +18,11 @@ package com.atlassian.migration.datacenter.core.aws.db.restore;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.migration.datacenter.core.util.EncryptionManager;
-import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import org.apache.commons.lang3.tuple.Pair;
+
+import static java.util.Objects.requireNonNull;
 
 public class TargetDbCredentialsStorageService {
 
@@ -40,9 +41,14 @@ public class TargetDbCredentialsStorageService {
      * to be used later to restore the database. The password will be encrypted before storage.
      * @param username the database username
      * @param password the database password
+     * @throws NullPointerException if either parameter is null
      */
     public void storeCredentials(String username, String password) {
+        requireNonNull(username);
+        requireNonNull(password);
+
         MigrationContext context = getMigrationContext();
+
         context.setTargetDatabaseUsername(username);
         context.setTargetDatabasePasswordEncrypted(encryptionManager.encryptString(password));
     }

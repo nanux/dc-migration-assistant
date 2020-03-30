@@ -82,7 +82,7 @@ class QuickstartDeploymentServiceTest {
             properties.setProperty(passwordPropertyKey, invocation.getArgument(1));
             return null;
         }).when(dbCredentialsStorageService).storeCredentials(anyString(), anyString());
-        when(dbCredentialsStorageService.getCredentials()).thenReturn(Pair.of(properties.getProperty(usernamePropertyKey), properties.getProperty(passwordPropertyKey)));
+        doAnswer(invocation -> Pair.of(properties.getProperty(usernamePropertyKey), properties.getProperty(passwordPropertyKey))).when(dbCredentialsStorageService).getCredentials();
     }
 
     @Test

@@ -72,6 +72,12 @@ public class QuickstartDeploymentService implements ApplicationDeploymentService
         addDeploymentIdToMigrationContext(deploymentId);
 
         scheduleMigrationServiceTransition(deploymentId);
+
+        storeDbCredentials(params);
+    }
+
+    private void storeDbCredentials(Map<String, String> params) {
+        dbCredentialsStorageService.storeCredentials("atljira", params.get("DBPassword"));
     }
 
     @Override
