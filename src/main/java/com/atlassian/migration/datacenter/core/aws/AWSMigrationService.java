@@ -62,6 +62,14 @@ public class AWSMigrationService implements MigrationService {
     }
 
     @Override
+    public void assertCurrentStage(MigrationStage expected) throws InvalidMigrationStageError {
+        MigrationStage currentStage = getCurrentStage();
+        if (currentStage != expected) {
+            throw new InvalidMigrationStageError(String.format("wanted to be in stage %s but was in stage %s", expected, currentStage));
+        }
+    }
+
+    @Override
     public Migration getCurrentMigration() {
         Migration migration = findFirstOrCreateMigration();
         return (Migration) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{Migration.class}, new ReadOnlyEntityInvocationHandler<>(migration));
