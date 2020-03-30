@@ -38,6 +38,11 @@ public interface MigrationService {
      */
     MigrationStage getCurrentStage();
 
+    /**
+     * @param expected the migration stage that the caller expects the migration to be in
+     * @throws InvalidMigrationStageError when there is a mismatch between the expected stage and the current stage
+     */
+    void assertCurrentStage(MigrationStage expected) throws InvalidMigrationStageError;
 
     /**
      * Gets the Migration Object that can only be read. Setter invocation must to happen through the {@link MigrationService} interface
