@@ -46,11 +46,11 @@ import com.atlassian.migration.datacenter.core.db.DatabaseExtractorFactory;
 import com.atlassian.migration.datacenter.core.fs.S3FilesystemMigrationService;
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloadManager;
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloader;
+import com.atlassian.migration.datacenter.core.util.EncryptionManager;
 import com.atlassian.migration.datacenter.core.util.MigrationRunner;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
-import com.atlassian.scheduler.SchedulerService;
 import com.atlassian.util.concurrent.Supplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -89,8 +89,13 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public EncryptedCredentialsStorage encryptedCredentialsStorage(Supplier<PluginSettingsFactory> pluginSettingsFactorySupplier, JiraHome jiraHome) {
-        return new EncryptedCredentialsStorage(pluginSettingsFactorySupplier, jiraHome);
+    public EncryptionManager encryptionManager(JiraHome jiraHome) {
+        return new EncryptionManager(jiraHome);
+    }
+
+    @Bean
+    public EncryptedCredentialsStorage encryptedCredentialsStorage(Supplier<PluginSettingsFactory> pluginSettingsFactorySupplier, EncryptionManager encryptionManager) {
+        return new EncryptedCredentialsStorage(pluginSettingsFactorySupplier, encryptionManager);
     }
 
     @Bean
