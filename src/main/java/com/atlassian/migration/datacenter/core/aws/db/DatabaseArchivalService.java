@@ -30,7 +30,7 @@ public class DatabaseArchivalService {
     public Path archiveDatabase(Path tempDirectory, MigrationStageCallback archiveStageCallback) throws InvalidMigrationStageError {
         Path target = tempDirectory.resolve("db.dump");
 
-        archiveStageCallback.transitionToServiceStartStage();
+        archiveStageCallback.assertInStartingStage();
 
         Process extractorProcess = this.databaseExtractor.startDatabaseDump(target);
         archiveStageCallback.transitionToServiceWaitStage();
