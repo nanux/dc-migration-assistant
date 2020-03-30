@@ -44,7 +44,7 @@ public class SsmPsqlDatabaseRestoreService {
     }
 
     public void restoreDatabase(DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback) throws DatabaseMigrationFailure, InvalidMigrationStageError {
-        restoreStageTransitionCallback.transitionToServiceStartStage();
+        restoreStageTransitionCallback.assertInStartingStage();
 
         String commandId = ssm.runSSMDocument(SSM_PLAYBOOK, MIGRATION_STACK_INSTANCE, Collections.emptyMap());
 
