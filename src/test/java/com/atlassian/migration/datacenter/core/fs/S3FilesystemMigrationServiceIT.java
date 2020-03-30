@@ -20,6 +20,7 @@ import com.atlassian.jira.config.util.JiraHome;
 import com.atlassian.migration.datacenter.core.aws.auth.AtlassianPluginAWSCredentialsProvider;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloadManager;
+import com.atlassian.migration.datacenter.core.util.MigrationRunner;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus;
@@ -68,7 +69,7 @@ class S3FilesystemMigrationServiceIT {
     @Mock
     JiraHome jiraHome;
     @Mock
-    SchedulerService schedulerService;
+    MigrationRunner migrationRunner;
     @Mock
     S3SyncFileSystemDownloadManager fileSystemDownloader;
 
@@ -112,7 +113,7 @@ class S3FilesystemMigrationServiceIT {
 
         Path file = genRandFile();
 
-        S3FilesystemMigrationService fsService = new S3FilesystemMigrationService(() -> s3AsyncClient, jiraHome, fileSystemDownloader, migrationService, schedulerService);
+        S3FilesystemMigrationService fsService = new S3FilesystemMigrationService(() -> s3AsyncClient, jiraHome, fileSystemDownloader, migrationService, migrationRunner);
         fsService.postConstruct();
 
         fsService.startMigration();
