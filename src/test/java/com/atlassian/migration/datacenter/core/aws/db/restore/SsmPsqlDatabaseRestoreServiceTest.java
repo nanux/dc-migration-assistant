@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.services.ssm.model.CommandInvocationStatus;
 import software.amazon.awssdk.services.ssm.model.GetCommandInvocationResponse;
 
@@ -69,8 +70,9 @@ class SsmPsqlDatabaseRestoreServiceTest {
         when(ssmApi.runSSMDocument("pending implementation", defaultEc2Instance, Collections.emptyMap())).thenReturn(mockCommandId);
 
         when(ssmApi.getSSMCommand(mockCommandId, defaultEc2Instance)).thenReturn(
-                GetCommandInvocationResponse.builder()
+                (GetCommandInvocationResponse) GetCommandInvocationResponse.builder()
                         .status(status)
+                        .sdkHttpResponse(SdkHttpResponse.builder().statusText("it failed").build())
                         .build()
         );
     }
