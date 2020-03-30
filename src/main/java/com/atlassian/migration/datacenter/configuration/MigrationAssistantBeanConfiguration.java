@@ -217,7 +217,7 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public QuickstartDeploymentService quickstartDeploymentService(ActiveObjects ao, CfnApi cfnApi, MigrationService migrationService) {
-        return new QuickstartDeploymentService(ao, cfnApi, migrationService);
+    public QuickstartDeploymentService quickstartDeploymentService(ActiveObjects ao, CfnApi cfnApi, MigrationService migrationService, TargetDbCredentialsStorageService dbCredentialsStorageService) {
+        return new QuickstartDeploymentService(ao, cfnApi, migrationService, dbCredentialsStorageService);
     }
 }
