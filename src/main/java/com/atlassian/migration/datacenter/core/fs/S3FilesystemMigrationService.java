@@ -21,6 +21,7 @@ import com.atlassian.migration.datacenter.core.exceptions.FileSystemMigrationFai
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloadManager;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
+import com.atlassian.migration.datacenter.core.util.MigrationRunner;
 import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
@@ -55,7 +56,8 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private S3AsyncClient s3AsyncClient;
     private final JiraHome jiraHome;
     private final MigrationService migrationService;
-    private final SchedulerService schedulerService;
+    //private final SchedulerService schedulerService;
+    private final MigrationRunner migrationRunner;
     private final S3SyncFileSystemDownloadManager fileSystemDownloadManager;
     private Supplier<S3AsyncClient> s3AsyncClientSupplier;
 
@@ -66,11 +68,11 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
                                         JiraHome jiraHome,
                                         S3SyncFileSystemDownloadManager fileSystemDownloadManager,
                                         MigrationService migrationService,
-                                        SchedulerService schedulerService) {
+                                        MigrationRunner migrationRunner) {
         this.s3AsyncClientSupplier = s3AsyncClientSupplier;
         this.jiraHome = jiraHome;
         this.migrationService = migrationService;
-        this.schedulerService = schedulerService;
+        this.migrationRunner = migrationRunner;
         this.fileSystemDownloadManager = fileSystemDownloadManager;
 
         this.report = new DefaultFileSystemMigrationReport();
@@ -102,32 +104,15 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
                             currentMigration.getStage()));
         }
 
-        final JobRunnerKey runnerKey = JobRunnerKey.of(S3UploadJobRunner.KEY);
         JobId jobId = getScheduledJobId();
-        logger.info("Starting filesystem migration");
+        S3UploadJobRunner jobRunner = new S3UploadJobRunner(this);
 
-        if (schedulerService.getJobDetails(jobId) != null) {
-            logger.warn("Tried to schedule file system migration while job already exists");
-            return false;
-        }
+        boolean result = migrationRunner.runMigration(jobId, jobRunner);
 
-        //TODO: Can the job runner be injected? It has no state
-        schedulerService.registerJobRunner(runnerKey, new S3UploadJobRunner(this));
-        logger.info("Registered new job runner for S3");
-
-        JobConfig jobConfig = JobConfig.forJobRunnerKey(runnerKey)
-                .withSchedule(null) // run now
-                .withRunMode(RunMode.RUN_ONCE_PER_CLUSTER);
-        try {
-            logger.info("Scheduling new job for S3 upload runner");
-            schedulerService.scheduleJob(jobId, jobConfig);
-        } catch (SchedulerServiceException e) {
-            logger.error("Exception when scheduling S3 upload job", e);
-            this.schedulerService.unscheduleJob(jobId);
+        if (!result) {
             migrationService.error();
-            return false;
         }
-        return true;
+        return result;
     }
 
     /**
@@ -175,11 +160,8 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
     @Override
     public void abortMigration() throws InvalidMigrationStageError {
-        // we always try to remove scheduled job if the system is in inconsistent state
-        if (schedulerService.getJobDetails(getScheduledJobId()) != null) {
-            schedulerService.unscheduleJob(getScheduledJobId());
-            logger.info("Removed scheduled filesystem migration job");
-        }
+        // We always try to remove scheduled job if the system is in inconsistent state
+        migrationRunner.abortJobIfPresesnt(getScheduledJobId());
 
         if (!isRunning() || fsUploader == null) {
             throw new InvalidMigrationStageError(String.format("Invalid migration stage when cancelling filesystem migration: %s", migrationService.getCurrentStage()));
