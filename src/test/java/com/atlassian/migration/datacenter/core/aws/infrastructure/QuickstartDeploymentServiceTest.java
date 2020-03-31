@@ -83,12 +83,11 @@ class QuickstartDeploymentServiceTest {
             return null;
         }).when(dbCredentialsStorageService).storeCredentials(anyString());
         lenient().doAnswer(invocation -> Pair.of(DEFAULT_DB_USER, properties.getProperty(passwordPropertyKey))).when(dbCredentialsStorageService).getCredentials();
+        when(mockMigrationService.getCurrentContext()).thenReturn(mockContext);
     }
 
     @Test
     void shouldDeployQuickStart() throws InvalidMigrationStageError {
-        initialiseValidMigration();
-
         deploySimpleStack();
 
         verify(mockCfnApi).provisionStack("https://aws-quickstart.s3.amazonaws.com/quickstart-atlassian-jira/templates/quickstart-jira-dc-with-vpc.template.yaml", STACK_NAME, STACK_PARAMS);
@@ -96,8 +95,6 @@ class QuickstartDeploymentServiceTest {
 
     @Test
     void shouldStoreDBCredentials() throws InvalidMigrationStageError {
-        initialiseValidMigration();
-
         deploymentService.deployApplication(STACK_NAME, STACK_PARAMS);
 
         final Pair<String, String> credentials = dbCredentialsStorageService.getCredentials();
@@ -107,7 +104,6 @@ class QuickstartDeploymentServiceTest {
 
     @Test
     void shouldReturnInProgressWhileDeploying() throws InvalidMigrationStageError {
-        initialiseValidMigration();
         when(mockContext.getApplicationDeploymentId()).thenReturn(STACK_NAME);
         when(mockCfnApi.getStatus(STACK_NAME)).thenReturn(StackStatus.CREATE_IN_PROGRESS);
 
@@ -118,7 +114,6 @@ class QuickstartDeploymentServiceTest {
 
     @Test
     void shouldTransitionToWaitingForDeploymentWhileDeploymentIsCompleting() throws InvalidMigrationStageError, InterruptedException {
-        initialiseValidMigration();
         when(mockCfnApi.getStatus(STACK_NAME)).thenReturn(StackStatus.CREATE_IN_PROGRESS);
 
         deploySimpleStack();
@@ -130,7 +125,6 @@ class QuickstartDeploymentServiceTest {
 
     @Test
     void shouldTransitionMigrationServiceStateWhenDeploymentFinishes() throws InterruptedException, InvalidMigrationStageError {
-        initialiseValidMigration();
         when(mockCfnApi.getStatus(STACK_NAME)).thenReturn(StackStatus.CREATE_COMPLETE);
 
         deploySimpleStack();
@@ -142,7 +136,6 @@ class QuickstartDeploymentServiceTest {
 
     @Test
     void shouldTransitionMigrationServiceToErrorWhenDeploymentFails() throws InterruptedException, InvalidMigrationStageError {
-        initialiseValidMigration();
         when(mockCfnApi.getStatus(STACK_NAME)).thenReturn(StackStatus.CREATE_FAILED);
 
         deploySimpleStack();
@@ -152,18 +145,7 @@ class QuickstartDeploymentServiceTest {
         verify(mockMigrationService).error();
     }
 
-//    @Test
-//    void shouldNotInitiateDeploymentIfNotInProvisionApplicationStage() throws InvalidMigrationStageError {
-//        doThrow(new InvalidMigrationStageError("")).when(mockMigrationService).transition(argThat(argument -> argument.equals(MigrationStage.PROVISION_APPLICATION)), any(MigrationStage.class));
-//
-//        assertThrows(InvalidMigrationStageError.class, this::deploySimpleStack);
-//    }
-
     private void deploySimpleStack() throws InvalidMigrationStageError {
         deploymentService.deployApplication(STACK_NAME, STACK_PARAMS);
-    }
-
-    private void initialiseValidMigration() {
-        when(mockAo.find(MigrationContext.class)).thenReturn(new MigrationContext[]{mockContext});
     }
 }
