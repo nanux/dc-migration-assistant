@@ -26,6 +26,8 @@ import static java.util.Objects.requireNonNull;
 
 public class TargetDbCredentialsStorageService {
 
+    private static final String APPLICATION_DB_USER = System.getProperty("com.atlassian.migration.db.target.applicationUsername", "atljira");
+
     private final MigrationService migrationService;
     private final ActiveObjects ao;
     private final EncryptionManager encryptionManager;
@@ -37,19 +39,17 @@ public class TargetDbCredentialsStorageService {
     }
 
     /**
-     * Stores the given database credentials in the {@link com.atlassian.migration.datacenter.dto.MigrationContext}
+     * Stores the given database password in the {@link com.atlassian.migration.datacenter.dto.MigrationContext}
      * to be used later to restore the database. The password will be encrypted before storage.
-     * @param username the database username
      * @param password the database password
-     * @throws NullPointerException if either parameter is null
+     * @throws NullPointerException if the password is null
      */
-    public void storeCredentials(String username, String password) {
-        requireNonNull(username);
+    public void storeCredentials(String password) {
         requireNonNull(password);
 
         MigrationContext context = getMigrationContext();
 
-        context.setTargetDatabaseUsername(username);
+        context.setTargetDatabaseUsername(APPLICATION_DB_USER);
         context.setTargetDatabasePasswordEncrypted(encryptionManager.encryptString(password));
     }
 

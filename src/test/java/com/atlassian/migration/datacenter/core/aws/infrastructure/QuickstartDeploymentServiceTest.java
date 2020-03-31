@@ -29,9 +29,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.invocation.InvocationOnMock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.stubbing.Answer;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 import java.util.HashMap;
@@ -43,6 +41,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -50,8 +49,11 @@ import static org.mockito.Mockito.when;
 class QuickstartDeploymentServiceTest {
 
     static final String STACK_NAME = "my-stack";
+    static final String TEST_DB_PASSWORD = "myDatabasePassword";
+    static final String DEFAULT_DB_USER = "atljira";
     static final HashMap<String, String> STACK_PARAMS = new HashMap<String, String>() {{
         put("parameter", "value");
+        put("DBPassword", TEST_DB_PASSWORD);
     }};
 
     @Mock
@@ -76,13 +78,11 @@ class QuickstartDeploymentServiceTest {
     void setUp() {
         Properties properties = new Properties();
         final String passwordPropertyKey = "password";
-        final String usernamePropertyKey = "username";
         doAnswer(invocation -> {
-            properties.setProperty(usernamePropertyKey, invocation.getArgument(0));
-            properties.setProperty(passwordPropertyKey, invocation.getArgument(1));
+            properties.setProperty(passwordPropertyKey, invocation.getArgument(0));
             return null;
-        }).when(dbCredentialsStorageService).storeCredentials(anyString(), anyString());
-        doAnswer(invocation -> Pair.of(properties.getProperty(usernamePropertyKey), properties.getProperty(passwordPropertyKey))).when(dbCredentialsStorageService).getCredentials();
+        }).when(dbCredentialsStorageService).storeCredentials(anyString());
+        lenient().doAnswer(invocation -> Pair.of(DEFAULT_DB_USER, properties.getProperty(passwordPropertyKey))).when(dbCredentialsStorageService).getCredentials();
     }
 
     @Test
@@ -98,13 +98,10 @@ class QuickstartDeploymentServiceTest {
     void shouldStoreDBCredentials() throws InvalidMigrationStageError {
         initialiseValidMigration();
 
-        final String databasePassword = "myDatabasePassword";
-        deploymentService.deployApplication(STACK_NAME, new HashMap<String, String>() {{
-            put("DBPassword", databasePassword);
-        }});
+        deploymentService.deployApplication(STACK_NAME, STACK_PARAMS);
 
         final Pair<String, String> credentials = dbCredentialsStorageService.getCredentials();
-        assertEquals(databasePassword, credentials.getRight());
+        assertEquals(TEST_DB_PASSWORD, credentials.getRight());
         assertEquals("atljira", credentials.getLeft());
     }
 

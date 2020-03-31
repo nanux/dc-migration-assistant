@@ -77,7 +77,7 @@ public class QuickstartDeploymentService implements ApplicationDeploymentService
     }
 
     private void storeDbCredentials(Map<String, String> params) {
-        dbCredentialsStorageService.storeCredentials("atljira", params.get("DBPassword"));
+        dbCredentialsStorageService.storeCredentials(params.get("DBPassword"));
     }
 
     @Override
