@@ -27,7 +27,6 @@ import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
 import com.atlassian.scheduler.SchedulerService;
 import net.java.ao.EntityManager;
 import net.java.ao.test.junit.ActiveObjectsJUnitRunner;
-import org.apache.http.auth.AUTH;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -129,8 +128,6 @@ public class AWSMigrationServiceTest {
 
         Migration updatedMigration = sut.getCurrentMigration();
 
-        entityManager.flushAll();
-
         assertEquals(testDeploymentId, updatedMigration.getContext().getApplicationDeploymentId());
     }
 
@@ -168,6 +165,26 @@ public class AWSMigrationServiceTest {
         Migration migration = sut.getCurrentMigration();
         assertNumberOfMigrations(1);
         assertEquals(NOT_STARTED, migration.getStage());
+    }
+
+    @Test
+    public void shouldGetLatestMigrationContext() throws MigrationAlreadyExistsException {
+        Migration migration = sut.createMigration();
+        MigrationContext context = migration.getContext();
+        final String testDeploymentId = "test-id";
+        context.setApplicationDeploymentId(testDeploymentId);
+        context.save();
+
+        MigrationContext newContext = sut.getCurrentContext();
+        assertEquals(testDeploymentId, newContext.getApplicationDeploymentId());
+
+        final String newDeploymentId = "next-id";
+        newContext.setApplicationDeploymentId(newDeploymentId);
+        newContext.save();
+
+        MigrationContext nextContext = sut.getCurrentContext();
+        assertEquals(newDeploymentId, nextContext.getApplicationDeploymentId());
+        assertEquals(newDeploymentId, sut.getCurrentMigration().getContext().getApplicationDeploymentId());
     }
 
     private void assertNumberOfMigrations(int i) {
