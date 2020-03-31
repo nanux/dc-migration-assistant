@@ -79,7 +79,6 @@ class QuickstartDeploymentServiceTest {
             properties.setProperty(passwordPropertyKey, invocation.getArgument(0));
             return null;
         }).when(dbCredentialsStorageService).storeCredentials(anyString());
-        lenient().doAnswer(invocation -> Pair.of(DEFAULT_DB_USER, properties.getProperty(passwordPropertyKey))).when(dbCredentialsStorageService).getCredentials();
         when(mockMigrationService.getCurrentContext()).thenReturn(mockContext);
     }
 
@@ -94,9 +93,7 @@ class QuickstartDeploymentServiceTest {
     void shouldStoreDBCredentials() throws InvalidMigrationStageError {
         deploymentService.deployApplication(STACK_NAME, STACK_PARAMS);
 
-        final Pair<String, String> credentials = dbCredentialsStorageService.getCredentials();
-        assertEquals(TEST_DB_PASSWORD, credentials.getRight());
-        assertEquals("atljira", credentials.getLeft());
+        verify(dbCredentialsStorageService).storeCredentials(TEST_DB_PASSWORD);
     }
 
     @Test

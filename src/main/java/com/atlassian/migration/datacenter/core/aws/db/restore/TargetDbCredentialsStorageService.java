@@ -17,10 +17,16 @@
 package com.atlassian.migration.datacenter.core.aws.db.restore;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
+import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
 import com.atlassian.migration.datacenter.core.util.EncryptionManager;
 import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
+import com.atlassian.util.concurrent.Supplier;
 import org.apache.commons.lang3.tuple.Pair;
+import software.amazon.awssdk.http.SdkHttpResponse;
+import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
+import software.amazon.awssdk.services.secretsmanager.model.CreateSecretRequest;
+import software.amazon.awssdk.services.secretsmanager.model.CreateSecretResponse;
 
 import static java.util.Objects.requireNonNull;
 
@@ -31,42 +37,41 @@ import static java.util.Objects.requireNonNull;
  */
 public class TargetDbCredentialsStorageService {
 
-    private static final String APPLICATION_DB_USER = System.getProperty("com.atlassian.migration.db.target.applicationUsername", "atljira");
-
+    private final Supplier<SecretsManagerClient> clientFactory;
     private final MigrationService migrationService;
-    private final EncryptionManager encryptionManager;
 
-    public TargetDbCredentialsStorageService(MigrationService migrationService, EncryptionManager encryptionManager) {
+    public TargetDbCredentialsStorageService(Supplier<SecretsManagerClient> clientFactory, MigrationService migrationService) {
+        this.clientFactory = clientFactory;
         this.migrationService = migrationService;
-        this.encryptionManager = encryptionManager;
     }
 
     /**
-     * Stores the given database password in the {@link com.atlassian.migration.datacenter.dto.MigrationContext}
-     * to be used later to restore the database. The password will be encrypted before storage.
+     * Stores the given database password in AWS <a href="https://aws.amazon.com/secrets-manager/">Secrets Manager</a>
+     * to be used later to restore the database. Will be stored under the key:
+     *          com.atlassian.migration.db.target.[migration_deployment_id].applicationPassword
      * @param password the database password
      * @throws NullPointerException if the password is null
      */
     public void storeCredentials(String password) {
         requireNonNull(password);
 
-        MigrationContext context = getMigrationContext();
+        MigrationContext context = migrationService.getCurrentContext();
 
-        context.setTargetDbPasswordEncrypted(encryptionManager.encryptString(password));
-        context.save();
+        SecretsManagerClient client = clientFactory.get();
+        CreateSecretRequest request = CreateSecretRequest.builder()
+                .name(String.format("com.atlassian.migration.db.target.%s.applicationPassword", context.getApplicationDeploymentId()))
+                .secretString(password)
+                .description("password for the application user in you new AWS deployment")
+                .build();
+        CreateSecretResponse response = client.createSecret(request);
+
+        SdkHttpResponse httpResponse = response.sdkHttpResponse();
+        if (!httpResponse.isSuccessful()) {
+            String errorMessage = "unable to store target database password with AWS secrets manager";
+            if (httpResponse.statusText().isPresent()) {
+                throw new DatabaseMigrationFailure(errorMessage + ": " + httpResponse.statusText().get());
+            }
+            throw new DatabaseMigrationFailure(errorMessage);
+        }
     }
-
-    /**
-     * @return a pair where the left element is the target database username and the right element is the target database password
-     */
-    public Pair<String, String> getCredentials() {
-        MigrationContext context = getMigrationContext();
-        String decryptedPassword = encryptionManager.decryptString(context.getTargetDbPasswordEncrypted());
-        return Pair.of(APPLICATION_DB_USER, decryptedPassword);
-    }
-
-    private MigrationContext getMigrationContext() {
-        return migrationService.getCurrentContext();
-    }
-
 }

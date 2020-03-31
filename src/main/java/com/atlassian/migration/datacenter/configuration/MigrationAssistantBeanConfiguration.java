@@ -110,8 +110,8 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public TargetDbCredentialsStorageService targetDbCredentialsStorageService(MigrationService migrationService, EncryptionManager encryptionManager) {
-        return new TargetDbCredentialsStorageService(migrationService, encryptionManager);
+    public TargetDbCredentialsStorageService targetDbCredentialsStorageService(Supplier<SecretsManagerClient> clientSupplier, MigrationService migrationService) {
+        return new TargetDbCredentialsStorageService(clientSupplier, migrationService);
     }
 
     @Bean
