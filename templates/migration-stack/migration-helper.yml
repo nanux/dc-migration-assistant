@@ -320,44 +320,20 @@ Resources:
       GroupDescription: Allow SSH Port from Trusted
       VpcId: !Ref HelperVpcId
 
-  # OpenStack to Helper security group
-  ExecutionRole:
-    Type: "AWS::IAM::Role"
-    Properties:
-      AssumeRolePolicyDocument:
-        Statement:
-          - Effect: "Allow"
-            Principal:
-              Service:
-                - "lambda.amazonaws.com"
-                - Fn::Join:
-                    - ""
-                    - - "states."
-                      - Ref: "AWS::Region"
-                      - ".amazonaws.com"
-            Action:
-              - "sts:AssumeRole"
-      Path: "/"
-      Policies:
-        - PolicyName: "Policies"
-          PolicyDocument:
-            Statement:
-              - Effect: "Allow"
-                Action: "*"
-                Resource: "*"
-  OpenStackAccessCustom:
-    Type: Custom::OpenStackAccessCustom
+  # Open EFS and RDS to Helper security group
+  MigrationStackResourceAccessCustom:
+    Type: Custom::MigrationStackResourceAccessCustom
     Version: 1.0
     Properties:
-      ServiceToken: !GetAtt OpenStackAccess.Arn
+      ServiceToken: !GetAtt MigrationStackResourceAccess.Arn
       HelperSG: !Ref HelperSecurityGroup
       EFSSG: !Ref EFSSecurityGroup
       RDSSG: !Ref RDSSecurityGroup
-  OpenStackAccess:
+  MigrationStackResourceAccess:
     Type: "AWS::Lambda::Function"
     Properties:
       Handler: index.lambda_handler
-      Role: !GetAtt ExecutionRole.Arn
+      Role: !GetAtt MigrationStackResourceAccessExecutionRole.Arn
       Runtime: python3.7
       Timeout: 120
       Code:
@@ -421,7 +397,7 @@ Resources:
             except Exception as e:
                 responseData = {'Error': str(e)}
                 cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
-  OpenStackAccessExecutionRole:
+  MigrationStackResourceAccessExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
