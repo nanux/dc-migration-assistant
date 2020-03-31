@@ -11,6 +11,9 @@ Parameters:
   EFSSecurityGroup:
     Description: "The Security Group attached to EFS, access to NFS port will be open from Migration Helper Security Group"
     Type: String
+  RDSSecurityGroup:
+    Description: "The Security Group attached to RDS, access to PostgreSQL port will be open from Migration Helper Security Group"
+    Type: String
   HelperInstanceType:
     Description: "The Instance Type of Helper EC2 Instance"
     Type: String
@@ -216,16 +219,6 @@ Resources:
                 Effect: Allow
                 Resource: !Sub ['arn:aws:s3:::${MigrationBucket}', { MigrationBucket: !Ref MigrationBucket
            }]
-
-      # TODO: Reduce this to minimum required perms
-      #   - PolicyName: Administrator
-      #     PolicyDocument:
-      #       Version: 2012-10-17
-      #       Statement:
-      #         - Sid: Administrator
-      #           Action: '*'
-      #           Effect: Allow
-      #           Resource: '*'
       ManagedPolicyArns:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/CloudWatchAgentServerPolicy'
@@ -235,7 +228,7 @@ Resources:
       GroupDescription: Allow SSH Port from Trusted
       VpcId: !Ref HelperVpcId
 
-  # OpenEFS to Helper security group
+  # OpenStack to Helper security group
   ExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
@@ -260,14 +253,15 @@ Resources:
               - Effect: "Allow"
                 Action: "*"
                 Resource: "*"
-  OpenEFSAccessCustom:
-    Type: Custom::OpenEFSAccessCustom
+  OpenStackAccessCustom:
+    Type: Custom::OpenStackAccessCustom
     Version: 1.0
     Properties:
-      ServiceToken: !GetAtt OpenEFSAccess.Arn
+      ServiceToken: !GetAtt OpenStackAccess.Arn
       HelperSG: !Ref HelperSecurityGroup
       EFSSG: !Ref EFSSecurityGroup
-  OpenEFSAccess:
+      RDSSG: !Ref RDSSecurityGroup
+  OpenStackAccess:
     Type: "AWS::Lambda::Function"
     Properties:
       Handler: index.lambda_handler
@@ -283,6 +277,7 @@ Resources:
           def lambda_handler(event, context):
             try:
                   efssg =  event['ResourceProperties']['EFSSG']
+                  rdssg =  event['ResourceProperties']['RDSSG']
                   evsg = event['ResourceProperties']['HelperSG']
                   if event['RequestType'] == 'Delete':
                       response = ec2client.revoke_security_group_ingress(
@@ -291,6 +286,16 @@ Resources:
                               {'IpProtocol': 'tcp',
                               'FromPort': 2049,
                               'ToPort': 2049,
+                              'UserIdGroupPairs': [{'GroupId': evsg}]}
+                          ]
+                      )
+                      print(response)
+                      response = ec2client.revoke_security_group_ingress(
+                          GroupId=rdssg,
+                          IpPermissions=[
+                              {'IpProtocol': 'tcp',
+                              'FromPort': 5432,
+                              'ToPort': 5432,
                               'UserIdGroupPairs': [{'GroupId': evsg}]}
                           ]
                       )
@@ -307,6 +312,15 @@ Resources:
                               'UserIdGroupPairs': [{'GroupId': evsg}]}
                           ]
                       )
+                      response = ec2client.authorize_security_group_ingress(
+                          GroupId=rdssg,
+                          IpPermissions=[
+                              {'IpProtocol': 'tcp',
+                              'FromPort': 5432,
+                              'ToPort': 5432,
+                              'UserIdGroupPairs': [{'GroupId': evsg}]}
+                          ]
+                      )
                       responseData = {'Create': 'SUCCESS'}
                       cfnresponse.send(event, context, cfnresponse.SUCCESS, responseData)
                   if event['RequestType'] == 'Update':
@@ -315,7 +329,7 @@ Resources:
             except Exception as e:
                 responseData = {'Error': str(e)}
                 cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
-  OpenEFSAccessExecutionRole:
+  OpenStackAccessExecutionRole:
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
