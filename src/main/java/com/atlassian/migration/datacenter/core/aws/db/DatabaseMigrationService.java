@@ -22,7 +22,6 @@ import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailu
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.fs.FilesystemUploader;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
-import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
 
 import java.nio.file.Path;
 
@@ -40,8 +39,13 @@ public class DatabaseMigrationService {
     private final SsmPsqlDatabaseRestoreService restoreService;
     private final DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback;
 
-
-    public DatabaseMigrationService(Path tempDirectory, DatabaseArchivalService databaseArchivalService, DatabaseArchiveStageTransitionCallback stageTransitionCallback, DatabaseArtifactS3UploadService s3UploadService, DatabaseUploadStageTransitionCallback uploadStageTransitionCallback, SsmPsqlDatabaseRestoreService restoreService, DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback)
+    public DatabaseMigrationService(Path tempDirectory,
+                                    DatabaseArchivalService databaseArchivalService,
+                                    DatabaseArchiveStageTransitionCallback stageTransitionCallback,
+                                    DatabaseArtifactS3UploadService s3UploadService,
+                                    DatabaseUploadStageTransitionCallback uploadStageTransitionCallback,
+                                    SsmPsqlDatabaseRestoreService restoreService,
+                                    DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback)
     {
         this.tempDirectory = tempDirectory;
         this.databaseArchivalService = databaseArchivalService;
