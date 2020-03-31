@@ -60,7 +60,7 @@ public class TargetDbCredentialsStorageService {
 
         SecretsManagerClient client = clientFactory.get();
         CreateSecretRequest request = CreateSecretRequest.builder()
-                .name(String.format("com.atlassian.migration.db.target.%s.applicationPassword", context.getApplicationDeploymentId()))
+                .name(String.format("atl-%s-app-rds-password", context.getApplicationDeploymentId()))
                 .secretString(password)
                 .description("password for the application user in you new AWS deployment")
                 .build();
