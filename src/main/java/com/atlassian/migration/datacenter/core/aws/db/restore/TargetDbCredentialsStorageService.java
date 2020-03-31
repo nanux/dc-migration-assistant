@@ -54,7 +54,7 @@ public class TargetDbCredentialsStorageService {
 
         MigrationContext context = getMigrationContext();
 
-        context.setTargetDatabasePasswordEncrypted(encryptionManager.encryptString(password));
+        context.setTargetDbPasswordEncrypted(encryptionManager.encryptString(password));
     }
 
     /**
@@ -62,7 +62,7 @@ public class TargetDbCredentialsStorageService {
      */
     public Pair<String, String> getCredentials() {
         MigrationContext context = getMigrationContext();
-        String decryptedPassword = encryptionManager.decryptString(context.getTargetDatabasePasswordEncrypted());
+        String decryptedPassword = encryptionManager.decryptString(context.getTargetDbPasswordEncrypted());
         return Pair.of(APPLICATION_DB_USER, decryptedPassword);
     }
 

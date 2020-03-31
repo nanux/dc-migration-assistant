@@ -28,8 +28,8 @@ public interface MigrationContext extends Entity {
 
     void setApplicationDeploymentId(String id);
 
-    String getTargetDatabasePasswordEncrypted();
+    String getTargetDbPasswordEncrypted();
 
-    void setTargetDatabasePasswordEncrypted(String encryptedPassword);
+    void setTargetDbPasswordEncrypted(String encryptedPassword);
 
 }
