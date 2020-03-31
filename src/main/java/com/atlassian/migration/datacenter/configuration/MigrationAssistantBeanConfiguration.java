@@ -36,6 +36,7 @@ import com.atlassian.migration.datacenter.core.aws.db.DatabaseMigrationService;
 import com.atlassian.migration.datacenter.core.aws.db.DatabaseUploadStageTransitionCallback;
 import com.atlassian.migration.datacenter.core.aws.db.restore.DatabaseRestoreStageTransitionCallback;
 import com.atlassian.migration.datacenter.core.aws.db.restore.SsmPsqlDatabaseRestoreService;
+import com.atlassian.migration.datacenter.core.aws.db.restore.TargetDbCredentialsStorageService;
 import com.atlassian.migration.datacenter.core.aws.infrastructure.QuickstartDeploymentService;
 import com.atlassian.migration.datacenter.core.aws.region.AvailabilityZoneManager;
 import com.atlassian.migration.datacenter.core.aws.region.PluginSettingsRegionManager;
@@ -51,6 +52,7 @@ import com.atlassian.migration.datacenter.core.util.MigrationRunner;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
 import com.atlassian.sal.api.pluginsettings.PluginSettingsFactory;
+import com.atlassian.scheduler.SchedulerService;
 import com.atlassian.util.concurrent.Supplier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -96,6 +98,11 @@ public class MigrationAssistantBeanConfiguration {
     @Bean
     public EncryptedCredentialsStorage encryptedCredentialsStorage(Supplier<PluginSettingsFactory> pluginSettingsFactorySupplier, EncryptionManager encryptionManager) {
         return new EncryptedCredentialsStorage(pluginSettingsFactorySupplier, encryptionManager);
+    }
+
+    @Bean
+    public TargetDbCredentialsStorageService targetDbCredentialsStorageService(MigrationService migrationService, ActiveObjects ao, EncryptionManager encryptionManager) {
+        return new TargetDbCredentialsStorageService(migrationService, ao, encryptionManager);
     }
 
     @Bean
@@ -200,12 +207,17 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
+    public MigrationRunner migrationRunner(SchedulerService schedulerService) {
+        return new MigrationRunner(schedulerService);
+    }
+
+    @Bean
     public FilesystemMigrationService filesystemMigrationService(Supplier<S3AsyncClient> clientSupplier, JiraHome jiraHome, S3SyncFileSystemDownloadManager downloadManager, MigrationService migrationService, MigrationRunner migrationRunner) {
         return new S3FilesystemMigrationService(clientSupplier, jiraHome, downloadManager, migrationService, migrationRunner);
     }
 
     @Bean
-    public QuickstartDeploymentService quickstartDeploymentService(ActiveObjects ao, CfnApi cfnApi, MigrationService migrationService) {
-        return new QuickstartDeploymentService(ao, cfnApi, migrationService);
+    public QuickstartDeploymentService quickstartDeploymentService(ActiveObjects ao, CfnApi cfnApi, MigrationService migrationService, TargetDbCredentialsStorageService dbCredentialsStorageService) {
+        return new QuickstartDeploymentService(ao, cfnApi, migrationService, dbCredentialsStorageService);
     }
 }

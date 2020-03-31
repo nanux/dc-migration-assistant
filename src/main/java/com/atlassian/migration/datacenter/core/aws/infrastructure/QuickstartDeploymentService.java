@@ -18,6 +18,7 @@ package com.atlassian.migration.datacenter.core.aws.infrastructure;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.migration.datacenter.core.aws.CfnApi;
+import com.atlassian.migration.datacenter.core.aws.db.restore.TargetDbCredentialsStorageService;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
@@ -42,11 +43,13 @@ public class QuickstartDeploymentService implements ApplicationDeploymentService
     private final CfnApi cfnApi;
     private final MigrationService migrationService;
     private final ActiveObjects ao;
+    private final TargetDbCredentialsStorageService dbCredentialsStorageService;
 
-    public QuickstartDeploymentService(ActiveObjects ao, CfnApi cfnApi, MigrationService migrationService) {
+    public QuickstartDeploymentService(ActiveObjects ao, CfnApi cfnApi, MigrationService migrationService, TargetDbCredentialsStorageService dbCredentialsStorageService) {
         this.ao = ao;
         this.cfnApi = cfnApi;
         this.migrationService = migrationService;
+        this.dbCredentialsStorageService = dbCredentialsStorageService;
     }
 
     /**
@@ -69,6 +72,12 @@ public class QuickstartDeploymentService implements ApplicationDeploymentService
         addDeploymentIdToMigrationContext(deploymentId);
 
         scheduleMigrationServiceTransition(deploymentId);
+
+        storeDbCredentials(params);
+    }
+
+    private void storeDbCredentials(Map<String, String> params) {
+        dbCredentialsStorageService.storeCredentials(params.get("DBPassword"));
     }
 
     @Override
