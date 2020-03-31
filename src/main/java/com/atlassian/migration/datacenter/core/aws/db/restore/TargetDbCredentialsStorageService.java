@@ -49,6 +49,7 @@ public class TargetDbCredentialsStorageService {
      * Stores the given database password in AWS <a href="https://aws.amazon.com/secrets-manager/">Secrets Manager</a>
      * to be used later to restore the database. Will be stored under the key:
      *          com.atlassian.migration.db.target.[migration_deployment_id].applicationPassword
+     * @see MigrationContext#getApplicationDeploymentId()
      * @param password the database password
      * @throws NullPointerException if the password is null
      */
