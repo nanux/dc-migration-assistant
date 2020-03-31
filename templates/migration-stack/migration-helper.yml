@@ -31,6 +31,7 @@ Parameters:
 Resources:
 
   #S3 Bucket for Database Transfer
+  #TODO: Stack deletion fails when the bucket is non-empty. Fix this - https://stackoverflow.com/questions/40383470/can-i-force-cloudformation-to-delete-non-empty-s3-bucket
   MigrationBucket:
     Type: AWS::S3::Bucket
     Properties:
@@ -47,7 +48,7 @@ Resources:
     Metadata:
         AWS::CloudFormation::Init:
           configSets:
-            install_prerequisites: [create_efs_script,mount_efs,prepare_efs_sync_script,install_psql_client]
+            install_prerequisites: [create_efs_script,mount_efs,prepare_efs_sync_script,install_psql_client, create_rds_restore_script]
           create_efs_script:
             files:
               /opt/atlassian/dc-migration-assistant/mount-efs.sh:
@@ -118,6 +119,21 @@ Resources:
                 command: !Sub
                   - "amazon-linux-extras install -y postgresql${PSQLClientVersion}"
                   - { PSQLClientVersion: !Ref PSQLVersion }
+          create_rds_restore_script:
+            files:
+              /opt/atlassian/dc-migration-assistant/restore-db-to-rds.sh:
+                content: !Sub
+                  - |
+                    #!/bin/bash
+                    echo "this script will pull the secret from secrets manager"
+                    echo "A RDS endpoint needs to be passed into the template"
+                    DATABASE_DOWNLOAD_DIR="/efs/downloads/db.dump"
+                    mkdir -p $DATABASE_DOWNLOAD_DIR
+                    aws secretsmanager  get-secret-value --secret-id ${SecretIdentifier} --region ${AWS::Region} --output text --query "SecretString"
+                    aws s3 sync s3://${MigrationBucket}/db.dump/ $DATABASE_DOWNLOAD_DIR --region ${AWS::Region}
+                    echo "${RDSEndPoint}"
+                  - { RDSEndPoint: "rds-dns-address", SecretIdentifier: "atl-qs-rds-password", MigrationBucket: !Ref MigrationBucket }
+                mode: "000755"
           prepare_efs_sync_script:
             packages:
               yum:
@@ -304,13 +320,32 @@ Resources:
               - Action: 's3:*'
                 Effect: Allow
                 Resource: !Sub ['arn:aws:s3:::${MigrationBucket}/*', { MigrationBucket: !Ref MigrationBucket
-           }]
+                }]
               - Action:
                   - 's3:ListBucket'
                   - 's3:HeadBucket'
                 Effect: Allow
                 Resource: !Sub ['arn:aws:s3:::${MigrationBucket}', { MigrationBucket: !Ref MigrationBucket
-           }]
+                }]
+        - PolicyName: MigrationInstanceSecretReadAccess
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Action:
+                  - 'secretsmanager:GetSecretValue'
+                Effect: Allow
+                Resource: !Sub ['arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${SecretIdentifier}-??????', { SecretIdentifier: "atl-qs-rds-password"
+                }]
+
+      # TODO: Reduce this to minimum required perms
+      #   - PolicyName: Administrator
+      #     PolicyDocument:
+      #       Version: 2012-10-17
+      #       Statement:
+      #         - Sid: Administrator
+      #           Action: '*'
+      #           Effect: Allow
+      #           Resource: '*'
       ManagedPolicyArns:
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore'
         - !Sub 'arn:${AWS::Partition}:iam::aws:policy/CloudWatchAgentServerPolicy'
@@ -440,6 +475,23 @@ Resources:
             workingDirectory: "/opt/atlassian/dc-migration-assistant/"
       DocumentType: "Command"
 
+  RdsRestoreDocument:
+    Type: "AWS::SSM::Document"
+    Properties:
+      Content:
+        schemaVersion: "2.2"
+        description: "This document is used by the Atlassian DC Migration Assistant to restore the database backup in S3 to a provisioned RDS instance"
+        mainSteps:
+        - action: "aws:runShellScript"
+          name: "restoreDatabaseBackupToRDS"
+          inputs:
+            runCommand:
+            - "#!/bin/bash"
+            - runuser -l jira -c '/opt/atlassian/dc-migration-assistant/restore-db-to-rds.sh'
+            timeoutSeconds: "60" #TODO: What is the correct value for timeout seconds here?
+            workingDirectory: "/opt/atlassian/dc-migration-assistant/"
+      DocumentType: "Command"
+
   DownloadProgressDocument:
     Type: "AWS::SSM::Document"
     Properties:
@@ -464,6 +516,9 @@ Outputs:
   DownloadStatusSSMDocument:
     Description: "The name of the SSM document to be invoked to get the status of the bulk copy s3 sync"
     Value: !Ref DownloadProgressDocument
+  RdsRestoreSSMDocument:
+    Description: "The name of the SSM document to be invoked to restore database backup into the provisioned RDS instance"
+    Value: !Ref RdsRestoreDocument
   ServerGroup:
     Description: "The autoscaling group containing the Migration host"
     Value: !Ref HelperServerGroup
