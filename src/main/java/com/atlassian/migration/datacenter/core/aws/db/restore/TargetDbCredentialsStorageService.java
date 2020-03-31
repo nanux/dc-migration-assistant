@@ -24,6 +24,11 @@ import org.apache.commons.lang3.tuple.Pair;
 
 import static java.util.Objects.requireNonNull;
 
+/**
+ * Service for managing credentials for the target database in the migrated environment.
+ * The migration should store the target database password with this service. It will be stored securely.
+ * The database username is managed as it is constant in Quick Start environments.
+ */
 public class TargetDbCredentialsStorageService {
 
     private static final String APPLICATION_DB_USER = System.getProperty("com.atlassian.migration.db.target.applicationUsername", "atljira");
@@ -49,17 +54,16 @@ public class TargetDbCredentialsStorageService {
 
         MigrationContext context = getMigrationContext();
 
-        context.setTargetDatabaseUsername(APPLICATION_DB_USER);
         context.setTargetDatabasePasswordEncrypted(encryptionManager.encryptString(password));
     }
 
     /**
-     * @return a pair where the left element is the database username and the right element is the database password
+     * @return a pair where the left element is the target database username and the right element is the target database password
      */
     public Pair<String, String> getCredentials() {
         MigrationContext context = getMigrationContext();
         String decryptedPassword = encryptionManager.decryptString(context.getTargetDatabasePasswordEncrypted());
-        return Pair.of(context.getTargetDatabaseUsername(), decryptedPassword);
+        return Pair.of(APPLICATION_DB_USER, decryptedPassword);
     }
 
     // TODO: put this behind the migration service

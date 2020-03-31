@@ -32,7 +32,4 @@ public interface MigrationContext extends Entity {
 
     void setTargetDatabasePasswordEncrypted(String encryptedPassword);
 
-    String getTargetDatabaseUsername();
-
-    void setTargetDatabaseUsername(String username);
 }
