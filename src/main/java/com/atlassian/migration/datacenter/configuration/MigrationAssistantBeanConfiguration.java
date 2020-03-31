@@ -101,8 +101,8 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public TargetDbCredentialsStorageService targetDbCredentialsStorageService(MigrationService migrationService, ActiveObjects ao, EncryptionManager encryptionManager) {
-        return new TargetDbCredentialsStorageService(migrationService, ao, encryptionManager);
+    public TargetDbCredentialsStorageService targetDbCredentialsStorageService(MigrationService migrationService, EncryptionManager encryptionManager) {
+        return new TargetDbCredentialsStorageService(migrationService, encryptionManager);
     }
 
     @Bean
@@ -217,7 +217,7 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public QuickstartDeploymentService quickstartDeploymentService(ActiveObjects ao, CfnApi cfnApi, MigrationService migrationService, TargetDbCredentialsStorageService dbCredentialsStorageService) {
-        return new QuickstartDeploymentService(ao, cfnApi, migrationService, dbCredentialsStorageService);
+    public QuickstartDeploymentService quickstartDeploymentService(CfnApi cfnApi, MigrationService migrationService, TargetDbCredentialsStorageService dbCredentialsStorageService) {
+        return new QuickstartDeploymentService(cfnApi, migrationService, dbCredentialsStorageService);
     }
 }

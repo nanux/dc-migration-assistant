@@ -34,12 +34,10 @@ public class TargetDbCredentialsStorageService {
     private static final String APPLICATION_DB_USER = System.getProperty("com.atlassian.migration.db.target.applicationUsername", "atljira");
 
     private final MigrationService migrationService;
-    private final ActiveObjects ao;
     private final EncryptionManager encryptionManager;
 
-    public TargetDbCredentialsStorageService(MigrationService migrationService, ActiveObjects ao, EncryptionManager encryptionManager) {
+    public TargetDbCredentialsStorageService(MigrationService migrationService, EncryptionManager encryptionManager) {
         this.migrationService = migrationService;
-        this.ao = ao;
         this.encryptionManager = encryptionManager;
     }
 

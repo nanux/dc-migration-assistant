@@ -63,9 +63,6 @@ class QuickstartDeploymentServiceTest {
     MigrationService mockMigrationService;
 
     @Mock
-    ActiveObjects mockAo;
-
-    @Mock
     TargetDbCredentialsStorageService dbCredentialsStorageService;
 
     @InjectMocks
