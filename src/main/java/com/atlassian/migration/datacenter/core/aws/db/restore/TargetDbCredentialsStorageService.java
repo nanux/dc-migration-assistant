@@ -55,6 +55,7 @@ public class TargetDbCredentialsStorageService {
         MigrationContext context = getMigrationContext();
 
         context.setTargetDbPasswordEncrypted(encryptionManager.encryptString(password));
+        context.save();
     }
 
     /**
@@ -66,14 +67,8 @@ public class TargetDbCredentialsStorageService {
         return Pair.of(APPLICATION_DB_USER, decryptedPassword);
     }
 
-    // TODO: put this behind the migration service
     private MigrationContext getMigrationContext() {
-        MigrationContext[] migrationContexts = ao.find(MigrationContext.class);
-        if (migrationContexts.length == 0) {
-            migrationService.error();
-            throw new RuntimeException("No migration context exists, are you really in a migration?");
-        }
-        return migrationContexts[0];
+        return migrationService.getCurrentContext();
     }
 
 }
