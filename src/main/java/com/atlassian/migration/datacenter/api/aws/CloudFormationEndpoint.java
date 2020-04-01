@@ -18,6 +18,7 @@ package com.atlassian.migration.datacenter.api.aws;
 
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeploymentService;
+import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import com.atlassian.migration.datacenter.spi.infrastructure.ProvisioningConfig;
 import com.google.common.collect.ImmutableMap;
 import org.slf4j.Logger;
@@ -69,7 +70,7 @@ public class CloudFormationEndpoint {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getInfrastructureStatus() {
         try {
-            ApplicationDeploymentService.ApplicationDeploymentStatus status = deploymentService.getDeploymentStatus();
+            InfrastructureDeploymentStatus status = deploymentService.getDeploymentStatus();
             return Response.ok(ImmutableMap.of("status", status)).build();
         } catch (Exception e) {
             return Response.status(Response.Status.NOT_FOUND).entity(ImmutableMap.of("error", e.getMessage())).build();

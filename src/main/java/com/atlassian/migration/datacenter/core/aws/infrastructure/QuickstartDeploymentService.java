@@ -16,7 +16,6 @@
 
 package com.atlassian.migration.datacenter.core.aws.infrastructure;
 
-import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.migration.datacenter.core.aws.CfnApi;
 import com.atlassian.migration.datacenter.core.aws.db.restore.TargetDbCredentialsStorageService;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
@@ -24,6 +23,7 @@ import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeploymentService;
+import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
@@ -79,17 +79,17 @@ public class QuickstartDeploymentService implements ApplicationDeploymentService
     }
 
     @Override
-    public ApplicationDeploymentStatus getDeploymentStatus() {
+    public InfrastructureDeploymentStatus getDeploymentStatus() {
         MigrationContext context = getMigrationContext();
         StackStatus status = cfnApi.getStatus(context.getApplicationDeploymentId());
 
         switch (status) {
             case CREATE_COMPLETE:
-                return ApplicationDeploymentStatus.CREATE_COMPLETE;
+                return InfrastructureDeploymentStatus.CREATE_COMPLETE;
             case CREATE_FAILED:
-                return ApplicationDeploymentStatus.CREATE_FAILED;
+                return InfrastructureDeploymentStatus.CREATE_FAILED;
             case CREATE_IN_PROGRESS:
-                return ApplicationDeploymentStatus.CREATE_IN_PROGRESS;
+                return InfrastructureDeploymentStatus.CREATE_IN_PROGRESS;
             default:
                 migrationService.error();
                 throw new RuntimeException("Unexpected stack status");
