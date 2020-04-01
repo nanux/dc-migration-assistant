@@ -25,12 +25,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class DatabaseMigrationJobRunner implements MigrationJobRunner
 {
     private static Logger log = LoggerFactory.getLogger(DatabaseMigrationJobRunner.class);
     private final DatabaseMigrationService databaseMigrationService;
     public static final String KEY = DatabaseMigrationJobRunner.class.getName();
+
+    private static final AtomicBoolean isRunning = new AtomicBoolean(false);
 
     public DatabaseMigrationJobRunner(DatabaseMigrationService databaseMigrationService)
     {
@@ -47,7 +50,8 @@ public class DatabaseMigrationJobRunner implements MigrationJobRunner
     @Override
     public JobRunnerResponse runJob(JobRunnerRequest request)
     {
-        if (databaseMigrationService.getStatus().isRunning()) {
+
+        if (!isRunning.compareAndSet(false, true)) {
             return JobRunnerResponse.aborted("Database migration job is already running");
         }
 
@@ -57,9 +61,11 @@ public class DatabaseMigrationJobRunner implements MigrationJobRunner
         } catch (InvalidMigrationStageError e) {
             log.error("Invalid migration transition - {}", e.getMessage());
             return JobRunnerResponse.failed(e);
+        } finally {
+            isRunning.set(false);
         }
 
-        log.info("Finished S3 migration job: {}", databaseMigrationService.getStatus());
+        log.info("Finished DB migration job");
 
         return JobRunnerResponse.success("Database migration complete");
 

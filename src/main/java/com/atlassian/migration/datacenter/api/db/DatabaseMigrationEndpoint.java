@@ -18,6 +18,7 @@ package com.atlassian.migration.datacenter.api.db;
 
 import com.atlassian.migration.datacenter.core.aws.db.DatabaseMigrationService;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -40,11 +41,14 @@ public class DatabaseMigrationEndpoint
 {
 
     private final DatabaseMigrationService databaseMigrationService;
+    private final MigrationService migrationService;
 
     private final ObjectMapper mapper;
 
-    public DatabaseMigrationEndpoint(DatabaseMigrationService databaseMigrationService) {
+    public DatabaseMigrationEndpoint(DatabaseMigrationService databaseMigrationService,
+                                     MigrationService migrationService) {
         this.databaseMigrationService = databaseMigrationService;
+        this.migrationService = migrationService;
         this.mapper = new ObjectMapper();
         this.mapper.setVisibility(PropertyAccessor.ALL, Visibility.ANY);
     }
@@ -55,25 +59,19 @@ public class DatabaseMigrationEndpoint
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/start")
     public Response runMigration() {
-        if (databaseMigrationService.getStatus().isRunning()) {
+        if (migrationService.getCurrentStage().isDBPhase()) {
             return Response
                     .status(Response.Status.CONFLICT)
-                    .entity(ImmutableMap.of("status", databaseMigrationService.getStatus().toString()))
+                    .entity(ImmutableMap.of("status", migrationService.getCurrentStage()))
                     .build();
         }
-        try {
-            boolean started = databaseMigrationService.scheduleMigration();
-            Response.ResponseBuilder builder = started ? Response.status(Response.Status.ACCEPTED) : Response.status(Response.Status.CONFLICT);
 
-            return builder
-                    .entity(ImmutableMap.of("migrationScheduled", started))
-                    .build();
-        } catch (InvalidMigrationStageError invalidMigrationStageError) {
-            return Response
-                    .status(Response.Status.CONFLICT)
-                    .entity(ImmutableMap.of("error", invalidMigrationStageError.getMessage()))
-                    .build();
-        }
+        boolean started = databaseMigrationService.scheduleMigration();
+        Response.ResponseBuilder builder = started ? Response.status(Response.Status.ACCEPTED) : Response.status(Response.Status.CONFLICT);
+
+        return builder
+            .entity(ImmutableMap.of("migrationScheduled", started))
+            .build();
     }
 
 
@@ -83,7 +81,7 @@ public class DatabaseMigrationEndpoint
     public Response getMigrationStatus() {
         try {
             return Response
-                    .ok(mapper.writeValueAsString(databaseMigrationService.getStatus().toString()))
+                    .ok(mapper.writeValueAsString(migrationService.getCurrentStage()))
                     .build();
         } catch (JsonProcessingException e) {
             return Response
