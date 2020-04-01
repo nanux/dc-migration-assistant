@@ -43,7 +43,7 @@ Resources:
       LifecycleConfiguration:
         Rules:
           - AbortIncompleteMultipartUpload:
-              DaysAfterInitiation: 7
+              DaysAfterInitiation: 4
             Status: "Enabled"
     DeletionPolicy: Delete
 
