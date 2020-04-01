@@ -18,6 +18,7 @@ package com.atlassian.migration.datacenter.core.aws.infrastructure;
 
 import com.atlassian.migration.datacenter.core.aws.CfnApi;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import com.atlassian.migration.datacenter.spi.infrastructure.MigrationInfrastructureDeploymentService;
 
@@ -27,23 +28,34 @@ import java.util.Map;
  * Manages the deployment of the migration helper stack which is used to hydrate the new
  * application deployment with data.
  */
-public class AWSMigrationHelperDeploymentService implements MigrationInfrastructureDeploymentService {
+public class AWSMigrationHelperDeploymentService extends CloudformationDeploymentService implements MigrationInfrastructureDeploymentService {
 
     private static final String MIGRATION_HELPER_TEMPLATE_URL = "https://trebuchet-aws-resources.s3.amazonaws.com/migration-helper.yml";
 
-    private final CfnApi cfnApi;
+    private final MigrationService migrationService;
 
-    public AWSMigrationHelperDeploymentService(CfnApi cfnApi) {
-        this.cfnApi = cfnApi;
+    public AWSMigrationHelperDeploymentService(CfnApi cfnApi, MigrationService migrationService) {
+        super(cfnApi);
+        this.migrationService = migrationService;
     }
 
     @Override
     public void deployMigrationInfrastructure(String deploymentId, Map<String, String> params) throws InvalidMigrationStageError {
-        cfnApi.provisionStack(MIGRATION_HELPER_TEMPLATE_URL, deploymentId, params);
+        super.deployCloudformationStack(MIGRATION_HELPER_TEMPLATE_URL, deploymentId, params);
+    }
+
+    @Override
+    protected void handleSuccessfulDeployment() {
+
+    }
+
+    @Override
+    protected void handleFailedDeployment() {
+
     }
 
     @Override
     public InfrastructureDeploymentStatus getDeploymentStatus() {
-        return null;
+        return super.getDeploymentStatus();
     }
 }

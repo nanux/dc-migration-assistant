@@ -18,18 +18,25 @@ package com.atlassian.migration.datacenter.core.aws.infrastructure;
 
 import com.atlassian.migration.datacenter.core.aws.CfnApi;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 import java.util.Collections;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AWSMigrationHelperDeploymentServiceTest {
+
+    static final String DEPLOYMENT_ID = "test-deployment";
 
     @Mock
     CfnApi mockCfn;
@@ -38,25 +45,57 @@ class AWSMigrationHelperDeploymentServiceTest {
     AWSMigrationHelperDeploymentService sut;
 
     @Test
-    void shouldProvisionCloudformationStack() throws InvalidMigrationStageError {
-        final String deploymentId = "test-deployment";
-        sut.deployMigrationInfrastructure(deploymentId, Collections.emptyMap());
+    void shouldProvisionCloudformationStack() {
+        givenMigrationStackHasStartedDeploying();
 
-        verify(mockCfn).provisionStack("https://trebuchet-aws-resources.s3.amazonaws.com/migration-helper.yml", deploymentId, Collections.emptyMap());
+        verify(mockCfn).provisionStack("https://trebuchet-aws-resources.s3.amazonaws.com/migration-helper.yml", DEPLOYMENT_ID, Collections.emptyMap());
     }
 
     @Test
     void shouldReturnInProgressWhileCloudformationDeploymentIsOngoing() {
+        givenMigrationStackHasStartedDeploying();
+        givenMigrationStackDeploymentIsInProgress();
 
+        assertEquals(InfrastructureDeploymentStatus.CREATE_IN_PROGRESS, sut.getDeploymentStatus());
     }
 
     @Test
-    void shouldReturnCompleteWhenCloudformationDeploymentSucceeds() {
+    void shouldReturnCompleteWhenCloudformationDeploymentSucceeds() throws InterruptedException {
+        givenMigrationStackHasStartedDeploying();
+        givenMigrationStackDeploymentIsComplete();
 
+        Thread.sleep(100);
+
+        assertEquals(InfrastructureDeploymentStatus.CREATE_COMPLETE, sut.getDeploymentStatus());
     }
 
     @Test
-    void shouldReturnErrorWhenCloudformationDeploymentFails() {
+    void shouldReturnErrorWhenCloudformationDeploymentFails() throws InterruptedException {
+        givenMigrationStackHasStartedDeploying();
+        givenMigrationStackDeploymentFailed();
 
+        Thread.sleep(100);
+
+        assertEquals(InfrastructureDeploymentStatus.CREATE_FAILED, sut.getDeploymentStatus());
+    }
+
+    private void givenMigrationStackHasStartedDeploying() {
+        try {
+            sut.deployMigrationInfrastructure(DEPLOYMENT_ID, Collections.emptyMap());
+        } catch (InvalidMigrationStageError invalidMigrationStageError) {
+            fail("invalid migration stage error thrown while deploying migration helper", invalidMigrationStageError);
+        }
+    }
+
+    private void givenMigrationStackDeploymentIsInProgress() {
+        when(mockCfn.getStatus(DEPLOYMENT_ID)).thenReturn(StackStatus.CREATE_IN_PROGRESS);
+    }
+
+    private void givenMigrationStackDeploymentIsComplete() {
+        when(mockCfn.getStatus(DEPLOYMENT_ID)).thenReturn(StackStatus.CREATE_COMPLETE);
+    }
+
+    private void givenMigrationStackDeploymentFailed() {
+        when(mockCfn.getStatus(DEPLOYMENT_ID)).thenReturn(StackStatus.CREATE_FAILED);
     }
 }
