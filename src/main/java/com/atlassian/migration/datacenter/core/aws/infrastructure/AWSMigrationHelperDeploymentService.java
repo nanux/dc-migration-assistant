@@ -18,6 +18,7 @@ package com.atlassian.migration.datacenter.core.aws.infrastructure;
 
 import com.atlassian.migration.datacenter.core.aws.CfnApi;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import com.atlassian.migration.datacenter.spi.infrastructure.MigrationInfrastructureDeploymentService;
@@ -42,6 +43,10 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
     @Override
     public void deployMigrationInfrastructure(String deploymentId, Map<String, String> params) throws InvalidMigrationStageError {
         super.deployCloudformationStack(MIGRATION_HELPER_TEMPLATE_URL, deploymentId, params);
+
+        final MigrationContext context = migrationService.getCurrentContext();
+        context.setHelperStackDeploymentId(deploymentId);
+        context.save();
     }
 
     @Override

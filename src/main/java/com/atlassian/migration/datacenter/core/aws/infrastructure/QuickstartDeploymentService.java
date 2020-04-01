@@ -50,22 +50,6 @@ public class QuickstartDeploymentService extends CloudformationDeploymentService
         this.dbCredentialsStorageService = dbCredentialsStorageService;
     }
 
-    @Override
-    protected void handleFailedDeployment() {
-        logger.error("application stack deployment failed");
-        migrationService.error();
-    }
-
-    @Override
-    protected void handleSuccessfulDeployment() {
-        try {
-            logger.debug("application stack deployment succeeded");
-            migrationService.transition(MigrationStage.PROVISION_MIGRATION_STACK);
-        } catch (InvalidMigrationStageError invalidMigrationStageError) {
-            logger.error("tried to transition migration from {} but got error: {}.", MigrationStage.PROVISION_APPLICATION_WAIT, invalidMigrationStageError.getMessage());
-        }
-    }
-
     /**
      * Commences the deployment of the AWS Quick Start. It will transition the state machine upon completion of the
      * deployment. If the deployment finishes successfully we transition to the next stage, otherwise we transition
@@ -86,6 +70,22 @@ public class QuickstartDeploymentService extends CloudformationDeploymentService
         addDeploymentIdToMigrationContext(deploymentId);
 
         storeDbCredentials(params);
+    }
+
+    @Override
+    protected void handleFailedDeployment() {
+        logger.error("application stack deployment failed");
+        migrationService.error();
+    }
+
+    @Override
+    protected void handleSuccessfulDeployment() {
+        try {
+            logger.debug("application stack deployment succeeded");
+            migrationService.transition(MigrationStage.PROVISION_MIGRATION_STACK);
+        } catch (InvalidMigrationStageError invalidMigrationStageError) {
+            logger.error("tried to transition migration from {} but got error: {}.", MigrationStage.PROVISION_APPLICATION_WAIT, invalidMigrationStageError.getMessage());
+        }
     }
 
     private void storeDbCredentials(Map<String, String> params) {

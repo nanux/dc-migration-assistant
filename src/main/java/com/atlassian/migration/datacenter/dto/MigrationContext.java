@@ -28,4 +28,8 @@ public interface MigrationContext extends Entity {
 
     void setApplicationDeploymentId(String id);
 
+    String getHelperStackDeploymentId();
+
+    void setHelperStackDeploymentId(String deploymentId);
+
 }
