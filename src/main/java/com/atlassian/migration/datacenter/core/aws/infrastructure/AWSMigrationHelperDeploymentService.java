@@ -70,6 +70,12 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
         stack.outputs().forEach(output -> {
             outputsMap.put(output.outputKey(), output.outputValue());
         });
+
+        String fsDownloadDocument = outputsMap.get("DownloadSSMDocument");
+        String fsDownloadStatusDocument = outputsMap.get("DownloadStatusSSMDocument");
+        String rdsRestoreDocument = outputsMap.get("RdsRestoreSSMDocument");
+        String migrationStackASG = outputsMap.get("ServerGroup");
+        String migrationBucket = outputsMap.get("MigrationBucket");
     }
 
     @Override
