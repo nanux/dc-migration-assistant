@@ -24,8 +24,8 @@
         <version>1.0.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
-
     <artifactId>plugin</artifactId>
+    <packaging>atlassian-plugin</packaging>
 
     <dependencies>
         <dependency>

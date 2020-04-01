@@ -18,17 +18,36 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
-    <modelVersion>4.0.0</modelVersion>
-    <modules>
-        <module>frontend</module>
-        <module>core</module>
-        <module>plugin</module>
-    </modules>
     <parent>
         <groupId>com.atlassian.pom</groupId>
         <artifactId>public-pom</artifactId>
         <version>6.0.2</version>
     </parent>
+
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.atlassian.migration.datacenter.migration-assistant</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.0.0</version>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <organization>
+        <name>Atlassian</name>
+        <url>https://www.atlassian.com</url>
+    </organization>
+    <name>Atlassian Data Center Migration Assistant</name>
+    <description>This is the officially supported DC Migration plugin for Atlassian JIRA.</description>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>frontend</module>
+        <module>core</module>
+        <module>plugin</module>
+    </modules>
 
     <repositories>
         <repository>
@@ -62,23 +81,6 @@
         </pluginRepository>
     </pluginRepositories>
 
-    <groupId>com.atlassian.migration.datacenter.migration-assistant</groupId>
-    <artifactId>parent</artifactId>
-    <version>1.0.0</version>
-    <licenses>
-        <license>
-            <name>The Apache Software License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
-    <organization>
-        <name>Atlassian</name>
-        <url>https://www.atlassian.com</url>
-    </organization>
-    <name>Atlassian Data Center Migration Assistant</name>
-    <description>This is the officially supported DC Migration plugin for Atlassian JIRA.</description>
-    <packaging>pom</packaging>
     <profiles>
         <profile>
             <id>watch-mode</id>
