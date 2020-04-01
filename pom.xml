@@ -19,6 +19,9 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
+    <modules>
+        <module>frontend</module>
+    </modules>
     <parent>
         <groupId>com.atlassian.pom</groupId>
         <artifactId>public-pom</artifactId>
@@ -73,7 +76,7 @@
     </organization>
     <name>Atlassian Data Center Migration Assistant</name>
     <description>This is the officially supported DC Migration plugin for Atlassian JIRA.</description>
-    <packaging>atlassian-plugin</packaging>
+    <packaging>pom</packaging>
 
     <dependencies>
         <dependency>
@@ -379,69 +382,6 @@
                         </Import-Package>
                     </instructions>
                 </configuration>
-            </plugin>
-
-
-            <plugin>
-                <!-- Install front-end modules and run ESLint -->
-                <groupId>com.github.eirslett</groupId>
-                <artifactId>frontend-maven-plugin</artifactId>
-                <version>${frontend.maven.plugin.version}</version>
-                <configuration>
-                    <nodeVersion>${nodeVersion}</nodeVersion>
-                    <yarnVersion>${yarnVersion}</yarnVersion>
-                    <installDirectory>${frontend.maven.plugin.install.directory}</installDirectory>
-                    <workingDirectory>${frontend.working.directory}</workingDirectory>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>install-node-and-yarn</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>install-node-and-yarn</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>install-prod-dependencies</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>${yarn.cmd.install}</arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>compile-the-ui</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>${yarn.cmd.build}</arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>lint</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>lint</arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>run-tests</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>test</arguments>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
 
             <plugin>
