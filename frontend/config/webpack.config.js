@@ -89,7 +89,7 @@ module.exports = (env, argv = {}) => {
     }
 
     function loadDotEnvVariables(mode) {
-        let dotEnvFilePath = path.join(__dirname, '..', '.env');
+        let dotEnvFilePath = path.join(__dirname, '../..', '.env');
         if (!isProductionEnv(mode)) {
             dotEnvFilePath = dotEnvFilePath + '.' + mode;
         }
