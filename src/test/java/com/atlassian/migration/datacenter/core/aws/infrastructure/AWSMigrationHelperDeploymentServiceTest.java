@@ -18,7 +18,10 @@ package com.atlassian.migration.datacenter.core.aws.infrastructure;
 
 import com.atlassian.migration.datacenter.core.aws.CfnApi;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.dto.MigrationContext;
+import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -41,8 +44,19 @@ class AWSMigrationHelperDeploymentServiceTest {
     @Mock
     CfnApi mockCfn;
 
+    @Mock
+    MigrationService mockMigrationService;
+
     @InjectMocks
     AWSMigrationHelperDeploymentService sut;
+
+    @Mock
+    MigrationContext mockContext;
+
+    @BeforeEach
+    void setUp() {
+        when(mockMigrationService.getCurrentContext()).thenReturn(mockContext);
+    }
 
     @Test
     void shouldProvisionCloudformationStack() {
@@ -55,6 +69,7 @@ class AWSMigrationHelperDeploymentServiceTest {
     void shouldReturnInProgressWhileCloudformationDeploymentIsOngoing() {
         givenMigrationStackHasStartedDeploying();
         givenMigrationStackDeploymentIsInProgress();
+        givenMigrationStackNameHasBeenStoredInContext();
 
         assertEquals(InfrastructureDeploymentStatus.CREATE_IN_PROGRESS, sut.getDeploymentStatus());
     }
@@ -63,6 +78,7 @@ class AWSMigrationHelperDeploymentServiceTest {
     void shouldReturnCompleteWhenCloudformationDeploymentSucceeds() throws InterruptedException {
         givenMigrationStackHasStartedDeploying();
         givenMigrationStackDeploymentIsComplete();
+        givenMigrationStackNameHasBeenStoredInContext();
 
         Thread.sleep(100);
 
@@ -73,6 +89,7 @@ class AWSMigrationHelperDeploymentServiceTest {
     void shouldReturnErrorWhenCloudformationDeploymentFails() throws InterruptedException {
         givenMigrationStackHasStartedDeploying();
         givenMigrationStackDeploymentFailed();
+        givenMigrationStackNameHasBeenStoredInContext();
 
         Thread.sleep(100);
 
@@ -97,5 +114,9 @@ class AWSMigrationHelperDeploymentServiceTest {
 
     private void givenMigrationStackDeploymentFailed() {
         when(mockCfn.getStatus(DEPLOYMENT_ID)).thenReturn(StackStatus.CREATE_FAILED);
+    }
+
+    private void givenMigrationStackNameHasBeenStoredInContext() {
+        when(mockContext.getHelperStackDeploymentId()).thenReturn(DEPLOYMENT_ID);
     }
 }

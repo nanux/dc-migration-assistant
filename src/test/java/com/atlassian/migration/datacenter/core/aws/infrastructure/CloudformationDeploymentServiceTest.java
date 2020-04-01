@@ -78,7 +78,7 @@ class CloudformationDeploymentServiceTest {
 
         deploySimpleStack();
 
-        assertEquals(InfrastructureDeploymentStatus.CREATE_IN_PROGRESS, sut.getDeploymentStatus());
+        assertEquals(InfrastructureDeploymentStatus.CREATE_IN_PROGRESS, sut.getDeploymentStatus(STACK_NAME));
     }
 
     @Test
