@@ -29,6 +29,8 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Objects.requireNonNull;
+
 /**
  * Superclass for classes which manage the deployment of cloudformation templates.
  */
@@ -37,8 +39,6 @@ public abstract class CloudformationDeploymentService {
     private static final Logger logger = LoggerFactory.getLogger(CloudformationDeploymentService.class);
 
     private final CfnApi cfnApi;
-
-    private String currentStack;
 
     protected CloudformationDeploymentService(CfnApi cfnApi) {
         this.cfnApi = cfnApi;
@@ -61,13 +61,13 @@ public abstract class CloudformationDeploymentService {
      * @param params the parameters for the cloudformation template
      */
     protected void deployCloudformationStack(String templateUrl, String stackName, Map<String, String> params) {
-        currentStack = stackName;
         cfnApi.provisionStack(templateUrl, stackName, params);
         beginWatchingDeployment(stackName);
     }
 
-    protected InfrastructureDeploymentStatus getDeploymentStatus() {
-        StackStatus status = cfnApi.getStatus(currentStack);
+    protected InfrastructureDeploymentStatus getDeploymentStatus(String stackName) {
+        requireNonNull(stackName);
+        StackStatus status = cfnApi.getStatus(stackName);
 
         switch (status) {
             case CREATE_COMPLETE:

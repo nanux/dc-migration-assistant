@@ -61,6 +61,6 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
 
     @Override
     public InfrastructureDeploymentStatus getDeploymentStatus() {
-        return super.getDeploymentStatus();
+        return super.getDeploymentStatus(migrationService.getCurrentContext().getHelperStackDeploymentId());
     }
 }
