@@ -17,8 +17,6 @@
 package com.atlassian.migration.datacenter.core.aws.infrastructure;
 
 import com.atlassian.migration.datacenter.core.aws.CfnApi;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
-import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +29,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Superclass for classes which manage the deployment of cloudformation templates.
+ */
 public abstract class CloudformationDeploymentService {
 
     private static final Logger logger = LoggerFactory.getLogger(CloudformationDeploymentService.class);
@@ -43,6 +44,22 @@ public abstract class CloudformationDeploymentService {
         this.cfnApi = cfnApi;
     }
 
+    /**
+     * Method that will be called if the deployment {@link this#deployCloudformationStack(String, String, Map)} fails
+     */
+    protected abstract void handleSuccessfulDeployment();
+
+    /**
+     * Method that will be called if the deployment succeeds
+     */
+    protected abstract void handleFailedDeployment();
+
+    /**
+     * Deploys a cloudformation stack and starts a thread to monitor the deployment.
+     * @param templateUrl the S3 url of the cloudformation template to deploy
+     * @param stackName the name for the cloudformation stack
+     * @param params the parameters for the cloudformation template
+     */
     protected void deployCloudformationStack(String templateUrl, String stackName, Map<String, String> params) {
         currentStack = stackName;
         cfnApi.provisionStack(templateUrl, stackName, params);
@@ -94,8 +111,4 @@ public abstract class CloudformationDeploymentService {
             canceller.cancel(true);
         });
     }
-
-    protected abstract void handleFailedDeployment();
-
-    protected abstract void handleSuccessfulDeployment();
 }

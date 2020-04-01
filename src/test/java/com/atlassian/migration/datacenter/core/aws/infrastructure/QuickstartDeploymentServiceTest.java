@@ -45,7 +45,6 @@ class QuickstartDeploymentServiceTest {
 
     static final String STACK_NAME = "my-stack";
     static final String TEST_DB_PASSWORD = "myDatabasePassword";
-    static final String DEFAULT_DB_USER = "atljira";
     static final HashMap<String, String> STACK_PARAMS = new HashMap<String, String>() {{
         put("parameter", "value");
         put("DBPassword", TEST_DB_PASSWORD);
@@ -93,7 +92,6 @@ class QuickstartDeploymentServiceTest {
 
     @Test
     void shouldReturnInProgressWhileDeploying() throws InvalidMigrationStageError {
-        when(mockContext.getApplicationDeploymentId()).thenReturn(STACK_NAME);
         when(mockCfnApi.getStatus(STACK_NAME)).thenReturn(StackStatus.CREATE_IN_PROGRESS);
 
         deploySimpleStack();
