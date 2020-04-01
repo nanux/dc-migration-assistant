@@ -20,10 +20,14 @@ import com.atlassian.migration.datacenter.core.aws.CfnApi;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
+import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentError;
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import com.atlassian.migration.datacenter.spi.infrastructure.MigrationInfrastructureDeploymentService;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Manages the deployment of the migration helper stack which is used to hydrate the new
@@ -34,10 +38,12 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
     private static final String MIGRATION_HELPER_TEMPLATE_URL = "https://trebuchet-aws-resources.s3.amazonaws.com/migration-helper.yml";
 
     private final MigrationService migrationService;
+    private final CfnApi cfnApi;
 
     public AWSMigrationHelperDeploymentService(CfnApi cfnApi, MigrationService migrationService) {
         super(cfnApi);
         this.migrationService = migrationService;
+        this.cfnApi = cfnApi;
     }
 
     @Override
@@ -53,12 +59,42 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
 
     @Override
     protected void handleSuccessfulDeployment() {
+        Optional<Stack> maybeStack = cfnApi.getStack(migrationService.getCurrentContext().getHelperStackDeploymentId());
+        if (!maybeStack.isPresent()) {
+            throw new InfrastructureDeploymentError("stack was not found by DescribeStack even though it succeeded");
+        }
 
+        Stack stack = maybeStack.get();
+
+        Map<String, String> outputsMap = new HashMap<>();
+        stack.outputs().forEach(output -> {
+            outputsMap.put(output.outputKey(), output.outputValue());
+        });
     }
 
     @Override
     protected void handleFailedDeployment() {
 
+    }
+
+    public String getFsRestoreDocument() {
+        return null;
+    }
+
+    public String getFsRestoreStatusDocument() {
+        return null;
+    }
+
+    public String getDbRestoreDocument() {
+        return null;
+    }
+
+    public String getMigrationHostInstanceId() {
+        return null;
+    }
+
+    public String getMigrationS3BucketName() {
+        return null;
     }
 
     @Override
