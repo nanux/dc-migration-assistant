@@ -16,24 +16,46 @@
 
 package com.atlassian.migration.datacenter.core.aws.infrastructure;
 
+import com.atlassian.migration.datacenter.core.aws.CfnApi;
+import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.Collections;
+
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class AWSMigrationHelperDeploymentServiceTest {
 
-    void shouldProvisionCloudformationStack() {
+    @Mock
+    CfnApi mockCfn;
 
+    @InjectMocks
+    AWSMigrationHelperDeploymentService sut;
+
+    @Test
+    void shouldProvisionCloudformationStack() throws InvalidMigrationStageError {
+        final String deploymentId = "test-deployment";
+        sut.deployMigrationInfrastructure(deploymentId, Collections.emptyMap());
+
+        verify(mockCfn).provisionStack("https://trebuchet-aws-resources.s3.amazonaws.com/migration-helper.yml", deploymentId, Collections.emptyMap());
     }
 
+    @Test
     void shouldReturnInProgressWhileCloudformationDeploymentIsOngoing() {
 
     }
 
+    @Test
     void shouldReturnCompleteWhenCloudformationDeploymentSucceeds() {
 
     }
 
+    @Test
     void shouldReturnErrorWhenCloudformationDeploymentFails() {
 
     }

@@ -16,6 +16,7 @@
 
 package com.atlassian.migration.datacenter.core.aws.infrastructure;
 
+import com.atlassian.migration.datacenter.core.aws.CfnApi;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import com.atlassian.migration.datacenter.spi.infrastructure.MigrationInfrastructureDeploymentService;
@@ -27,9 +28,18 @@ import java.util.Map;
  * application deployment with data.
  */
 public class AWSMigrationHelperDeploymentService implements MigrationInfrastructureDeploymentService {
+
+    private static final String MIGRATION_HELPER_TEMPLATE_URL = "https://trebuchet-aws-resources.s3.amazonaws.com/migration-helper.yml";
+
+    private final CfnApi cfnApi;
+
+    public AWSMigrationHelperDeploymentService(CfnApi cfnApi) {
+        this.cfnApi = cfnApi;
+    }
+
     @Override
     public void deployMigrationInfrastructure(String deploymentId, Map<String, String> params) throws InvalidMigrationStageError {
-
+        cfnApi.provisionStack(MIGRATION_HELPER_TEMPLATE_URL, deploymentId, params);
     }
 
     @Override
