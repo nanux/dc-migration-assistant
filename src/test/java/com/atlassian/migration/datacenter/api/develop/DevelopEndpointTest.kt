@@ -19,10 +19,12 @@ import com.atlassian.migration.datacenter.spi.MigrationService
 import com.atlassian.migration.datacenter.spi.MigrationStage
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.mockk.MockKAnnotations
+import io.mockk.Runs
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
+import io.mockk.just
 import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -52,10 +54,10 @@ internal class DevelopEndpointTest {
     @Test
     @Throws(Exception::class)
     fun shouldSetStageWithCorrectTargetStageWhenProfileIsEnabled() {
-        val migrationStage =
-            objectMapper.readValue("\"FS_MIGRATION_COPY\"", MigrationStage::class.java)
+        val migrationStage = objectMapper.readValue("\"FS_MIGRATION_COPY\"", MigrationStage::class.java)
         every { environment.activeProfiles } returns arrayOf(DevelopEndpoint.ALLOW_ANY_TRANSITION_PROFILE)
         every { migrationService.currentStage } returns migrationStage
+        every { migrationService.transition(MigrationStage.FS_MIGRATION_COPY) } just Runs
         val response = endpoint.setMigrationStage(migrationStage)
         assertEquals(
             Response.Status.OK.statusCode,
