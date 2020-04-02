@@ -39,9 +39,15 @@ public abstract class CloudformationDeploymentService {
     private static final Logger logger = LoggerFactory.getLogger(CloudformationDeploymentService.class);
 
     private final CfnApi cfnApi;
+    private int deployStatusPollIntervalSeconds;
 
-    protected CloudformationDeploymentService(CfnApi cfnApi) {
+    CloudformationDeploymentService(CfnApi cfnApi) {
+        this(cfnApi, 30);
+    }
+
+    CloudformationDeploymentService(CfnApi cfnApi, int deployStatusPollIntervalSeconds) {
         this.cfnApi = cfnApi;
+        this.deployStatusPollIntervalSeconds = deployStatusPollIntervalSeconds;
     }
 
     /**
@@ -97,7 +103,7 @@ public abstract class CloudformationDeploymentService {
                 handleFailedDeployment();
                 stackCompleteFuture.complete("");
             }
-        }, 0, 30, TimeUnit.SECONDS);
+        }, 0, deployStatusPollIntervalSeconds, TimeUnit.SECONDS);
 
         ScheduledFuture<?> canceller = scheduledExecutorService.scheduleAtFixedRate(() -> {
             logger.error("timed out while waiting for stack {} to deploy", stackName);

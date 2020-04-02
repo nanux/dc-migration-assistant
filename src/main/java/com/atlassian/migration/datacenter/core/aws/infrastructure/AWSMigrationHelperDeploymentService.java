@@ -39,9 +39,21 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
 
     private final MigrationService migrationService;
     private final CfnApi cfnApi;
+    private String fsRestoreDocument;
+    private String fsRestoreStatusDocument;
+    private String rdsRestoreDocument;
+    private String migrationStackASG;
+    private String migrationBucket;
+
 
     public AWSMigrationHelperDeploymentService(CfnApi cfnApi, MigrationService migrationService) {
         super(cfnApi);
+        this.migrationService = migrationService;
+        this.cfnApi = cfnApi;
+    }
+
+    AWSMigrationHelperDeploymentService(CfnApi cfnApi, MigrationService migrationService, int pollIntervalSeconds) {
+        super(cfnApi, pollIntervalSeconds);
         this.migrationService = migrationService;
         this.cfnApi = cfnApi;
     }
@@ -71,11 +83,11 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
             outputsMap.put(output.outputKey(), output.outputValue());
         });
 
-        String fsDownloadDocument = outputsMap.get("DownloadSSMDocument");
-        String fsDownloadStatusDocument = outputsMap.get("DownloadStatusSSMDocument");
-        String rdsRestoreDocument = outputsMap.get("RdsRestoreSSMDocument");
-        String migrationStackASG = outputsMap.get("ServerGroup");
-        String migrationBucket = outputsMap.get("MigrationBucket");
+        fsRestoreDocument = outputsMap.get("DownloadSSMDocument");
+        fsRestoreStatusDocument = outputsMap.get("DownloadStatusSSMDocument");
+        rdsRestoreDocument = outputsMap.get("RdsRestoreSSMDocument");
+        migrationStackASG = outputsMap.get("ServerGroup");
+        migrationBucket = outputsMap.get("MigrationBucket");
     }
 
     @Override
@@ -84,22 +96,22 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
     }
 
     public String getFsRestoreDocument() {
-        return null;
+        return fsRestoreDocument;
     }
 
     public String getFsRestoreStatusDocument() {
-        return null;
+        return fsRestoreStatusDocument;
     }
 
     public String getDbRestoreDocument() {
-        return null;
-    }
-
-    public String getMigrationHostInstanceId() {
-        return null;
+        return rdsRestoreDocument;
     }
 
     public String getMigrationS3BucketName() {
+        return migrationBucket;
+    }
+
+    public String getMigrationHostInstanceId() {
         return null;
     }
 
