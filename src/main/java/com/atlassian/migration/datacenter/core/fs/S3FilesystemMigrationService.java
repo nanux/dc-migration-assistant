@@ -17,6 +17,7 @@
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.jira.config.util.JiraHome;
+import com.atlassian.migration.datacenter.core.aws.infrastructure.AWSMigrationHelperDeploymentService;
 import com.atlassian.migration.datacenter.core.exceptions.FileSystemMigrationFailure;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloadManager;
@@ -46,14 +47,14 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private static final Logger logger = LoggerFactory.getLogger(S3FilesystemMigrationService.class);
 
     private static final String OVERRIDE_UPLOAD_DIRECTORY = System.getProperty("com.atlassian.migration.datacenter.fs.overrideJiraHome", "");
-    private static final String BUCKET_NAME = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
 
     private S3AsyncClient s3AsyncClient;
     private final JiraHome jiraHome;
     private final MigrationService migrationService;
     private final MigrationRunner migrationRunner;
     private final S3SyncFileSystemDownloadManager fileSystemDownloadManager;
-    private Supplier<S3AsyncClient> s3AsyncClientSupplier;
+    private final Supplier<S3AsyncClient> s3AsyncClientSupplier;
+    private final AWSMigrationHelperDeploymentService migrationHelperDeploymentService;
 
     private FileSystemMigrationReport report;
     private FilesystemUploader fsUploader;
@@ -62,12 +63,13 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
                                         JiraHome jiraHome,
                                         S3SyncFileSystemDownloadManager fileSystemDownloadManager,
                                         MigrationService migrationService,
-                                        MigrationRunner migrationRunner) {
+                                        MigrationRunner migrationRunner, AWSMigrationHelperDeploymentService migrationHelperDeploymentService) {
         this.s3AsyncClientSupplier = s3AsyncClientSupplier;
         this.jiraHome = jiraHome;
         this.migrationService = migrationService;
         this.migrationRunner = migrationRunner;
         this.fileSystemDownloadManager = fileSystemDownloadManager;
+        this.migrationHelperDeploymentService = migrationHelperDeploymentService;
 
         this.report = new DefaultFileSystemMigrationReport();
     }
@@ -169,7 +171,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     }
 
     private String getS3Bucket() {
-        return BUCKET_NAME;
+        return System.getProperty("S3_TARGET_BUCKET_NAME", migrationHelperDeploymentService.getMigrationS3BucketName());
     }
 
     private JobId getScheduledJobId() {
