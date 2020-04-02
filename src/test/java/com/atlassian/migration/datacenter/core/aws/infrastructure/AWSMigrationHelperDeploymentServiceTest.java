@@ -20,22 +20,25 @@ import com.atlassian.migration.datacenter.core.aws.CfnApi;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
+import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentError;
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
-import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.function.Executable;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.cloudformation.model.Output;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -139,6 +142,28 @@ class AWSMigrationHelperDeploymentServiceTest {
         assertStackOutputsAreAvailable();
     }
 
+    @Test
+    void shouldThrowErrorWhenGettingOutputsIfStackDidNotDeploySuccessfully() throws InterruptedException {
+        givenMigrationStackDeploymentWillFail();
+        givenMigrationStackHasStartedDeploying();
+
+        Thread.sleep(100);
+
+        assertGettingStackOutputsThrowsError();
+    }
+
+    private void assertGettingStackOutputsThrowsError() {
+        ArrayList<Executable> outputGetters = new ArrayList<>();
+        outputGetters.add(sut::getMigrationS3BucketName);
+        outputGetters.add(sut::getDbRestoreDocument);
+        outputGetters.add(sut::getFsRestoreDocument);
+        outputGetters.add(sut::getFsRestoreStatusDocument);
+
+        for (Executable outputGetter : outputGetters) {
+            assertThrows(InfrastructureDeploymentError.class, outputGetter);
+        }
+    }
+
     private void assertStackOutputsAreAvailable() {
         assertEquals(FS_DOWNLOAD_DOC, sut.getFsRestoreDocument());
         assertEquals(FS_DOWNLOAD_STATUS_DOC, sut.getFsRestoreStatusDocument());
@@ -185,6 +210,6 @@ class AWSMigrationHelperDeploymentServiceTest {
     }
 
     private void givenContextContainsMigrationHelperStackId() {
-        when(mockContext.getHelperStackDeploymentId()).thenReturn(DEPLOYMENT_ID);
+        lenient().when(mockContext.getHelperStackDeploymentId()).thenReturn(DEPLOYMENT_ID);
     }
 }

@@ -28,6 +28,7 @@ import software.amazon.awssdk.services.cloudformation.model.Stack;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Manages the deployment of the migration helper stack which is used to hydrate the new
@@ -60,6 +61,8 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
 
     @Override
     public void deployMigrationInfrastructure(Map<String, String> params) throws InvalidMigrationStageError {
+        resetStackOutputs();
+
         String applicationDeploymentId = migrationService.getCurrentContext().getApplicationDeploymentId();
         String migrationStackDeploymentId = applicationDeploymentId + "-migration";
         super.deployCloudformationStack(MIGRATION_HELPER_TEMPLATE_URL, migrationStackDeploymentId, params);
@@ -67,6 +70,14 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
         final MigrationContext context = migrationService.getCurrentContext();
         context.setHelperStackDeploymentId(migrationStackDeploymentId);
         context.save();
+    }
+
+    private void resetStackOutputs() {
+        fsRestoreDocument = "";
+        fsRestoreStatusDocument = "";
+        rdsRestoreDocument = "";
+        migrationStackASG = "";
+        migrationBucket = "";
     }
 
     @Override
@@ -96,23 +107,40 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
     }
 
     public String getFsRestoreDocument() {
+        ensureStackOutputsAreSet();
         return fsRestoreDocument;
     }
 
     public String getFsRestoreStatusDocument() {
+        ensureStackOutputsAreSet();
         return fsRestoreStatusDocument;
     }
 
     public String getDbRestoreDocument() {
+        ensureStackOutputsAreSet();
         return rdsRestoreDocument;
     }
 
     public String getMigrationS3BucketName() {
+        ensureStackOutputsAreSet();
         return migrationBucket;
     }
 
     public String getMigrationHostInstanceId() {
+        ensureStackOutputsAreSet();
         return null;
+    }
+
+    private void ensureStackOutputsAreSet() {
+        final Stream<String> stackOutputs = Stream.of(
+                this.fsRestoreDocument,
+                fsRestoreStatusDocument,
+                rdsRestoreDocument,
+                migrationBucket,
+                migrationStackASG);
+        if (stackOutputs.anyMatch(output -> output == null || output.equals(""))) {
+            throw new InfrastructureDeploymentError("migration stack outputs are not set");
+        }
     }
 
     @Override
