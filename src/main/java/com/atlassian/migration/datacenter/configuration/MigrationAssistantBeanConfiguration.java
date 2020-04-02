@@ -176,7 +176,7 @@ public class MigrationAssistantBeanConfiguration {
                                                              DatabaseArtifactS3UploadService s3UploadService,
                                                              DatabaseUploadStageTransitionCallback uploadStageTransitionCallback,
                                                              SsmPsqlDatabaseRestoreService restoreService,
-                                                             DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback) {
+                                                             DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback, AWSMigrationHelperDeploymentService migrationHelperDeploymentService) {
         String tempDirectoryPath = System.getProperty("java.io.tmpdir");
         return new DatabaseMigrationService(
                 Paths.get(tempDirectoryPath),
@@ -187,7 +187,8 @@ public class MigrationAssistantBeanConfiguration {
                 s3UploadService,
                 uploadStageTransitionCallback,
                 restoreService,
-                restoreStageTransitionCallback);
+                restoreStageTransitionCallback,
+                migrationHelperDeploymentService);
     }
 
     @Bean

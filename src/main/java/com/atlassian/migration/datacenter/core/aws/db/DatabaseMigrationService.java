@@ -18,27 +18,21 @@ package com.atlassian.migration.datacenter.core.aws.db;
 
 import com.atlassian.migration.datacenter.core.aws.db.restore.DatabaseRestoreStageTransitionCallback;
 import com.atlassian.migration.datacenter.core.aws.db.restore.SsmPsqlDatabaseRestoreService;
+import com.atlassian.migration.datacenter.core.aws.infrastructure.AWSMigrationHelperDeploymentService;
 import com.atlassian.migration.datacenter.core.db.DatabaseMigrationJobRunner;
 import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.fs.FilesystemUploader;
-import com.atlassian.migration.datacenter.core.fs.S3UploadJobRunner;
-import com.atlassian.migration.datacenter.core.util.MigrationJobRunner;
 import com.atlassian.migration.datacenter.core.util.MigrationRunner;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
-import com.atlassian.scheduler.JobRunnerRequest;
-import com.atlassian.scheduler.JobRunnerResponse;
 import com.atlassian.scheduler.config.JobId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.FAILED;
 
 /**
  * Copyright Atlassian: 10/03/2020
@@ -46,8 +40,6 @@ import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigr
 public class DatabaseMigrationService
 {
     private static Logger logger = LoggerFactory.getLogger(DatabaseMigrationService.class);
-
-    private static final String TARGET_BUCKET_NAME = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
 
     private final Path tempDirectory;
     private final DatabaseArchivalService databaseArchivalService;
@@ -58,6 +50,7 @@ public class DatabaseMigrationService
     private final DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback;
     private final MigrationService migrationService;
     private final MigrationRunner migrationRunner;
+    private final AWSMigrationHelperDeploymentService  migrationHelperDeploymentService;
 
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
@@ -69,7 +62,7 @@ public class DatabaseMigrationService
                                     DatabaseArtifactS3UploadService s3UploadService,
                                     DatabaseUploadStageTransitionCallback uploadStageTransitionCallback,
                                     SsmPsqlDatabaseRestoreService restoreService,
-                                    DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback)
+                                    DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback, AWSMigrationHelperDeploymentService migrationHelperDeploymentService)
     {
         this.tempDirectory = tempDirectory;
         this.databaseArchivalService = databaseArchivalService;
@@ -80,6 +73,7 @@ public class DatabaseMigrationService
         this.restoreStageTransitionCallback = restoreStageTransitionCallback;
         this.migrationService = migrationService;
         this.migrationRunner = migrationRunner;
+        this.migrationHelperDeploymentService = migrationHelperDeploymentService;
     }
 
     /**
@@ -96,8 +90,11 @@ public class DatabaseMigrationService
         FileSystemMigrationErrorReport report;
 
         migrationService.transition(MigrationStage.DB_MIGRATION_UPLOAD);
+
+        String bucketName = System.getProperty("S3_TARGET_BUCKET_NAME", migrationHelperDeploymentService.getMigrationS3BucketName());
+
         try {
-            report = s3UploadService.upload(pathToDatabaseFile, TARGET_BUCKET_NAME, this.uploadStageTransitionCallback);
+            report = s3UploadService.upload(pathToDatabaseFile, bucketName, this.uploadStageTransitionCallback);
         } catch (FilesystemUploader.FileUploadException e) {
             migrationService.error(e);
             throw new DatabaseMigrationFailure("Error when uploading database dump to S3", e);

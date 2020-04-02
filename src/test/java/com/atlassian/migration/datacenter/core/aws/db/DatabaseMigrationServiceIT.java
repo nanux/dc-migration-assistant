@@ -112,6 +112,7 @@ class DatabaseMigrationServiceIT {
 
         when(migrationHelperDeploymentService.getMigrationHostInstanceId()).thenReturn("1-0123456789");
         when(migrationHelperDeploymentService.getDbRestoreDocument()).thenReturn("ATL-RESTORE-DB");
+        when(migrationHelperDeploymentService.getMigrationS3BucketName()).thenReturn(bucket);
 
         CreateBucketRequest req = CreateBucketRequest.builder()
                 .bucket(bucket)
@@ -143,7 +144,7 @@ class DatabaseMigrationServiceIT {
                                                                         s3UploadService,
                                                                         uploadStageTransitionCallback,
                                                                         restoreService,
-                                                                        restoreStageTransitionCallback);
+                                                                        restoreStageTransitionCallback, migrationHelperDeploymentService);
 
         FileSystemMigrationErrorReport report = service.performMigration();
 
