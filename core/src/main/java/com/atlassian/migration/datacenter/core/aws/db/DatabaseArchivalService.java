@@ -14,8 +14,8 @@ package com.atlassian.migration.datacenter.core.aws.db;
 
 import com.atlassian.migration.datacenter.core.aws.MigrationStageCallback;
 import com.atlassian.migration.datacenter.core.db.DatabaseExtractor;
-import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.DatabaseMigrationFailure;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 
 import java.nio.file.Path;
 

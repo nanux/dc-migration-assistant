@@ -14,14 +14,22 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.core.exceptions;
+package com.atlassian.migration.datacenter.spi.dto;
 
-public class DatabaseMigrationFailure extends RuntimeException {
-    public DatabaseMigrationFailure(String message) {
-        super(message);
-    }
+import net.java.ao.Entity;
 
-    public DatabaseMigrationFailure(String message, Throwable cause) {
-        super(message, cause);
-    }
+public interface MigrationContext extends Entity {
+
+    Migration getMigration();
+
+    void setMigration(Migration migration);
+
+    String getApplicationDeploymentId();
+
+    void setApplicationDeploymentId(String id);
+
+    String getHelperStackDeploymentId();
+
+    void setHelperStackDeploymentId(String deploymentId);
+
 }

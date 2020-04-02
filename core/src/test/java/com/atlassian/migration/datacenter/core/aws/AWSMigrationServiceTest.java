@@ -18,10 +18,10 @@ package com.atlassian.migration.datacenter.core.aws;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.activeobjects.test.TestActiveObjects;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
-import com.atlassian.migration.datacenter.core.exceptions.MigrationAlreadyExistsException;
-import com.atlassian.migration.datacenter.dto.Migration;
-import com.atlassian.migration.datacenter.dto.MigrationContext;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.MigrationAlreadyExistsException;
+import com.atlassian.migration.datacenter.spi.dto.Migration;
+import com.atlassian.migration.datacenter.spi.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
 import com.atlassian.scheduler.SchedulerService;

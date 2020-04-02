@@ -16,10 +16,10 @@
 
 package com.atlassian.migration.datacenter.spi;
 
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
-import com.atlassian.migration.datacenter.core.exceptions.MigrationAlreadyExistsException;
-import com.atlassian.migration.datacenter.dto.Migration;
-import com.atlassian.migration.datacenter.dto.MigrationContext;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.MigrationAlreadyExistsException;
+import com.atlassian.migration.datacenter.spi.dto.Migration;
+import com.atlassian.migration.datacenter.spi.dto.MigrationContext;
 
 /**
  * Manages the lifecycle of the migration

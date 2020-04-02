@@ -17,7 +17,7 @@
 package com.atlassian.migration.datacenter.core.aws.db.restore;
 
 import com.atlassian.migration.datacenter.core.aws.MigrationStageCallback;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 

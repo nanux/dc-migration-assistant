@@ -16,7 +16,7 @@
 
 package com.atlassian.migration.datacenter.api.aws;
 
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeploymentService;
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import com.atlassian.migration.datacenter.spi.infrastructure.ProvisioningConfig;

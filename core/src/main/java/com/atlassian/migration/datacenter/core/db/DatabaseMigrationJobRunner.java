@@ -17,7 +17,7 @@
 package com.atlassian.migration.datacenter.core.db;
 
 import com.atlassian.migration.datacenter.core.aws.db.DatabaseMigrationService;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.util.MigrationJobRunner;
 import com.atlassian.scheduler.JobRunnerRequest;
 import com.atlassian.scheduler.JobRunnerResponse;

@@ -17,10 +17,10 @@
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.jira.config.util.JiraHome;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloadManager;
 import com.atlassian.migration.datacenter.core.util.MigrationRunner;
-import com.atlassian.migration.datacenter.dto.Migration;
+import com.atlassian.migration.datacenter.spi.dto.Migration;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus;

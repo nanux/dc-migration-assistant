@@ -13,8 +13,8 @@
 package com.atlassian.migration.datacenter.core.application;
 
 
-import com.atlassian.migration.datacenter.core.exceptions.ConfigurationReadException;
-import com.atlassian.migration.datacenter.core.exceptions.UnsupportedPasswordEncodingException;
+import com.atlassian.migration.datacenter.spi.exceptions.ConfigurationReadException;
+import com.atlassian.migration.datacenter.spi.exceptions.UnsupportedPasswordEncodingException;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import org.apache.commons.lang3.StringUtils;

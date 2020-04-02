@@ -16,7 +16,7 @@
 
 package com.atlassian.migration.datacenter.core.fs;
 
-import com.atlassian.migration.datacenter.core.exceptions.FileSystemMigrationFailure;
+import com.atlassian.migration.datacenter.spi.exceptions.FileSystemMigrationFailure;
 import com.atlassian.migration.datacenter.core.util.UploadQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -17,7 +17,7 @@
 package com.atlassian.migration.datacenter.api.db;
 
 import com.atlassian.migration.datacenter.core.aws.db.DatabaseMigrationService;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility;
 import com.fasterxml.jackson.annotation.PropertyAccessor;

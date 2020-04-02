@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.core.exceptions;
+package com.atlassian.migration.datacenter.spi.exceptions;
 
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import org.apache.commons.lang3.StringUtils;

@@ -19,7 +19,7 @@ package com.atlassian.migration.datacenter.core.aws.cloud;
 import com.atlassian.migration.datacenter.core.aws.auth.WriteCredentialsService;
 import com.atlassian.migration.datacenter.core.aws.region.InvalidAWSRegionException;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import org.junit.jupiter.api.Test;

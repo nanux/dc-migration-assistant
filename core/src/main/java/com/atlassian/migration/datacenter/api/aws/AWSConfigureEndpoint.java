@@ -17,7 +17,7 @@
 package com.atlassian.migration.datacenter.api.aws;
 
 import com.atlassian.migration.datacenter.core.aws.cloud.AWSConfigurationService;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 
 import javax.ws.rs.Consumes;

@@ -18,10 +18,10 @@ package com.atlassian.migration.datacenter.core.aws.infrastructure;
 
 import com.atlassian.migration.datacenter.core.aws.CfnApi;
 import com.atlassian.migration.datacenter.core.aws.db.restore.TargetDbCredentialsStorageService;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
-import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
+import com.atlassian.migration.datacenter.spi.dto.MigrationContext;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -34,7 +34,6 @@ import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import java.util.HashMap;
 import java.util.Properties;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;

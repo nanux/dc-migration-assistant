@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.dto;
+package com.atlassian.migration.datacenter.spi.dto;
 
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import net.java.ao.Entity;

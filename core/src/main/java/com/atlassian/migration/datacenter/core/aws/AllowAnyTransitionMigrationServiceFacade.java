@@ -13,8 +13,8 @@
 package com.atlassian.migration.datacenter.core.aws;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
-import com.atlassian.migration.datacenter.dto.Migration;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.dto.Migration;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 

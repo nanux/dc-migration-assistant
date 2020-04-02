@@ -18,8 +18,8 @@ package com.atlassian.migration.datacenter.core.aws.db.restore;
 
 import com.atlassian.migration.datacenter.core.aws.ssm.SSMApi;
 import com.atlassian.migration.datacenter.core.aws.ssm.SuccessfulSSMCommandConsumer;
-import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.DatabaseMigrationFailure;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.EnsureSuccessfulSSMCommandConsumer;
 
 import java.util.Collections;

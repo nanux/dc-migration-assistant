@@ -14,14 +14,11 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.core.exceptions;
+package com.atlassian.migration.datacenter.spi.exceptions;
 
-public class FileSystemMigrationFailure extends Exception {
-    public FileSystemMigrationFailure(String message) {
+public class InfrastructureProvisioningError extends Exception {
+    public InfrastructureProvisioningError(String message) {
         super(message);
     }
 
-    public FileSystemMigrationFailure(String message, Throwable cause) {
-        super(message, cause);
-    }
 }

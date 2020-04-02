@@ -18,7 +18,7 @@ package com.atlassian.migration.datacenter.core.db;
 
 import com.atlassian.migration.datacenter.core.application.ApplicationConfiguration;
 import com.atlassian.migration.datacenter.core.application.DatabaseConfiguration.DBType;
-import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
+import com.atlassian.migration.datacenter.spi.exceptions.DatabaseMigrationFailure;
 
 public class DatabaseExtractorFactory {
     public static DatabaseExtractor getExtractor(ApplicationConfiguration config) throws DatabaseMigrationFailure {

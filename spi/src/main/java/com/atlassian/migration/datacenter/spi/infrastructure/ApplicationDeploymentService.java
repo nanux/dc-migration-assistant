@@ -14,22 +14,15 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.dto;
+package com.atlassian.migration.datacenter.spi.infrastructure;
 
-import net.java.ao.Entity;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 
-public interface MigrationContext extends Entity {
+import java.util.Map;
 
-    Migration getMigration();
+public interface ApplicationDeploymentService {
 
-    void setMigration(Migration migration);
+    void deployApplication(String deploymentId, Map<String, String> params) throws InvalidMigrationStageError;
 
-    String getApplicationDeploymentId();
-
-    void setApplicationDeploymentId(String id);
-
-    String getHelperStackDeploymentId();
-
-    void setHelperStackDeploymentId(String deploymentId);
-
+    InfrastructureDeploymentStatus getDeploymentStatus();
 }

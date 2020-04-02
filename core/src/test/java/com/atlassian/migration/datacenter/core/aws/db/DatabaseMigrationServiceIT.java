@@ -22,7 +22,7 @@ import com.atlassian.migration.datacenter.core.aws.db.restore.DatabaseRestoreSta
 import com.atlassian.migration.datacenter.core.aws.db.restore.SsmPsqlDatabaseRestoreService;
 import com.atlassian.migration.datacenter.core.aws.ssm.SSMApi;
 import com.atlassian.migration.datacenter.core.db.DatabaseExtractorFactory;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.util.MigrationRunner;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;

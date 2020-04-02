@@ -16,10 +16,9 @@
 
 package com.atlassian.migration.datacenter.core.aws.db.restore;
 
-import com.atlassian.migration.datacenter.core.aws.MigrationStageCallback;
 import com.atlassian.migration.datacenter.core.aws.ssm.SSMApi;
-import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.DatabaseMigrationFailure;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

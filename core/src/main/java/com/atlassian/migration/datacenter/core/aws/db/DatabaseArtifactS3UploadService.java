@@ -12,7 +12,7 @@
 
 package com.atlassian.migration.datacenter.core.aws.db;
 
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.fs.Crawler;
 import com.atlassian.migration.datacenter.core.fs.DirectoryStreamCrawler;
 import com.atlassian.migration.datacenter.core.fs.FilesystemUploader;

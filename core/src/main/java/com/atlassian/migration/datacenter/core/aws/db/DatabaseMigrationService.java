@@ -19,26 +19,19 @@ package com.atlassian.migration.datacenter.core.aws.db;
 import com.atlassian.migration.datacenter.core.aws.db.restore.DatabaseRestoreStageTransitionCallback;
 import com.atlassian.migration.datacenter.core.aws.db.restore.SsmPsqlDatabaseRestoreService;
 import com.atlassian.migration.datacenter.core.db.DatabaseMigrationJobRunner;
-import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.DatabaseMigrationFailure;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.fs.FilesystemUploader;
-import com.atlassian.migration.datacenter.core.fs.S3UploadJobRunner;
-import com.atlassian.migration.datacenter.core.util.MigrationJobRunner;
 import com.atlassian.migration.datacenter.core.util.MigrationRunner;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
-import com.atlassian.scheduler.JobRunnerRequest;
-import com.atlassian.scheduler.JobRunnerResponse;
 import com.atlassian.scheduler.config.JobId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.FAILED;
 
 /**
  * Copyright Atlassian: 10/03/2020
