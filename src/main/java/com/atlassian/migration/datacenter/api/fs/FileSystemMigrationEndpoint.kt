@@ -21,8 +21,12 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.PropertyAccessor
 import com.fasterxml.jackson.core.JsonProcessingException
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.common.collect.ImmutableMap
-import javax.ws.rs.*
+import javax.ws.rs.Consumes
+import javax.ws.rs.DELETE
+import javax.ws.rs.GET
+import javax.ws.rs.PUT
+import javax.ws.rs.Path
+import javax.ws.rs.Produces
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -37,20 +41,21 @@ class FileSystemMigrationEndpoint(private val fsMigrationService: FilesystemMigr
     fun runFileMigration(): Response {
         return if (fsMigrationService.isRunning) {
             Response
-                    .status(Response.Status.CONFLICT)
-                    .entity(ImmutableMap.of("status", fsMigrationService.report.status))
-                    .build()
+                .status(Response.Status.CONFLICT)
+                .entity(mapOf("status" to fsMigrationService.report.status))
+                .build()
         } else try {
             val started = fsMigrationService.scheduleMigration()
-            val builder = if (started) Response.status(Response.Status.ACCEPTED) else Response.status(Response.Status.CONFLICT)
+            val builder =
+                if (started) Response.status(Response.Status.ACCEPTED) else Response.status(Response.Status.CONFLICT)
             builder
-                    .entity(ImmutableMap.of("migrationScheduled", started))
-                    .build()
+                .entity(mapOf("migrationScheduled" to started))
+                .build()
         } catch (invalidMigrationStageError: InvalidMigrationStageError) {
             Response
-                    .status(Response.Status.CONFLICT)
-                    .entity(ImmutableMap.of("error", invalidMigrationStageError.message))
-                    .build()
+                .status(Response.Status.CONFLICT)
+                .entity(mapOf("error" to invalidMigrationStageError.message))
+                .build()
         }
     }
 
@@ -59,19 +64,19 @@ class FileSystemMigrationEndpoint(private val fsMigrationService: FilesystemMigr
     @GET
     fun getFilesystemMigrationStatus(): Response {
         val report = fsMigrationService.report
-                ?: return Response
-                        .status(Response.Status.BAD_REQUEST)
-                        .entity(ImmutableMap.of("error", "no file system migration exists"))
-                        .build()
+            ?: return Response
+                .status(Response.Status.BAD_REQUEST)
+                .entity(mapOf("error" to "no file system migration exists"))
+                .build()
         return try {
             Response
-                    .ok(mapper.writeValueAsString(report))
-                    .build()
+                .ok(mapper.writeValueAsString(report))
+                .build()
         } catch (e: JsonProcessingException) {
             Response
-                    .serverError()
-                    .entity(String.format("Unable to get file system status. Please contact support and show them this error: %s", e.message))
-                    .build()
+                .serverError()
+                .entity("Unable to get file system status. Please contact support and show them this error: ${e.message}")
+                .build()
         }
     }
 
@@ -82,12 +87,12 @@ class FileSystemMigrationEndpoint(private val fsMigrationService: FilesystemMigr
         return try {
             fsMigrationService.abortMigration()
             Response
-                    .ok(ImmutableMap.of("cancelled", true))
-                    .build()
+                .ok(mapOf("cancelled" to true))
+                .build()
         } catch (e: InvalidMigrationStageError) {
             Response.status(Response.Status.CONFLICT)
-                    .entity(ImmutableMap.of("error", "filesystem migration is not in progress"))
-                    .build()
+                .entity(mapOf("error" to "filesystem migration is not in progress"))
+                .build()
         }
     }
 

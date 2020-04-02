@@ -27,7 +27,10 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 @Path("aws/availabilityZones")
-class AWSAvailabilityZoneEndpoint(private val availabilityZoneService: AvailabilityZoneService, private val regionService: RegionService) {
+class AWSAvailabilityZoneEndpoint(
+    private val availabilityZoneService: AvailabilityZoneService,
+    private val regionService: RegionService
+) {
     @Produces(MediaType.APPLICATION_JSON)
     @GET
     fun getAvailabilityZoneList(): Response {
@@ -46,8 +49,8 @@ class AWSAvailabilityZoneEndpoint(private val availabilityZoneService: Availabil
     private fun findAZListForRegion(region: Region): Response {
         return try {
             Response
-                    .ok(availabilityZoneService.getAZForRegion(region).map { it.zoneName() }.sorted().toList())
-                    .build()
+                .ok(availabilityZoneService.getAZForRegion(region).map { it.zoneName() }.sorted().toList())
+                .build()
         } catch (ex: InvalidAWSRegionException) {
             Response.status(Response.Status.NOT_FOUND).build()
         }

@@ -18,9 +18,12 @@ package com.atlassian.migration.datacenter.api.aws
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError
 import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeploymentService
 import com.atlassian.migration.datacenter.spi.infrastructure.ProvisioningConfig
-import com.google.common.collect.ImmutableMap
 import org.slf4j.LoggerFactory
-import javax.ws.rs.*
+import javax.ws.rs.Consumes
+import javax.ws.rs.GET
+import javax.ws.rs.POST
+import javax.ws.rs.Path
+import javax.ws.rs.Produces
 import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
@@ -46,9 +49,9 @@ class CloudFormationEndpoint(private val deploymentService: ApplicationDeploymen
         } catch (e: InvalidMigrationStageError) {
             log.error("Migration stage is not valid.", e)
             Response
-                    .status(Response.Status.CONFLICT)
-                    .entity(ImmutableMap.of("error", e.message))
-                    .build()
+                .status(Response.Status.CONFLICT)
+                .entity(mapOf("error" to e.message))
+                .build()
         }
     }
 
@@ -59,10 +62,9 @@ class CloudFormationEndpoint(private val deploymentService: ApplicationDeploymen
     fun infrastructureStatus(): Response {
         return try {
             val status = deploymentService.deploymentStatus
-            Response.ok(ImmutableMap.of("status", status)).build()
+            Response.ok(mapOf("status" to status)).build()
         } catch (e: Exception) {
-            Response.status(Response.Status.NOT_FOUND).entity(ImmutableMap.of("error", e.message)).build()
+            Response.status(Response.Status.NOT_FOUND).entity(mapOf("error" to e.message)).build()
         }
     }
-
 }

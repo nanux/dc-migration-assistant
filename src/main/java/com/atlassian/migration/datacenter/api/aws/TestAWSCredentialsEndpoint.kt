@@ -26,7 +26,10 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 @Path("aws/credentials")
-class TestAWSCredentialsEndpoint @Autowired constructor(private val writeCredentialsService: WriteCredentialsService, private val probe: ProbeAWSAuth) {
+class TestAWSCredentialsEndpoint @Autowired constructor(
+    private val writeCredentialsService: WriteCredentialsService,
+    private val probe: ProbeAWSAuth
+) {
     @POST
     @Path("/test")
     @Produces(MediaType.APPLICATION_JSON)
@@ -34,14 +37,13 @@ class TestAWSCredentialsEndpoint @Autowired constructor(private val writeCredent
         return try {
             Response.ok(probe.probeSDKV2()).build()
         } catch (cfne: CloudFormationException) {
-            if (cfne.statusCode() == 401 || cfne.statusCode() == 403) {
+            if (cfne.statusCode() in arrayOf(401, 403)) {
                 return Response
-                        .status(Response.Status.BAD_REQUEST)
-                        .entity(cfne.message)
-                        .build()
+                    .status(Response.Status.BAD_REQUEST)
+                    .entity(cfne.message)
+                    .build()
             }
             throw cfne
         }
     }
-
 }

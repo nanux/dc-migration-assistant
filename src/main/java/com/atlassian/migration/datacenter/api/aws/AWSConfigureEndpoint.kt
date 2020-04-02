@@ -33,13 +33,17 @@ class AWSConfigureEndpoint(private val awsConfigurationService: AWSConfiguration
     fun storeAWSCredentials(configure: AWSConfigureWebObject?): Response {
         try {
             configure?.let {
-                awsConfigurationService.configureCloudProvider(configure.accessKeyId, configure.secretAccessKey, configure.region)
+                awsConfigurationService.configureCloudProvider(
+                    configure.accessKeyId,
+                    configure.secretAccessKey,
+                    configure.region
+                )
             }
         } catch (invalidMigrationStageError: InvalidMigrationStageError) {
             return Response
-                    .status(Response.Status.CONFLICT)
-                    .entity(invalidMigrationStageError.message)
-                    .build()
+                .status(Response.Status.CONFLICT)
+                .entity(invalidMigrationStageError.message)
+                .build()
         }
         return Response.noContent().build()
     }
@@ -50,5 +54,4 @@ class AWSConfigureEndpoint(private val awsConfigurationService: AWSConfiguration
         var secretAccessKey: String? = null
         var region: String? = null
     }
-
 }

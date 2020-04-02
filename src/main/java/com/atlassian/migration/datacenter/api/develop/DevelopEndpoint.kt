@@ -42,7 +42,9 @@ class DevelopEndpoint(private val migrationService: MigrationService, private va
         val isProfileEnabled =
             environment.activeProfiles.any { it.equals(ALLOW_ANY_TRANSITION_PROFILE, ignoreCase = true) }
 
-        return if (isProfileEnabled) {
+        return if (!isProfileEnabled) {
+            Response.status(Response.Status.NOT_FOUND).build()
+        } else {
             try {
                 migrationService.transition(targetStage)
                 Response
@@ -55,8 +57,6 @@ class DevelopEndpoint(private val migrationService: MigrationService, private va
                     .entity(mapOf("error" to "Unable to transition migration to $targetStage"))
                     .build()
             }
-        } else {
-            Response.status(Response.Status.NOT_FOUND).build()
         }
     }
 }

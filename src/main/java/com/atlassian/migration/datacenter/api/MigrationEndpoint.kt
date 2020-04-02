@@ -16,19 +16,17 @@
 
 package com.atlassian.migration.datacenter.api;
 
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
-import com.atlassian.migration.datacenter.core.exceptions.MigrationAlreadyExistsException;
-import com.atlassian.migration.datacenter.spi.MigrationService;
-import com.atlassian.migration.datacenter.spi.MigrationStage;
-import com.google.common.collect.ImmutableMap;
-
-import javax.ws.rs.Consumes;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError
+import com.atlassian.migration.datacenter.core.exceptions.MigrationAlreadyExistsException
+import com.atlassian.migration.datacenter.spi.MigrationService
+import com.atlassian.migration.datacenter.spi.MigrationStage
+import javax.ws.rs.Consumes
+import javax.ws.rs.GET
+import javax.ws.rs.POST
+import javax.ws.rs.Path
+import javax.ws.rs.Produces
+import javax.ws.rs.core.MediaType
+import javax.ws.rs.core.Response
 
 /**
  * REST API Endpoint for managing in-product DC migrations.
@@ -45,12 +43,12 @@ class MigrationEndpoint(private val migrationService: MigrationService) {
     fun getMigrationStatus(): Response {
         return if (migrationService.currentStage == MigrationStage.NOT_STARTED) {
             Response
-                    .status(Response.Status.NOT_FOUND)
-                    .build()
+                .status(Response.Status.NOT_FOUND)
+                .build()
         } else {
             Response
-                    .ok(ImmutableMap.of("stage", migrationService.currentStage.toString()))
-                    .build()
+                .ok(mapOf("stage" to migrationService.currentStage.toString()))
+                .build()
         }
     }
 
@@ -69,14 +67,14 @@ class MigrationEndpoint(private val migrationService: MigrationService) {
             Response.noContent().build()
         } catch (e: MigrationAlreadyExistsException) {
             Response
-                    .status(Response.Status.CONFLICT)
-                    .entity(ImmutableMap.of("error", "migration already exists"))
-                    .build()
+                .status(Response.Status.CONFLICT)
+                .entity(mapOf("error" to "migration already exists"))
+                .build()
         } catch (invalidMigrationStageError: InvalidMigrationStageError) {
             Response
-                    .status(Response.Status.CONFLICT)
-                    .entity(ImmutableMap.of("error", "Unable to transition migration from initial state"))
-                    .build()
+                .status(Response.Status.CONFLICT)
+                .entity(mapOf("error" to "Unable to transition migration from initial state"))
+                .build()
         }
     }
 }
