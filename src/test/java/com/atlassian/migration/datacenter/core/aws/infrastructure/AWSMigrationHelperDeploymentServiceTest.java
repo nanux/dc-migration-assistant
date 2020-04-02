@@ -21,6 +21,7 @@ import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageE
 import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,16 +31,20 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class AWSMigrationHelperDeploymentServiceTest {
 
-    static final String DEPLOYMENT_ID = "test-deployment";
+    public static final String APPLICATION_DEPLOYMENT = "application-deployment";
 
     @Mock
     CfnApi mockCfn;
@@ -52,17 +57,35 @@ class AWSMigrationHelperDeploymentServiceTest {
 
     @Mock
     MigrationContext mockContext;
+    private AtomicReference<String> deploymentId;
+
 
     @BeforeEach
     void setUp() {
         when(mockMigrationService.getCurrentContext()).thenReturn(mockContext);
+        when(mockContext.getApplicationDeploymentId()).thenReturn(APPLICATION_DEPLOYMENT);
+
+        deploymentId = new AtomicReference<>();
+        doAnswer(invocation -> {
+            deploymentId.set(invocation.getArgument(0));
+            return null;
+        }).when(mockContext).setHelperStackDeploymentId(anyString());
+
+        lenient().when(mockContext.getHelperStackDeploymentId()).thenReturn(deploymentId.get());
+    }
+
+    @Test
+    void shouldNameMigrationStackAfterApplicationStackWithSuffixAndStoreInContext() {
+        givenMigrationStackHasStartedDeploying();
+
+        assertEquals(getStackName(), deploymentId.get());
     }
 
     @Test
     void shouldProvisionCloudformationStack() {
         givenMigrationStackHasStartedDeploying();
 
-        verify(mockCfn).provisionStack("https://trebuchet-aws-resources.s3.amazonaws.com/migration-helper.yml", DEPLOYMENT_ID, Collections.emptyMap());
+        verify(mockCfn).provisionStack("https://trebuchet-aws-resources.s3.amazonaws.com/migration-helper.yml", getStackName(), Collections.emptyMap());
     }
 
     @Test
@@ -98,25 +121,30 @@ class AWSMigrationHelperDeploymentServiceTest {
 
     private void givenMigrationStackHasStartedDeploying() {
         try {
-            sut.deployMigrationInfrastructure(DEPLOYMENT_ID, Collections.emptyMap());
+            sut.deployMigrationInfrastructure(Collections.emptyMap());
         } catch (InvalidMigrationStageError invalidMigrationStageError) {
             fail("invalid migration stage error thrown while deploying migration helper", invalidMigrationStageError);
         }
     }
 
     private void givenMigrationStackDeploymentIsInProgress() {
-        when(mockCfn.getStatus(DEPLOYMENT_ID)).thenReturn(StackStatus.CREATE_IN_PROGRESS);
+        when(mockCfn.getStatus(getStackName())).thenReturn(StackStatus.CREATE_IN_PROGRESS);
     }
 
     private void givenMigrationStackDeploymentIsComplete() {
-        when(mockCfn.getStatus(DEPLOYMENT_ID)).thenReturn(StackStatus.CREATE_COMPLETE);
+        when(mockCfn.getStatus(getStackName())).thenReturn(StackStatus.CREATE_COMPLETE);
     }
 
     private void givenMigrationStackDeploymentFailed() {
-        when(mockCfn.getStatus(DEPLOYMENT_ID)).thenReturn(StackStatus.CREATE_FAILED);
+        when(mockCfn.getStatus(getStackName())).thenReturn(StackStatus.CREATE_FAILED);
     }
 
     private void givenMigrationStackNameHasBeenStoredInContext() {
-        when(mockContext.getHelperStackDeploymentId()).thenReturn(DEPLOYMENT_ID);
+        when(mockContext.getHelperStackDeploymentId()).thenReturn(getStackName());
+    }
+
+    @NotNull
+    private String getStackName() {
+        return APPLICATION_DEPLOYMENT + "-migration";
     }
 }

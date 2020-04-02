@@ -26,7 +26,7 @@ import java.util.Map;
  */
 public interface MigrationInfrastructureDeploymentService {
 
-    void deployMigrationInfrastructure(String deploymentId, Map<String, String> params) throws InvalidMigrationStageError;
+    void deployMigrationInfrastructure(Map<String, String> params) throws InvalidMigrationStageError;
 
     InfrastructureDeploymentStatus getDeploymentStatus();
 
