@@ -23,6 +23,11 @@ import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentError;
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import com.atlassian.migration.datacenter.spi.infrastructure.MigrationInfrastructureDeploymentService;
+import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
+import software.amazon.awssdk.services.autoscaling.model.AutoScalingGroup;
+import software.amazon.awssdk.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
+import software.amazon.awssdk.services.autoscaling.model.DescribeAutoScalingGroupsResponse;
+import software.amazon.awssdk.services.autoscaling.model.Instance;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 
 import java.util.HashMap;
@@ -38,6 +43,7 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
 
     private static final String MIGRATION_HELPER_TEMPLATE_URL = "https://trebuchet-aws-resources.s3.amazonaws.com/migration-helper.yml";
 
+    private final AutoScalingClient autoScalingClient;
     private final MigrationService migrationService;
     private final CfnApi cfnApi;
     private String fsRestoreDocument;
@@ -47,16 +53,18 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
     private String migrationBucket;
 
 
-    public AWSMigrationHelperDeploymentService(CfnApi cfnApi, MigrationService migrationService) {
+    public AWSMigrationHelperDeploymentService(CfnApi cfnApi, AutoScalingClient autoScalingClient, MigrationService migrationService) {
         super(cfnApi);
+        this.autoScalingClient = autoScalingClient;
         this.migrationService = migrationService;
         this.cfnApi = cfnApi;
     }
 
-    AWSMigrationHelperDeploymentService(CfnApi cfnApi, MigrationService migrationService, int pollIntervalSeconds) {
+    AWSMigrationHelperDeploymentService(CfnApi cfnApi, MigrationService migrationService, AutoScalingClient autoScalingClient, int pollIntervalSeconds) {
         super(cfnApi, pollIntervalSeconds);
         this.migrationService = migrationService;
         this.cfnApi = cfnApi;
+        this.autoScalingClient = autoScalingClient;
     }
 
     @Override
@@ -128,7 +136,16 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
 
     public String getMigrationHostInstanceId() {
         ensureStackOutputsAreSet();
-        return null;
+
+        DescribeAutoScalingGroupsResponse response = autoScalingClient.describeAutoScalingGroups(
+                DescribeAutoScalingGroupsRequest.builder()
+                        .autoScalingGroupNames(migrationStackASG)
+                        .build());
+
+        AutoScalingGroup migrationStackGroup = response.autoScalingGroups().get(0);
+        Instance migrationInstance = migrationStackGroup.instances().get(0);
+
+        return migrationInstance.instanceId();
     }
 
     private void ensureStackOutputsAreSet() {

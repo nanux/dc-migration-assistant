@@ -28,6 +28,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.function.Executable;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
+import software.amazon.awssdk.services.autoscaling.model.AutoScalingGroup;
+import software.amazon.awssdk.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
+import software.amazon.awssdk.services.autoscaling.model.DescribeAutoScalingGroupsResponse;
+import software.amazon.awssdk.services.autoscaling.model.Instance;
 import software.amazon.awssdk.services.cloudformation.model.Output;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
@@ -56,6 +61,7 @@ class AWSMigrationHelperDeploymentServiceTest {
     static final String DB_RESTORE_DOC = "db-restore-doc";
     static final String MIGRATION_ASG = "migration-asg";
     static final String MIGRATION_BUCKET = "migration-bucket";
+    static final String MIGRATION_HOST_INSTANCE_ID = "i-12345";
 
     @Mock
     CfnApi mockCfn;
@@ -64,6 +70,9 @@ class AWSMigrationHelperDeploymentServiceTest {
     MigrationService mockMigrationService;
 
     AWSMigrationHelperDeploymentService sut;
+
+    @Mock
+    AutoScalingClient mockAutoscaling;
 
     @Mock
     MigrationContext mockContext;
@@ -83,7 +92,7 @@ class AWSMigrationHelperDeploymentServiceTest {
 
         lenient().when(mockContext.getHelperStackDeploymentId()).thenReturn(deploymentId.get());
 
-        sut = new AWSMigrationHelperDeploymentService(mockCfn, mockMigrationService, 1);
+        sut = new AWSMigrationHelperDeploymentService(mockCfn, mockMigrationService, mockAutoscaling,1);
     }
 
     @Test
@@ -158,6 +167,7 @@ class AWSMigrationHelperDeploymentServiceTest {
         outputGetters.add(sut::getDbRestoreDocument);
         outputGetters.add(sut::getFsRestoreDocument);
         outputGetters.add(sut::getFsRestoreStatusDocument);
+        outputGetters.add(sut::getMigrationHostInstanceId);
 
         for (Executable outputGetter : outputGetters) {
             assertThrows(InfrastructureDeploymentError.class, outputGetter);
@@ -169,6 +179,7 @@ class AWSMigrationHelperDeploymentServiceTest {
         assertEquals(FS_DOWNLOAD_STATUS_DOC, sut.getFsRestoreStatusDocument());
         assertEquals(DB_RESTORE_DOC, sut.getDbRestoreDocument());
         assertEquals(MIGRATION_BUCKET, sut.getMigrationS3BucketName());
+        assertEquals(MIGRATION_HOST_INSTANCE_ID, sut.getMigrationHostInstanceId());
     }
 
     private void givenMigrationStackHasStartedDeploying() {
@@ -199,9 +210,23 @@ class AWSMigrationHelperDeploymentServiceTest {
                         Output.builder().outputKey("RdsRestoreSSMDocument").outputValue(DB_RESTORE_DOC).build(),
                         Output.builder().outputKey("ServerGroup").outputValue(MIGRATION_ASG).build(),
                         Output.builder().outputKey("MigrationBucket").outputValue(MIGRATION_BUCKET).build()
-                ).build();
+                        ).build();
 
         when(mockCfn.getStack(DEPLOYMENT_ID)).thenReturn(Optional.of(completedStack));
+        lenient().when(mockAutoscaling.describeAutoScalingGroups(
+                DescribeAutoScalingGroupsRequest.builder()
+                        .autoScalingGroupNames(MIGRATION_ASG)
+                        .build()
+        )).thenReturn(
+                DescribeAutoScalingGroupsResponse.builder()
+                        .autoScalingGroups(
+                                AutoScalingGroup.builder()
+                                        .instances(
+                                                Instance.builder()
+                                                        .instanceId(MIGRATION_HOST_INSTANCE_ID).build()
+                                        ).build()
+                        ).build()
+        );
     }
 
     private void givenMigrationStackDeploymentWillFail() {
