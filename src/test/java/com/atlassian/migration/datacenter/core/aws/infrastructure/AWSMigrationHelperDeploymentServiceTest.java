@@ -92,7 +92,7 @@ class AWSMigrationHelperDeploymentServiceTest {
 
         lenient().when(mockContext.getHelperStackDeploymentId()).thenReturn(deploymentId.get());
 
-        sut = new AWSMigrationHelperDeploymentService(mockCfn, mockMigrationService, mockAutoscaling,1);
+        sut = new AWSMigrationHelperDeploymentService(mockCfn, () -> mockAutoscaling, mockMigrationService,1);
     }
 
     @Test
