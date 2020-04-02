@@ -36,7 +36,7 @@ import javax.ws.rs.core.Response;
 
 import static javax.ws.rs.core.MediaType.APPLICATION_JSON;
 
-@Path("/migration/fs")
+@Path("/migration/db")
 public class DatabaseMigrationEndpoint
 {
 
