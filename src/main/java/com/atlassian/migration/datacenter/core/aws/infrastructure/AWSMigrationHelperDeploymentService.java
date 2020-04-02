@@ -53,7 +53,6 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
     private String migrationStackASG;
     private String migrationBucket;
 
-
     public AWSMigrationHelperDeploymentService(CfnApi cfnApi, Supplier<AutoScalingClient> autoScalingClientFactory, MigrationService migrationService) {
         this(cfnApi, autoScalingClientFactory, migrationService, 30);
     }

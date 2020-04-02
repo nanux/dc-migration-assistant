@@ -39,8 +39,8 @@ import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -92,7 +92,7 @@ class AWSMigrationHelperDeploymentServiceTest {
 
         lenient().when(mockContext.getHelperStackDeploymentId()).thenReturn(deploymentId.get());
 
-        sut = new AWSMigrationHelperDeploymentService(mockCfn, () -> mockAutoscaling, mockMigrationService,1);
+        sut = new AWSMigrationHelperDeploymentService(mockCfn, () -> mockAutoscaling, mockMigrationService, 1);
     }
 
     @Test
@@ -100,7 +100,6 @@ class AWSMigrationHelperDeploymentServiceTest {
         givenMigrationStackHasStartedDeploying();
 
         assertEquals(DEPLOYMENT_ID, deploymentId.get());
-
     }
 
     @Test
@@ -210,7 +209,7 @@ class AWSMigrationHelperDeploymentServiceTest {
                         Output.builder().outputKey("RdsRestoreSSMDocument").outputValue(DB_RESTORE_DOC).build(),
                         Output.builder().outputKey("ServerGroup").outputValue(MIGRATION_ASG).build(),
                         Output.builder().outputKey("MigrationBucket").outputValue(MIGRATION_BUCKET).build()
-                        ).build();
+                ).build();
 
         when(mockCfn.getStack(DEPLOYMENT_ID)).thenReturn(Optional.of(completedStack));
         lenient().when(mockAutoscaling.describeAutoScalingGroups(
