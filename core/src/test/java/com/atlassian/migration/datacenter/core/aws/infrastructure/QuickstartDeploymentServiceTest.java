@@ -34,6 +34,7 @@ import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import java.util.HashMap;
 import java.util.Properties;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
