@@ -159,8 +159,8 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public SsmPsqlDatabaseRestoreService ssmPsqlDatabaseRestoreService(SSMApi ssm) {
-        return new SsmPsqlDatabaseRestoreService(ssm);
+    public SsmPsqlDatabaseRestoreService ssmPsqlDatabaseRestoreService(SSMApi ssm, AWSMigrationHelperDeploymentService migrationHelperDeploymentService) {
+        return new SsmPsqlDatabaseRestoreService(ssm, migrationHelperDeploymentService);
     }
 
     @Bean

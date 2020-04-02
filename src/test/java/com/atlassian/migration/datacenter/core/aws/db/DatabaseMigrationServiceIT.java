@@ -20,6 +20,7 @@ import com.atlassian.migration.datacenter.core.application.ApplicationConfigurat
 import com.atlassian.migration.datacenter.core.application.DatabaseConfiguration;
 import com.atlassian.migration.datacenter.core.aws.db.restore.DatabaseRestoreStageTransitionCallback;
 import com.atlassian.migration.datacenter.core.aws.db.restore.SsmPsqlDatabaseRestoreService;
+import com.atlassian.migration.datacenter.core.aws.infrastructure.AWSMigrationHelperDeploymentService;
 import com.atlassian.migration.datacenter.core.aws.ssm.SSMApi;
 import com.atlassian.migration.datacenter.core.db.DatabaseExtractorFactory;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
@@ -90,6 +91,8 @@ class DatabaseMigrationServiceIT {
     private MigrationService migrationService;
     @Mock
     private MigrationRunner migrationRunner;
+    @Mock
+    AWSMigrationHelperDeploymentService migrationHelperDeploymentService;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -106,6 +109,9 @@ class DatabaseMigrationServiceIT {
                 .credentialsProvider(new AwsCredentialsProviderShim(s3.getDefaultCredentialsProvider()))
                 .region(Region.US_EAST_1)
                 .build();
+
+        when(migrationHelperDeploymentService.getMigrationHostInstanceId()).thenReturn("1-0123456789");
+        when(migrationHelperDeploymentService.getDbRestoreDocument()).thenReturn("ATL-RESTORE-DB");
 
         CreateBucketRequest req = CreateBucketRequest.builder()
                 .bucket(bucket)
@@ -126,7 +132,7 @@ class DatabaseMigrationServiceIT {
 
         when(ssmApi.runSSMDocument(anyString(), anyString(), anyMap())).thenReturn("my-commnd");
         when(ssmApi.getSSMCommand(anyString(), anyString())).thenReturn(GetCommandInvocationResponse.builder().status(CommandInvocationStatus.SUCCESS).build());
-        SsmPsqlDatabaseRestoreService restoreService = new SsmPsqlDatabaseRestoreService(ssmApi);
+        SsmPsqlDatabaseRestoreService restoreService = new SsmPsqlDatabaseRestoreService(ssmApi, migrationHelperDeploymentService);
         DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback  = new DatabaseRestoreStageTransitionCallback(this.migrationService);
 
         DatabaseMigrationService service = new DatabaseMigrationService(tempDir,
