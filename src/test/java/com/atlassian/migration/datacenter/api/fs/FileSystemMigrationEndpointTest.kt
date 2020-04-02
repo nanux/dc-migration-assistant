@@ -9,7 +9,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.just
 import io.mockk.runs
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -30,14 +30,14 @@ internal class FileSystemMigrationEndpointTest {
     fun abortRunningMigrationShouldBeSuccessful() {
         every { fsMigrationService.abortMigration() } just runs
         val response = endpoint.abortFilesystemMigration()
-        Assertions.assertEquals(response.status, Response.Status.OK.statusCode)
+        assertEquals(response.status, Response.Status.OK.statusCode)
     }
 
     @Test
     @Throws(Exception::class)
     fun throwConflictIfMigrationIsNotRunning() {
-        every {fsMigrationService.abortMigration()} throws InvalidMigrationStageError("running")
+        every { fsMigrationService.abortMigration() } throws InvalidMigrationStageError("running")
         val response = endpoint.abortFilesystemMigration()
-        Assertions.assertEquals(response.status, Response.Status.CONFLICT.statusCode)
+        assertEquals(response.status, Response.Status.CONFLICT.statusCode)
     }
 }

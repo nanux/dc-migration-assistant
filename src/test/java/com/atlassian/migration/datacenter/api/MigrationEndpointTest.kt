@@ -30,9 +30,9 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.runs
 import io.mockk.verify
-import org.hamcrest.MatcherAssert
+import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -53,7 +53,7 @@ class MigrationEndpointTest {
     fun testOKAndMigrationStatusWhenMigrationExists() {
         every { migrationService.currentStage } returns MigrationStage.AUTHENTICATION
         val response = sut.getMigrationStatus()
-        MatcherAssert.assertThat<String?>(
+        assertThat(
             response.entity.toString(),
             Matchers.containsString(MigrationStage.AUTHENTICATION.toString())
         )
@@ -63,7 +63,7 @@ class MigrationEndpointTest {
     fun testNotFoundWhenMigrationDoesNotExist() {
         every { migrationService.currentStage } returns MigrationStage.NOT_STARTED
         val response = sut.getMigrationStatus()
-        Assertions.assertEquals(Response.Status.NOT_FOUND.statusCode, response.status)
+        assertEquals(Response.Status.NOT_FOUND.statusCode, response.status)
     }
 
     @Test
@@ -72,7 +72,7 @@ class MigrationEndpointTest {
         every { migrationService.createMigration() } returns stubMigration
         every { migrationService.transition(MigrationStage.AUTHENTICATION) } just runs
         val response = sut.createMigration()
-        Assertions.assertEquals(Response.Status.NO_CONTENT.statusCode, response.status)
+        assertEquals(Response.Status.NO_CONTENT.statusCode, response.status)
     }
 
     @Test
@@ -82,9 +82,9 @@ class MigrationEndpointTest {
         every { migrationService.createMigration() } returns stubMigration
         every { migrationService.transition(MigrationStage.AUTHENTICATION) } throws InvalidMigrationStageError("")
         val response = sut.createMigration()
-        Assertions.assertEquals(Response.Status.CONFLICT.statusCode, response.status)
+        assertEquals(Response.Status.CONFLICT.statusCode, response.status)
         val entity = response.entity as MutableMap<*, *>
-        Assertions.assertEquals("Unable to transition migration from initial state", entity["error"])
+        assertEquals("Unable to transition migration from initial state", entity["error"])
     }
 
     @Test
@@ -92,9 +92,9 @@ class MigrationEndpointTest {
         every { (migrationService).createMigration() } throws MigrationAlreadyExistsException("")
         every { migrationService.transition(any()) } just Runs
         val response = sut.createMigration()
-        Assertions.assertEquals(Response.Status.CONFLICT.statusCode, response.status)
+        assertEquals(Response.Status.CONFLICT.statusCode, response.status)
         val entity = response.entity as MutableMap<*, *>
-        Assertions.assertEquals("migration already exists", entity["error"])
+        assertEquals("migration already exists", entity["error"])
         verify(exactly = 0) { migrationService.transition(any()) }
     }
 }

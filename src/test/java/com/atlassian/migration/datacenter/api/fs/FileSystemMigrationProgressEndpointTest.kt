@@ -30,21 +30,23 @@ import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
 import org.hamcrest.MatcherAssert
 import org.hamcrest.Matchers
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import java.nio.file.Paths
 import java.time.Duration
-import java.util.*
+import java.util.HashSet
 import javax.ws.rs.core.Response
 
 @ExtendWith(MockKExtension::class)
 class FileSystemMigrationProgressEndpointTest {
     @MockK
     lateinit var fsMigrationService: FilesystemMigrationService
+
     @MockK
     lateinit var report: FileSystemMigrationReport
+
     @InjectMockKs
     lateinit var endpoint: FileSystemMigrationEndpoint
 
@@ -76,10 +78,10 @@ class FileSystemMigrationProgressEndpointTest {
         val responseReason = tree.at("/failedFiles/0/reason").asText()
         val responseFailedFile = tree.at("/failedFiles/0/filePath").asText()
         val responseSuccessFileCount = tree.at("/migratedFiles").asLong()
-        Assertions.assertEquals(FilesystemMigrationStatus.RUNNING.name, responseStatus)
-        Assertions.assertEquals(testReason, responseReason)
-        Assertions.assertEquals(testFile.toUri().toString(), responseFailedFile)
-        Assertions.assertEquals(1, responseSuccessFileCount)
+        assertEquals(FilesystemMigrationStatus.RUNNING.name, responseStatus)
+        assertEquals(testReason, responseReason)
+        assertEquals(testFile.toUri().toString(), responseFailedFile)
+        assertEquals(1, responseSuccessFileCount)
     }
 
     @Test
@@ -108,18 +110,21 @@ class FileSystemMigrationProgressEndpointTest {
         val responseReason = tree.at("/failedFiles/99/reason").asText()
         val responseFailedFile = tree.at("/failedFiles/99/filePath").asText()
         val responseSuccessFileCount = tree.at("/migratedFiles").asLong()
-        Assertions.assertEquals(FilesystemMigrationStatus.RUNNING.name, responseStatus)
-        Assertions.assertEquals(testReason, responseReason)
-        Assertions.assertEquals(testFile.toUri().toString(), responseFailedFile)
-        Assertions.assertEquals(1000000, responseSuccessFileCount)
+        assertEquals(FilesystemMigrationStatus.RUNNING.name, responseStatus)
+        assertEquals(testReason, responseReason)
+        assertEquals(testFile.toUri().toString(), responseFailedFile)
+        assertEquals(1000000, responseSuccessFileCount)
     }
 
     @Test
     fun shouldReturnBadRequestWhenNoReportExists() {
         every { fsMigrationService.report } returns null
         val response = endpoint.getFilesystemMigrationStatus()
-        Assertions.assertEquals(Response.Status.BAD_REQUEST.statusCode, response.status)
-        MatcherAssert.assertThat<String?>(response.entity.toString(), Matchers.containsString("no file system migration exists"))
+        assertEquals(Response.Status.BAD_REQUEST.statusCode, response.status)
+        MatcherAssert.assertThat<String?>(
+            response.entity.toString(),
+            Matchers.containsString("no file system migration exists")
+        )
     }
 
     @Test
@@ -129,8 +134,8 @@ class FileSystemMigrationProgressEndpointTest {
         every { fsMigrationService.isRunning } returns true
         every { fsMigrationService.report } returns reportMock
         val response = endpoint.runFileMigration()
-        Assertions.assertEquals(Response.Status.CONFLICT.statusCode, response.status)
-        Assertions.assertEquals(FilesystemMigrationStatus.RUNNING, (response.entity as MutableMap<*, *>)["status"])
+        assertEquals(Response.Status.CONFLICT.statusCode, response.status)
+        assertEquals(FilesystemMigrationStatus.RUNNING, (response.entity as MutableMap<*, *>)["status"])
     }
 
     @Test
@@ -138,8 +143,8 @@ class FileSystemMigrationProgressEndpointTest {
         every { fsMigrationService.isRunning } returns false
         every { fsMigrationService.scheduleMigration() } returns true
         val response = endpoint.runFileMigration()
-        Assertions.assertEquals(Response.Status.ACCEPTED.statusCode, response.status)
-        Assertions.assertEquals(true, (response.entity as MutableMap<*, *>)["migrationScheduled"])
+        assertEquals(Response.Status.ACCEPTED.statusCode, response.status)
+        assertEquals(true, (response.entity as MutableMap<*, *>)["migrationScheduled"])
     }
 
     @Test
@@ -148,7 +153,7 @@ class FileSystemMigrationProgressEndpointTest {
         every { fsMigrationService.isRunning } returns false
         every { fsMigrationService.scheduleMigration() } returns false
         val response = endpoint.runFileMigration()
-        Assertions.assertEquals(Response.Status.CONFLICT.statusCode, response.status)
-        Assertions.assertEquals(false, (response.entity as MutableMap<*, *>)["migrationScheduled"])
+        assertEquals(Response.Status.CONFLICT.statusCode, response.status)
+        assertEquals(false, (response.entity as MutableMap<*, *>)["migrationScheduled"])
     }
 }

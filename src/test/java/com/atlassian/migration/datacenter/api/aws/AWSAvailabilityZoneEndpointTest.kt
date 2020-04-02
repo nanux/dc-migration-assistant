@@ -23,21 +23,23 @@ import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.ec2.model.AvailabilityZone
-import java.util.*
+import java.util.ArrayList
 import javax.ws.rs.core.Response
 
 @ExtendWith(MockKExtension::class)
 class AWSAvailabilityZoneEndpointTest {
     @MockK
     lateinit var availabilityZoneService: AvailabilityZoneService
+
     @MockK
     lateinit var regionService: RegionService
+
     @InjectMockKs
     lateinit var availabilityZoneEndpoint: AWSAvailabilityZoneEndpoint
 
@@ -50,8 +52,8 @@ class AWSAvailabilityZoneEndpointTest {
         every { availabilityZoneService.getAZForRegion(mockRegion) } returns buildAZList()
         val response = availabilityZoneEndpoint.getAvailabilityZoneList(mockRegion.toString())
         val responseList = response.entity as List<*>
-        Assertions.assertEquals(Response.Status.OK.statusCode, response.status)
-        Assertions.assertEquals(3, responseList.size)
+        assertEquals(Response.Status.OK.statusCode, response.status)
+        assertEquals(3, responseList.size)
     }
 
     @Test
@@ -59,7 +61,7 @@ class AWSAvailabilityZoneEndpointTest {
         val mockRegion = Region.of("eu-central-2")
         every { availabilityZoneService.getAZForRegion(mockRegion) } throws InvalidAWSRegionException()
         val response = availabilityZoneEndpoint.getAvailabilityZoneList(mockRegion.toString())
-        Assertions.assertEquals(Response.Status.NOT_FOUND.statusCode, response.status)
+        assertEquals(Response.Status.NOT_FOUND.statusCode, response.status)
     }
 
     @Test
@@ -71,8 +73,8 @@ class AWSAvailabilityZoneEndpointTest {
         val response = availabilityZoneEndpoint.getAvailabilityZoneList()
 
         val responseList = response.entity as List<*>
-        Assertions.assertEquals(Response.Status.OK.statusCode, response.status)
-        Assertions.assertEquals(3, responseList.size)
+        assertEquals(Response.Status.OK.statusCode, response.status)
+        assertEquals(3, responseList.size)
     }
 
     @Test
@@ -81,7 +83,7 @@ class AWSAvailabilityZoneEndpointTest {
         every { regionService.region } returns "eu-central-2"
         every { availabilityZoneService.getAZForRegion(mockRegion) } throws InvalidAWSRegionException()
         val response = availabilityZoneEndpoint.getAvailabilityZoneList()
-        Assertions.assertEquals(Response.Status.NOT_FOUND.statusCode, response.status)
+        assertEquals(Response.Status.NOT_FOUND.statusCode, response.status)
     }
 
     companion object {

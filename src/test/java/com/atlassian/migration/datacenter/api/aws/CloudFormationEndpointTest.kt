@@ -25,7 +25,7 @@ import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.verify
-import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -36,6 +36,7 @@ import javax.ws.rs.core.Response
 internal class CloudFormationEndpointTest {
     @MockK(relaxUnitFun = true)
     lateinit var deploymentService: ApplicationDeploymentService
+
     @InjectMockKs
     lateinit var endpoint: CloudFormationEndpoint
 
@@ -47,8 +48,8 @@ internal class CloudFormationEndpointTest {
         val stackName = "stack-name"
         val provisioningConfig = ProvisioningConfig("url", stackName, HashMap())
         val response = endpoint.provisionInfrastructure(provisioningConfig)
-        Assertions.assertEquals(Response.Status.ACCEPTED.statusCode, response.status)
-        Assertions.assertEquals(provisioningConfig.stackName, response.entity)
+        assertEquals(Response.Status.ACCEPTED.statusCode, response.status)
+        assertEquals(provisioningConfig.stackName, response.entity)
         verify { deploymentService.deployApplication(stackName, HashMap()) }
     }
 
@@ -56,10 +57,15 @@ internal class CloudFormationEndpointTest {
     fun shouldBeConflictWhenCurrentMigrationStageIsNotValid() {
         val provisioningConfig = ProvisioningConfig("url", "stack-name", HashMap())
         val errorMessage = "migration status is FUBAR"
-        every { deploymentService.deployApplication(provisioningConfig.stackName, provisioningConfig.params) } throws InvalidMigrationStageError(errorMessage)
+        every {
+            deploymentService.deployApplication(
+                provisioningConfig.stackName,
+                provisioningConfig.params
+            )
+        } throws InvalidMigrationStageError(errorMessage)
         val response = endpoint.provisionInfrastructure(provisioningConfig)
-        Assertions.assertEquals(Response.Status.CONFLICT.statusCode, response.status)
-        Assertions.assertEquals(errorMessage, (response.entity as Map<*, *>)["error"])
+        assertEquals(Response.Status.CONFLICT.statusCode, response.status)
+        assertEquals(errorMessage, (response.entity as Map<*, *>)["error"])
     }
 
     @Test
@@ -67,16 +73,17 @@ internal class CloudFormationEndpointTest {
         val expectedStatus = ApplicationDeploymentStatus.CREATE_IN_PROGRESS
         every { deploymentService.deploymentStatus } returns expectedStatus
         val response = endpoint.infrastructureStatus()
-        Assertions.assertEquals(Response.Status.OK.statusCode, response.status)
-        Assertions.assertEquals(expectedStatus, (response.entity as Map<*, *>)["status"])
+        assertEquals(Response.Status.OK.statusCode, response.status)
+        assertEquals(expectedStatus, (response.entity as Map<*, *>)["status"])
     }
 
     @Test
     fun shouldGetHandleErrorWhenStatusCannotBeRetrieved() {
         val expectedErrorMessage = "stack Id not found"
-        every {deploymentService.deploymentStatus} throws StackInstanceNotFoundException.builder().message(expectedErrorMessage).build()
+        every { deploymentService.deploymentStatus } throws StackInstanceNotFoundException.builder()
+            .message(expectedErrorMessage).build()
         val response = endpoint.infrastructureStatus()
-        Assertions.assertEquals(Response.Status.NOT_FOUND.statusCode, response.status)
-        Assertions.assertEquals(expectedErrorMessage, (response.entity as Map<*, *>)["error"])
+        assertEquals(Response.Status.NOT_FOUND.statusCode, response.status)
+        assertEquals(expectedErrorMessage, (response.entity as Map<*, *>)["error"])
     }
 }

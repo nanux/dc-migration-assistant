@@ -35,6 +35,7 @@ import javax.ws.rs.core.Response
 internal class AWSConfigureEndpointTest {
     @MockK(relaxUnitFun = true)
     lateinit var configurationService: AWSConfigurationService
+
     @InjectMockKs
     lateinit var sut: AWSConfigureEndpoint
 
