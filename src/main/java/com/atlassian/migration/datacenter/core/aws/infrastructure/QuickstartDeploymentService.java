@@ -16,7 +16,6 @@
 
 package com.atlassian.migration.datacenter.core.aws.infrastructure;
 
-import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.migration.datacenter.core.aws.CfnApi;
 import com.atlassian.migration.datacenter.core.aws.db.restore.TargetDbCredentialsStorageService;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
@@ -24,6 +23,7 @@ import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeploymentService;
+import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
@@ -35,17 +35,17 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-public class QuickstartDeploymentService implements ApplicationDeploymentService {
+public class QuickstartDeploymentService extends CloudformationDeploymentService implements ApplicationDeploymentService {
 
     private final Logger logger = LoggerFactory.getLogger(QuickstartDeploymentService.class);
     private static final String QUICKSTART_TEMPLATE_URL = "https://aws-quickstart.s3.amazonaws.com/quickstart-atlassian-jira/templates/quickstart-jira-dc-with-vpc.template.yaml";
 
-    private final CfnApi cfnApi;
     private final MigrationService migrationService;
     private final TargetDbCredentialsStorageService dbCredentialsStorageService;
 
     public QuickstartDeploymentService(CfnApi cfnApi, MigrationService migrationService, TargetDbCredentialsStorageService dbCredentialsStorageService) {
-        this.cfnApi = cfnApi;
+        super(cfnApi);
+
         this.migrationService = migrationService;
         this.dbCredentialsStorageService = dbCredentialsStorageService;
     }
@@ -65,81 +65,43 @@ public class QuickstartDeploymentService implements ApplicationDeploymentService
         migrationService.transition(MigrationStage.PROVISION_APPLICATION_WAIT);
 
         logger.info("deploying application stack");
-        cfnApi.provisionStack(QUICKSTART_TEMPLATE_URL, deploymentId, params);
+        super.deployCloudformationStack(QUICKSTART_TEMPLATE_URL, deploymentId, params);
 
         addDeploymentIdToMigrationContext(deploymentId);
 
-        scheduleMigrationServiceTransition(deploymentId);
-
         storeDbCredentials(params);
+    }
+
+    @Override
+    protected void handleFailedDeployment() {
+        logger.error("application stack deployment failed");
+        migrationService.error();
+    }
+
+    @Override
+    protected void handleSuccessfulDeployment() {
+        try {
+            logger.debug("application stack deployment succeeded");
+            migrationService.transition(MigrationStage.PROVISION_MIGRATION_STACK);
+        } catch (InvalidMigrationStageError invalidMigrationStageError) {
+            logger.error("tried to transition migration from {} but got error: {}.", MigrationStage.PROVISION_APPLICATION_WAIT, invalidMigrationStageError.getMessage());
+        }
     }
 
     private void storeDbCredentials(Map<String, String> params) {
         dbCredentialsStorageService.storeCredentials(params.get("DBPassword"));
     }
 
-    @Override
-    public ApplicationDeploymentStatus getDeploymentStatus() {
-        MigrationContext context = getMigrationContext();
-        StackStatus status = cfnApi.getStatus(context.getApplicationDeploymentId());
-
-        switch (status) {
-            case CREATE_COMPLETE:
-                return ApplicationDeploymentStatus.CREATE_COMPLETE;
-            case CREATE_FAILED:
-                return ApplicationDeploymentStatus.CREATE_FAILED;
-            case CREATE_IN_PROGRESS:
-                return ApplicationDeploymentStatus.CREATE_IN_PROGRESS;
-            default:
-                migrationService.error();
-                throw new RuntimeException("Unexpected stack status");
-        }
-    }
-
     private void addDeploymentIdToMigrationContext(String deploymentId) {
         logger.info("Storing stack name in migration context");
 
-        MigrationContext context = getMigrationContext();
+        MigrationContext context = migrationService.getCurrentContext();
         context.setApplicationDeploymentId(deploymentId);
         context.save();
     }
 
-    private MigrationContext getMigrationContext() {
-        return migrationService.getCurrentContext();
-    }
-
-    private void scheduleMigrationServiceTransition(String deploymentId) {
-        logger.info("scheduling transition of migration status when application stack deployment is completed");
-        CompletableFuture<String> stackCompleteFuture = new CompletableFuture<>();
-
-        final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        ScheduledFuture<?> ticker = scheduledExecutorService.scheduleAtFixedRate(() -> {
-            final StackStatus status = cfnApi.getStatus(deploymentId);
-            if (status.equals(StackStatus.CREATE_COMPLETE)) {
-                try {
-                    migrationService.transition(MigrationStage.PROVISION_MIGRATION_STACK);
-                } catch (InvalidMigrationStageError invalidMigrationStageError) {
-                    logger.error("tried to transition migration from {} but got error: {}.", MigrationStage.PROVISION_APPLICATION_WAIT, invalidMigrationStageError.getMessage());
-                }
-                stackCompleteFuture.complete("");
-            }
-            if (status.equals(StackStatus.CREATE_FAILED)) {
-                logger.error("application stack deployment failed");
-                migrationService.error();
-                stackCompleteFuture.complete("");
-            }
-        }, 0, 30, TimeUnit.SECONDS);
-
-        ScheduledFuture<?> canceller = scheduledExecutorService.scheduleAtFixedRate(() -> {
-            logger.error("timed out while waiting for application stack to deploy");
-            migrationService.error();
-            ticker.cancel(true);
-            // Need to have non-zero period otherwise we get illegal argument exception
-        }, 1, 100, TimeUnit.HOURS);
-
-        stackCompleteFuture.whenComplete((result, thrown) -> {
-            ticker.cancel(true);
-            canceller.cancel(true);
-        });
+    @Override
+    public InfrastructureDeploymentStatus getDeploymentStatus() {
+        return super.getDeploymentStatus(migrationService.getCurrentContext().getApplicationDeploymentId());
     }
 }
