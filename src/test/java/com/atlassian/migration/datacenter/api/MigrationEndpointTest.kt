@@ -52,11 +52,10 @@ class MigrationEndpointTest {
     @Test
     fun testOKAndMigrationStatusWhenMigrationExists() {
         every { migrationService.currentStage } returns MigrationStage.AUTHENTICATION
+
         val response = sut.getMigrationStatus()
-        assertThat(
-            response.entity.toString(),
-            Matchers.containsString(MigrationStage.AUTHENTICATION.toString())
-        )
+
+        assertThat(response.entity.toString(), Matchers.containsString(MigrationStage.AUTHENTICATION.toString()))
     }
 
     @Test
@@ -71,7 +70,9 @@ class MigrationEndpointTest {
         val stubMigration = mockk<Migration>()
         every { migrationService.createMigration() } returns stubMigration
         every { migrationService.transition(MigrationStage.AUTHENTICATION) } just runs
+
         val response = sut.createMigration()
+
         assertEquals(Response.Status.NO_CONTENT.statusCode, response.status)
     }
 
@@ -81,7 +82,9 @@ class MigrationEndpointTest {
         val stubMigration = mockk<Migration>()
         every { migrationService.createMigration() } returns stubMigration
         every { migrationService.transition(MigrationStage.AUTHENTICATION) } throws InvalidMigrationStageError("")
+
         val response = sut.createMigration()
+
         assertEquals(Response.Status.CONFLICT.statusCode, response.status)
         val entity = response.entity as MutableMap<*, *>
         assertEquals("Unable to transition migration from initial state", entity["error"])
@@ -91,7 +94,9 @@ class MigrationEndpointTest {
     fun testBadRequestWhenCreatingMigrationAndUnableToTransitionPastTheInitialStage() {
         every { (migrationService).createMigration() } throws MigrationAlreadyExistsException("")
         every { migrationService.transition(any()) } just Runs
+
         val response = sut.createMigration()
+
         assertEquals(Response.Status.CONFLICT.statusCode, response.status)
         val entity = response.entity as MutableMap<*, *>
         assertEquals("migration already exists", entity["error"])

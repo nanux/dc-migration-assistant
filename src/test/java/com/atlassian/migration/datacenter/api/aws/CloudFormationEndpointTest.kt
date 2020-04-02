@@ -17,7 +17,7 @@ package com.atlassian.migration.datacenter.api.aws
 
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError
 import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeploymentService
-import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeploymentService.ApplicationDeploymentStatus
+import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus
 import com.atlassian.migration.datacenter.spi.infrastructure.ProvisioningConfig
 import io.mockk.MockKAnnotations
 import io.mockk.every
@@ -47,7 +47,9 @@ internal class CloudFormationEndpointTest {
     fun shouldAcceptRequestToProvisionCloudFormationStack() {
         val stackName = "stack-name"
         val provisioningConfig = ProvisioningConfig("url", stackName, HashMap())
+
         val response = endpoint.provisionInfrastructure(provisioningConfig)
+
         assertEquals(Response.Status.ACCEPTED.statusCode, response.status)
         assertEquals(provisioningConfig.stackName, response.entity)
         verify { deploymentService.deployApplication(stackName, HashMap()) }
@@ -63,16 +65,20 @@ internal class CloudFormationEndpointTest {
                 provisioningConfig.params
             )
         } throws InvalidMigrationStageError(errorMessage)
+
         val response = endpoint.provisionInfrastructure(provisioningConfig)
+
         assertEquals(Response.Status.CONFLICT.statusCode, response.status)
         assertEquals(errorMessage, (response.entity as Map<*, *>)["error"])
     }
 
     @Test
     fun shouldGetCurrentProvisioningStatusForGivenStackId() {
-        val expectedStatus = ApplicationDeploymentStatus.CREATE_IN_PROGRESS
+        val expectedStatus = InfrastructureDeploymentStatus.CREATE_IN_PROGRESS
         every { deploymentService.deploymentStatus } returns expectedStatus
+
         val response = endpoint.infrastructureStatus()
+
         assertEquals(Response.Status.OK.statusCode, response.status)
         assertEquals(expectedStatus, (response.entity as Map<*, *>)["status"])
     }
@@ -82,7 +88,9 @@ internal class CloudFormationEndpointTest {
         val expectedErrorMessage = "stack Id not found"
         every { deploymentService.deploymentStatus } throws StackInstanceNotFoundException.builder()
             .message(expectedErrorMessage).build()
+
         val response = endpoint.infrastructureStatus()
+
         assertEquals(Response.Status.NOT_FOUND.statusCode, response.status)
         assertEquals(expectedErrorMessage, (response.entity as Map<*, *>)["error"])
     }

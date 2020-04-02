@@ -50,7 +50,9 @@ class AWSAvailabilityZoneEndpointTest {
     fun testAvailabilityZoneEndpointWithRegion() {
         val mockRegion = Region.of("eu-central-1")
         every { availabilityZoneService.getAZForRegion(mockRegion) } returns buildAZList()
+
         val response = availabilityZoneEndpoint.getAvailabilityZoneList(mockRegion.toString())
+
         val responseList = response.entity as List<*>
         assertEquals(Response.Status.OK.statusCode, response.status)
         assertEquals(3, responseList.size)
@@ -60,7 +62,9 @@ class AWSAvailabilityZoneEndpointTest {
     fun testAvailabilityZoneEndpointWithInvalidRegion() {
         val mockRegion = Region.of("eu-central-2")
         every { availabilityZoneService.getAZForRegion(mockRegion) } throws InvalidAWSRegionException()
+
         val response = availabilityZoneEndpoint.getAvailabilityZoneList(mockRegion.toString())
+
         assertEquals(Response.Status.NOT_FOUND.statusCode, response.status)
     }
 
@@ -82,7 +86,9 @@ class AWSAvailabilityZoneEndpointTest {
         val mockRegion = Region.of("eu-central-2")
         every { regionService.region } returns "eu-central-2"
         every { availabilityZoneService.getAZForRegion(mockRegion) } throws InvalidAWSRegionException()
+
         val response = availabilityZoneEndpoint.getAvailabilityZoneList()
+
         assertEquals(Response.Status.NOT_FOUND.statusCode, response.status)
     }
 

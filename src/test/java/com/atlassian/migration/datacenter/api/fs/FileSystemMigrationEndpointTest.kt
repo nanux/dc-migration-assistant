@@ -29,7 +29,9 @@ internal class FileSystemMigrationEndpointTest {
     @Test
     fun abortRunningMigrationShouldBeSuccessful() {
         every { fsMigrationService.abortMigration() } just runs
+
         val response = endpoint.abortFilesystemMigration()
+
         assertEquals(response.status, Response.Status.OK.statusCode)
     }
 
@@ -37,7 +39,9 @@ internal class FileSystemMigrationEndpointTest {
     @Throws(Exception::class)
     fun throwConflictIfMigrationIsNotRunning() {
         every { fsMigrationService.abortMigration() } throws InvalidMigrationStageError("running")
+
         val response = endpoint.abortFilesystemMigration()
+
         assertEquals(response.status, Response.Status.CONFLICT.statusCode)
     }
 }

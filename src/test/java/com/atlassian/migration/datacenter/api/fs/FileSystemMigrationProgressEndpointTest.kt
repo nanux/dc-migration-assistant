@@ -29,6 +29,7 @@ import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
 import org.hamcrest.MatcherAssert
+import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
@@ -68,7 +69,9 @@ class FileSystemMigrationProgressEndpointTest {
             every { countOfMigratedFiles } returns 1L
             every { elapsedTime } returns Duration.ofMinutes(1)
         }
+
         val response = endpoint.getFilesystemMigrationStatus()
+
         val mapper = ObjectMapper()
         mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
         val responseJson = response.entity as String
@@ -78,6 +81,7 @@ class FileSystemMigrationProgressEndpointTest {
         val responseReason = tree.at("/failedFiles/0/reason").asText()
         val responseFailedFile = tree.at("/failedFiles/0/filePath").asText()
         val responseSuccessFileCount = tree.at("/migratedFiles").asLong()
+
         assertEquals(FilesystemMigrationStatus.RUNNING.name, responseStatus)
         assertEquals(testReason, responseReason)
         assertEquals(testFile.toUri().toString(), responseFailedFile)
@@ -100,7 +104,9 @@ class FileSystemMigrationProgressEndpointTest {
         }
         every { report.failedFiles } returns failedFiles
         every { report.countOfMigratedFiles } returns 1000000L
+
         val response = endpoint.getFilesystemMigrationStatus()
+
         val mapper = ObjectMapper()
         mapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY)
         val responseJson = response.entity as String
@@ -119,9 +125,11 @@ class FileSystemMigrationProgressEndpointTest {
     @Test
     fun shouldReturnBadRequestWhenNoReportExists() {
         every { fsMigrationService.report } returns null
+
         val response = endpoint.getFilesystemMigrationStatus()
+
         assertEquals(Response.Status.BAD_REQUEST.statusCode, response.status)
-        MatcherAssert.assertThat<String?>(
+        assertThat<String?>(
             response.entity.toString(),
             Matchers.containsString("no file system migration exists")
         )
@@ -133,7 +141,9 @@ class FileSystemMigrationProgressEndpointTest {
         every { reportMock.status } returns FilesystemMigrationStatus.RUNNING
         every { fsMigrationService.isRunning } returns true
         every { fsMigrationService.report } returns reportMock
+
         val response = endpoint.runFileMigration()
+
         assertEquals(Response.Status.CONFLICT.statusCode, response.status)
         assertEquals(FilesystemMigrationStatus.RUNNING, (response.entity as MutableMap<*, *>)["status"])
     }
@@ -142,17 +152,20 @@ class FileSystemMigrationProgressEndpointTest {
     fun shouldRunFileMigrationWhenNoOtherMigrationIsNotInProgress() {
         every { fsMigrationService.isRunning } returns false
         every { fsMigrationService.scheduleMigration() } returns true
+
         val response = endpoint.runFileMigration()
+
         assertEquals(Response.Status.ACCEPTED.statusCode, response.status)
         assertEquals(true, (response.entity as MutableMap<*, *>)["migrationScheduled"])
     }
 
     @Test
-    @Throws(Exception::class)
     fun shouldNotRunFileMigrationWhenWhenUnableToScheduleMigration() {
         every { fsMigrationService.isRunning } returns false
         every { fsMigrationService.scheduleMigration() } returns false
+
         val response = endpoint.runFileMigration()
+
         assertEquals(Response.Status.CONFLICT.statusCode, response.status)
         assertEquals(false, (response.entity as MutableMap<*, *>)["migrationScheduled"])
     }

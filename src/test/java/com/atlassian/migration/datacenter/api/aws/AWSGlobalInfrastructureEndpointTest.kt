@@ -41,7 +41,9 @@ class AWSGlobalInfrastructureEndpointTest {
     @Test
     fun itShouldReturnServerErrorWhenGlobalInfrastructureModuleFails() {
         every { mockGlobalInfrastructure.regions } returns null
+
         val res = sut.getRegions()
+
         assertEquals(Response.Status.INTERNAL_SERVER_ERROR.statusCode, res.status)
     }
 
@@ -50,7 +52,9 @@ class AWSGlobalInfrastructureEndpointTest {
         val regionOne = "atlassian-east-1"
         val regionTwo = "atlassian-west-1"
         every { mockGlobalInfrastructure.regions } returns listOf(regionOne, regionTwo)
+
         val res = sut.getRegions()
+
         assertEquals(Response.Status.OK.statusCode, res.status)
         assertEquals(listOf(regionOne, regionTwo), res.entity)
     }

@@ -67,10 +67,11 @@ internal class AWSConfigureEndpointTest {
         payload.accessKeyId = "accessKeyId"
         payload.secretAccessKey = "secretKey"
         payload.region = "us-east-1"
-
         every { configurationService.configureCloudProvider(any(), any(), any()) } throws InvalidMigrationStageError("")
 
         val response = sut.storeAWSCredentials(payload)
+
         assertEquals(Response.Status.CONFLICT.statusCode, response.status)
+
     }
 }

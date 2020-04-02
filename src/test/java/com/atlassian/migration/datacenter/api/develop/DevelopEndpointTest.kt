@@ -58,7 +58,9 @@ internal class DevelopEndpointTest {
         every { environment.activeProfiles } returns arrayOf(DevelopEndpoint.ALLOW_ANY_TRANSITION_PROFILE)
         every { migrationService.currentStage } returns migrationStage
         every { migrationService.transition(MigrationStage.FS_MIGRATION_COPY) } just Runs
+
         val response = endpoint.setMigrationStage(migrationStage)
+
         assertEquals(
             Response.Status.OK.statusCode,
             response.status
@@ -72,7 +74,9 @@ internal class DevelopEndpointTest {
     @Throws(Exception::class)
     fun shouldNotCallMigrationServiceWhenProfileIsDisabled() {
         every { environment.activeProfiles } returns arrayOf()
+
         val response = endpoint.setMigrationStage(MigrationStage.FS_MIGRATION_COPY_WAIT)
+
         assertEquals(
             Response.Status.NOT_FOUND.statusCode,
             response.status
