@@ -201,8 +201,8 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public S3SyncFileSystemDownloader s3SyncFileSystemDownloader(SSMApi ssmApi) {
-        return new S3SyncFileSystemDownloader(ssmApi);
+    public S3SyncFileSystemDownloader s3SyncFileSystemDownloader(SSMApi ssmApi, AWSMigrationHelperDeploymentService migrationHelperDeploymentService) {
+        return new S3SyncFileSystemDownloader(ssmApi, migrationHelperDeploymentService);
     }
 
     @Bean
