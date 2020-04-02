@@ -26,6 +26,12 @@ import java.util.Map;
  */
 public interface MigrationInfrastructureDeploymentService {
 
+    /**
+     * Deploys any infrastructure required to facilitate the migration. Leaves naming of the infrastructure
+     * group to the implementor
+     * @param params Any parameters for the deployment
+     * @throws InvalidMigrationStageError when the current stage is not {@link com.atlassian.migration.datacenter.spi.MigrationStage#PROVISION_MIGRATION_STACK}
+     */
     void deployMigrationInfrastructure(Map<String, String> params) throws InvalidMigrationStageError;
 
     InfrastructureDeploymentStatus getDeploymentStatus();
