@@ -209,7 +209,7 @@ class AWSMigrationHelperDeploymentServiceTest {
                         Output.builder().outputKey("RdsRestoreSSMDocument").outputValue(DB_RESTORE_DOC).build(),
                         Output.builder().outputKey("ServerGroup").outputValue(MIGRATION_ASG).build(),
                         Output.builder().outputKey("MigrationBucket").outputValue(MIGRATION_BUCKET).build()
-                ).build();
+                        ).build();
 
         when(mockCfn.getStack(DEPLOYMENT_ID)).thenReturn(Optional.of(completedStack));
         lenient().when(mockAutoscaling.describeAutoScalingGroups(
