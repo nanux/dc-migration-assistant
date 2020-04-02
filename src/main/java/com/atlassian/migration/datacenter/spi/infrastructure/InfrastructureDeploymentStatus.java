@@ -14,22 +14,11 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.dto;
+package com.atlassian.migration.datacenter.spi.infrastructure;
 
-import net.java.ao.Entity;
-
-public interface MigrationContext extends Entity {
-
-    Migration getMigration();
-
-    void setMigration(Migration migration);
-
-    String getApplicationDeploymentId();
-
-    void setApplicationDeploymentId(String id);
-
-    String getHelperStackDeploymentId();
-
-    void setHelperStackDeploymentId(String deploymentId);
-
+/**
+ * Represents the status of the deployment of infrastructure
+ */
+public enum InfrastructureDeploymentStatus {
+    CREATE_IN_PROGRESS, CREATE_COMPLETE, CREATE_FAILED
 }

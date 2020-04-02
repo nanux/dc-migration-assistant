@@ -18,6 +18,7 @@ package com.atlassian.migration.datacenter.api.aws;
 
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeploymentService;
+import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import com.atlassian.migration.datacenter.spi.infrastructure.ProvisioningConfig;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -72,7 +73,7 @@ class CloudFormationEndpointTest {
 
     @Test
     public void shouldGetCurrentProvisioningStatusForGivenStackId() {
-        ApplicationDeploymentService.ApplicationDeploymentStatus expectedStatus = ApplicationDeploymentService.ApplicationDeploymentStatus.CREATE_IN_PROGRESS;
+        InfrastructureDeploymentStatus expectedStatus = InfrastructureDeploymentStatus.CREATE_IN_PROGRESS;
         when(this.deploymentService.getDeploymentStatus()).thenReturn(expectedStatus);
 
         Response response = endpoint.getInfrastructureStatus();
