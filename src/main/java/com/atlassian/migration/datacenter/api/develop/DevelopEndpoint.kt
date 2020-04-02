@@ -17,8 +17,8 @@ package com.atlassian.migration.datacenter.api.develop
 
 import com.atlassian.migration.datacenter.spi.MigrationService
 import com.atlassian.migration.datacenter.spi.MigrationStage
-import com.google.common.collect.ImmutableMap
 import org.slf4j.LoggerFactory
+import org.springframework.core.env.Environment
 import javax.ws.rs.Consumes
 import javax.ws.rs.PUT
 import javax.ws.rs.Path
@@ -27,10 +27,11 @@ import javax.ws.rs.core.MediaType
 import javax.ws.rs.core.Response
 
 @Path("/develop")
-class DevelopEndpoint(private val migrationService: MigrationService) {
+class DevelopEndpoint(private val migrationService: MigrationService, private val environment: Environment) {
 
     companion object {
         private val logger = LoggerFactory.getLogger(DevelopEndpoint::class.java)
+        const val ALLOW_ANY_TRANSITION_PROFILE = "allowAnyTransition"
     }
 
     @PUT
@@ -38,19 +39,24 @@ class DevelopEndpoint(private val migrationService: MigrationService) {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     fun setMigrationStage(targetStage: MigrationStage): Response {
-        return try {
-            val currentStage = migrationService.currentStage
-            migrationService.transition(currentStage, targetStage)
-            Response
-                    .ok(ImmutableMap.of("targetStage", migrationService.currentStage.toString()))
+        val isProfileEnabled =
+            environment.activeProfiles.any { it.equals(ALLOW_ANY_TRANSITION_PROFILE, ignoreCase = true) }
+
+        return if (isProfileEnabled) {
+            try {
+                migrationService.transition(targetStage)
+                Response
+                    .ok(mapOf("targetStage" to migrationService.currentStage.toString()))
                     .build()
-        } catch (e: Exception) {
-            logger.warn("Cannot parse the migration stage", e)
-            Response
+            } catch (e: Exception) {
+                logger.warn("Cannot parse the migration stage", e)
+                Response
                     .status(Response.Status.CONFLICT)
-                    .entity(ImmutableMap.of<String?, String?>("error", "Unable to transition migration to $targetStage"))
+                    .entity(mapOf("error" to "Unable to transition migration to $targetStage"))
                     .build()
+            }
+        } else {
+            Response.status(Response.Status.NOT_FOUND).build()
         }
     }
-
 }

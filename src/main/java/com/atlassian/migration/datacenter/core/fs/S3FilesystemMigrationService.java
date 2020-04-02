@@ -17,22 +17,17 @@
 package com.atlassian.migration.datacenter.core.fs;
 
 import com.atlassian.jira.config.util.JiraHome;
-import com.atlassian.migration.datacenter.core.exceptions.FileUploadException;
+import com.atlassian.migration.datacenter.core.exceptions.FileSystemMigrationFailure;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloadManager;
-import com.atlassian.migration.datacenter.core.fs.download.s3sync.S3SyncFileSystemDownloader;
 import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
+import com.atlassian.migration.datacenter.core.util.MigrationRunner;
 import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
-import com.atlassian.scheduler.SchedulerService;
-import com.atlassian.scheduler.SchedulerServiceException;
-import com.atlassian.scheduler.config.JobConfig;
 import com.atlassian.scheduler.config.JobId;
-import com.atlassian.scheduler.config.JobRunnerKey;
-import com.atlassian.scheduler.config.RunMode;
 import com.atlassian.util.concurrent.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,7 +51,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     private S3AsyncClient s3AsyncClient;
     private final JiraHome jiraHome;
     private final MigrationService migrationService;
-    private final SchedulerService schedulerService;
+    private final MigrationRunner migrationRunner;
     private final S3SyncFileSystemDownloadManager fileSystemDownloadManager;
     private Supplier<S3AsyncClient> s3AsyncClientSupplier;
 
@@ -67,11 +62,11 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
                                         JiraHome jiraHome,
                                         S3SyncFileSystemDownloadManager fileSystemDownloadManager,
                                         MigrationService migrationService,
-                                        SchedulerService schedulerService) {
+                                        MigrationRunner migrationRunner) {
         this.s3AsyncClientSupplier = s3AsyncClientSupplier;
         this.jiraHome = jiraHome;
         this.migrationService = migrationService;
-        this.schedulerService = schedulerService;
+        this.migrationRunner = migrationRunner;
         this.fileSystemDownloadManager = fileSystemDownloadManager;
 
         this.report = new DefaultFileSystemMigrationReport();
@@ -84,7 +79,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
     @Override
     public boolean isRunning() {
-        return this.migrationService.getCurrentStage().equals(MigrationStage.WAIT_FS_MIGRATION_COPY);
+        return this.migrationService.getCurrentStage().equals(MigrationStage.FS_MIGRATION_COPY_WAIT);
     }
 
     @Override
@@ -103,33 +98,15 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
                             currentMigration.getStage()));
         }
 
-        final JobRunnerKey runnerKey = JobRunnerKey.of(S3UploadJobRunner.KEY);
         JobId jobId = getScheduledJobId();
-        logger.info("Starting filesystem migration");
+        S3UploadJobRunner jobRunner = new S3UploadJobRunner(this);
 
-        if (schedulerService.getJobDetails(jobId) != null) {
-            logger.warn("Tried to schedule file system migration while job already exists");
-            return false;
-        }
+        boolean result = migrationRunner.runMigration(jobId, jobRunner);
 
-        //TODO: Can the job runner be injected? It has no state
-        schedulerService.registerJobRunner(runnerKey, new S3UploadJobRunner(this));
-        logger.info("Registered new job runner for S3");
-
-        JobConfig jobConfig = JobConfig.forJobRunnerKey(runnerKey)
-                .withSchedule(null) // run now
-                .withRunMode(RunMode.RUN_ONCE_PER_CLUSTER);
-        try {
-            logger.info("Scheduling new job for S3 upload runner");
-
-            schedulerService.scheduleJob(jobId, jobConfig);
-        } catch (SchedulerServiceException e) {
-            logger.error("Exception when scheduling S3 upload job", e);
-            this.schedulerService.unscheduleJob(jobId);
+        if (!result) {
             migrationService.error();
-            return false;
         }
-        return true;
+        return result;
     }
 
     /**
@@ -147,7 +124,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
         s3AsyncClient = this.s3AsyncClientSupplier.get();
         report = new DefaultFileSystemMigrationReport();
 
-        migrationService.transition(MigrationStage.FS_MIGRATION_COPY, MigrationStage.WAIT_FS_MIGRATION_COPY);
+        migrationService.transition(MigrationStage.FS_MIGRATION_COPY_WAIT);
         report.setStatus(RUNNING);
 
         Crawler homeCrawler = new DirectoryStreamCrawler(report);
@@ -157,41 +134,28 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
         fsUploader = new FilesystemUploader(homeCrawler, s3Uploader);
 
-        logger.trace("commencing upload of shared home");
+        logger.info("commencing upload of shared home");
         try {
             fsUploader.uploadDirectory(getSharedHomeDir());
-        } catch (FileUploadException e) {
-            logger.error("Caught exception during upload; check report for details.", e);
-        }
 
-        if (!report.getStatus().equals(FAILED)) {
-            logger.trace("upload of shared home complete. commencing shared home download");
-            try {
-                fileSystemDownloadManager.downloadFileSystem();
-                report.setStatus(DONE);
-            } catch (S3SyncFileSystemDownloader.CannotLaunchCommandException e) {
-                report.setStatus(FAILED);
-                logger.error("unable to launch s3 sync ssm command", e);
-            }
-        }
+            logger.info("upload of shared home complete. commencing shared home download");
+            fileSystemDownloadManager.downloadFileSystem();
 
-        if (report.getStatus().equals(DONE)) {
-            logger.trace("Completed file system migration. Transitioning to next stage.");
-            this.migrationService.transition(MigrationStage.WAIT_FS_MIGRATION_COPY, MigrationStage.OFFLINE_WARNING);
-        } else if (report.getStatus().equals(FAILED)) {
-            logger.error("Encountered error during file system migration. Transitioning to error state.");
-            this.migrationService.error();
             report.setStatus(DONE);
+
+            logger.info("Completed file system migration. Transitioning to next stage.");
+            migrationService.transition(MigrationStage.OFFLINE_WARNING);
+        } catch (FileSystemMigrationFailure e) {
+            logger.error("Encountered critical error during file system migration");
+            report.setStatus(FAILED);
+            migrationService.error();
         }
     }
 
     @Override
     public void abortMigration() throws InvalidMigrationStageError {
-        // we always try to remove scheduled job if the system is in inconsistent state
-        if (schedulerService.getJobDetails(getScheduledJobId()) != null) {
-            schedulerService.unscheduleJob(getScheduledJobId());
-            logger.info("Removed scheduled filesystem migration job");
-        }
+        // We always try to remove scheduled job if the system is in inconsistent state
+        migrationRunner.abortJobIfPresesnt(getScheduledJobId());
 
         if (!isRunning() || fsUploader == null) {
             throw new InvalidMigrationStageError(String.format("Invalid migration stage when cancelling filesystem migration: %s", migrationService.getCurrentStage()));

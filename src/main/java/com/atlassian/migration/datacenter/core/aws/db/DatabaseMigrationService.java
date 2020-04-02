@@ -16,96 +16,135 @@
 
 package com.atlassian.migration.datacenter.core.aws.db;
 
-import com.atlassian.migration.datacenter.core.application.ApplicationConfiguration;
-import com.atlassian.migration.datacenter.core.db.DatabaseExtractor;
-import com.atlassian.migration.datacenter.core.db.DatabaseExtractorFactory;
+import com.atlassian.migration.datacenter.core.aws.db.restore.DatabaseRestoreStageTransitionCallback;
+import com.atlassian.migration.datacenter.core.aws.db.restore.SsmPsqlDatabaseRestoreService;
+import com.atlassian.migration.datacenter.core.db.DatabaseMigrationJobRunner;
 import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
-import com.atlassian.migration.datacenter.core.fs.Crawler;
-import com.atlassian.migration.datacenter.core.fs.DirectoryStreamCrawler;
+import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.fs.FilesystemUploader;
-import com.atlassian.migration.datacenter.core.fs.S3UploadConfig;
-import com.atlassian.migration.datacenter.core.fs.S3Uploader;
-import com.atlassian.migration.datacenter.core.fs.reporting.DefaultFileSystemMigrationReport;
+import com.atlassian.migration.datacenter.core.fs.S3UploadJobRunner;
+import com.atlassian.migration.datacenter.core.util.MigrationJobRunner;
+import com.atlassian.migration.datacenter.core.util.MigrationRunner;
+import com.atlassian.migration.datacenter.spi.MigrationService;
+import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
-import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationReport;
-import com.atlassian.util.concurrent.Supplier;
-import software.amazon.awssdk.services.s3.S3AsyncClient;
+import com.atlassian.scheduler.JobRunnerRequest;
+import com.atlassian.scheduler.JobRunnerResponse;
+import com.atlassian.scheduler.config.JobId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import javax.annotation.PostConstruct;
+import javax.annotation.Nullable;
 import java.nio.file.Path;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-public class DatabaseMigrationService {
-    private final ApplicationConfiguration applicationConfiguration;
+import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.FAILED;
+
+/**
+ * Copyright Atlassian: 10/03/2020
+ */
+public class DatabaseMigrationService
+{
+    private static Logger logger = LoggerFactory.getLogger(DatabaseMigrationService.class);
+
+    private static final String TARGET_BUCKET_NAME = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
+
     private final Path tempDirectory;
-    private S3AsyncClient s3AsyncClient;
-    private Supplier<S3AsyncClient> s3AsyncClientSupplier;
+    private final DatabaseArchivalService databaseArchivalService;
+    private final DatabaseArchiveStageTransitionCallback stageTransitionCallback;
+    private final DatabaseArtifactS3UploadService s3UploadService;
+    private final DatabaseUploadStageTransitionCallback uploadStageTransitionCallback;
+    private final SsmPsqlDatabaseRestoreService restoreService;
+    private final DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback;
+    private final MigrationService migrationService;
+    private final MigrationRunner migrationRunner;
 
-    private Process extractorProcess;
-    private AtomicReference<MigrationStatus> status = new AtomicReference<>();
+    private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
-
-    public DatabaseMigrationService(ApplicationConfiguration applicationConfiguration,
-                                    Path tempDirectory,
-                                    Supplier<S3AsyncClient> s3AsyncClientSupplier) {
-        this.applicationConfiguration = applicationConfiguration;
+    public DatabaseMigrationService(Path tempDirectory,
+                                    MigrationService migrationService,
+                                    MigrationRunner migrationRunner,
+                                    DatabaseArchivalService databaseArchivalService,
+                                    DatabaseArchiveStageTransitionCallback stageTransitionCallback,
+                                    DatabaseArtifactS3UploadService s3UploadService,
+                                    DatabaseUploadStageTransitionCallback uploadStageTransitionCallback,
+                                    SsmPsqlDatabaseRestoreService restoreService,
+                                    DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback)
+    {
         this.tempDirectory = tempDirectory;
-        this.s3AsyncClientSupplier = s3AsyncClientSupplier;
-        this.setStatus(MigrationStatus.NOT_STARTED);
-    }
-
-    @PostConstruct
-    public void postConstruct() {
-        this.s3AsyncClient = this.s3AsyncClientSupplier.get();
+        this.databaseArchivalService = databaseArchivalService;
+        this.stageTransitionCallback = stageTransitionCallback;
+        this.s3UploadService = s3UploadService;
+        this.uploadStageTransitionCallback = uploadStageTransitionCallback;
+        this.restoreService = restoreService;
+        this.restoreStageTransitionCallback = restoreStageTransitionCallback;
+        this.migrationService = migrationService;
+        this.migrationRunner = migrationRunner;
     }
 
     /**
      * Start database dump and upload to S3 bucket. This is a blocking operation and should be started from ExecutorService
      * or preferably from ScheduledJob. The status of the migration can be queried via getStatus().
      */
-    public FileSystemMigrationErrorReport performMigration() throws DatabaseMigrationFailure {
-        DatabaseExtractor extractor = DatabaseExtractorFactory.getExtractor(applicationConfiguration);
-        Path target = tempDirectory.resolve("db.dump");
+    public FileSystemMigrationErrorReport performMigration() throws DatabaseMigrationFailure, InvalidMigrationStageError {
+        migrationService.transition(MigrationStage.DB_MIGRATION_EXPORT);
 
-        extractorProcess = extractor.startDatabaseDump(target);
-        setStatus(MigrationStatus.DUMP_IN_PROGRESS);
+        Path pathToDatabaseFile = databaseArchivalService.archiveDatabase(tempDirectory, stageTransitionCallback);
+
+        migrationService.transition(MigrationStage.DB_MIGRATION_EXPORT_WAIT);
+
+        FileSystemMigrationErrorReport report;
+
+        migrationService.transition(MigrationStage.DB_MIGRATION_UPLOAD);
         try {
-            extractorProcess.waitFor();
-        } catch (Exception e) {
-            String msg = "Error while waiting for DB extractor to finish";
-            setStatus(MigrationStatus.error(msg, e));
-            throw new DatabaseMigrationFailure(msg, e);
+            report = s3UploadService.upload(pathToDatabaseFile, TARGET_BUCKET_NAME, this.uploadStageTransitionCallback);
+        } catch (FilesystemUploader.FileUploadException e) {
+            migrationService.error(e);
+            throw new DatabaseMigrationFailure("Error when uploading database dump to S3", e);
         }
-        setStatus(MigrationStatus.DUMP_COMPLETE);
+        migrationService.transition(MigrationStage.DB_MIGRATION_UPLOAD_WAIT);
 
-
-        FileSystemMigrationReport report = new DefaultFileSystemMigrationReport();
-
-        String bucket = System.getProperty("S3_TARGET_BUCKET_NAME", "trebuchet-testing");
-        S3UploadConfig config = new S3UploadConfig(bucket, this.s3AsyncClient, target.getParent());
-
-
-        S3Uploader uploader = new S3Uploader(config, report);
-        Crawler crawler = new DirectoryStreamCrawler(report);
-
-
-        FilesystemUploader filesystemUploader = new FilesystemUploader(crawler, uploader);
-        setStatus(MigrationStatus.UPLOAD_IN_PROGRESS);
-
-        filesystemUploader.uploadDirectory(target);
-
-        setStatus(MigrationStatus.UPLOAD_COMPLETE);
-
-        setStatus(MigrationStatus.FINISHED);
+        migrationService.transition(MigrationStage.DATA_MIGRATION_IMPORT);
+        try {
+            restoreService.restoreDatabase(restoreStageTransitionCallback);
+        } catch (Exception e) {
+            migrationService.error(e);
+            throw new DatabaseMigrationFailure("Error when restoring database", e);
+        }
+        migrationService.transition(MigrationStage.DB_MIGRATION_UPLOAD_WAIT);
 
         return report;
     }
 
-    private void setStatus(MigrationStatus status) {
-        this.status.set(status);
+    public Boolean scheduleMigration() {
+
+        JobId jobId = getScheduledJobId();
+        DatabaseMigrationJobRunner jobRunner = new DatabaseMigrationJobRunner(this);
+
+        boolean result = migrationRunner.runMigration(jobId, jobRunner);
+
+        if (!result) {
+            migrationService.error();
+        }
+        return result;
     }
 
-    public MigrationStatus getStatus() {
-        return status.get();
+    public void abortMigration() throws InvalidMigrationStageError {
+        // We always try to remove scheduled job if the system is in inconsistent state
+        migrationRunner.abortJobIfPresesnt(getScheduledJobId());
+
+        if (!migrationService.getCurrentStage().isDBPhase() || s3UploadService == null) {
+            throw new InvalidMigrationStageError(String.format("Invalid migration stage when cancelling filesystem migration: %s", migrationService.getCurrentStage()));
+        }
+
+        logger.warn("Aborting running filesystem migration");
+
+        migrationService.error();
     }
+
+    private JobId getScheduledJobId() {
+        return JobId.of(DatabaseMigrationJobRunner.KEY + migrationService.getCurrentMigration().getID());
+    }
+
 }
+

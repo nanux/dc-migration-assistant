@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Proxy;
+import java.util.Optional;
 
 import static com.atlassian.migration.datacenter.spi.MigrationStage.ERROR;
 import static com.atlassian.migration.datacenter.spi.MigrationStage.NOT_STARTED;
@@ -62,17 +63,33 @@ public class AWSMigrationService implements MigrationService {
     }
 
     @Override
+    public void assertCurrentStage(MigrationStage expected) throws InvalidMigrationStageError {
+        MigrationStage currentStage = getCurrentStage();
+        if (currentStage != expected) {
+            throw new InvalidMigrationStageError(String.format("wanted to be in stage %s but was in stage %s", expected, currentStage));
+        }
+    }
+
+    @Override
     public Migration getCurrentMigration() {
         Migration migration = findFirstOrCreateMigration();
         return (Migration) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{Migration.class}, new ReadOnlyEntityInvocationHandler<>(migration));
     }
 
     @Override
-    public void transition(MigrationStage from, MigrationStage to) throws InvalidMigrationStageError {
+    public MigrationContext getCurrentContext() {
+        return getCurrentMigration().getContext();
+    }
+
+    @Override
+    public synchronized void transition(MigrationStage to) throws InvalidMigrationStageError
+    {
         Migration migration = findFirstOrCreateMigration();
-        final MigrationStage currentStage = migration.getStage();
-        if (!currentStage.equals(from)) {
-            throw InvalidMigrationStageError.errorWithMessage(from, currentStage);
+        MigrationStage currentStage = migration.getStage();
+
+        // NOTE: This assumes that the state transitions from the start of the enum to the end.
+        if (!currentStage.isValidTransition(to)) {
+            throw InvalidMigrationStageError.errorWithMessage(currentStage, to);
         }
         setCurrentStage(migration, to);
     }
@@ -83,12 +100,19 @@ public class AWSMigrationService implements MigrationService {
         setCurrentStage(migration, ERROR);
     }
 
-    private void setCurrentStage(Migration migration, MigrationStage stage) {
+    @Override
+    public void error(Throwable e)
+    {
+        error();
+        findFirstOrCreateMigration().getStage().setException(Optional.of(e));
+    }
+
+    protected synchronized void setCurrentStage(Migration migration, MigrationStage stage) {
         migration.setStage(stage);
         migration.save();
     }
 
-    private Migration findFirstOrCreateMigration() {
+    protected synchronized Migration findFirstOrCreateMigration() {
         Migration[] migrations = ao.find(Migration.class);
         if (migrations.length == 1) {
             // In case we have interrupted migration (e.g. the node went down), we want to pick up where we've

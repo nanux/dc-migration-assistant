@@ -17,11 +17,8 @@
 package com.atlassian.migration.datacenter.core.application;
 
 public class DatabaseConfiguration {
-    public enum DBType {
-        POSTGRESQL,
-        MYSQL,
-        SQLSERVER,
-        ORACLE
+    public static DatabaseConfiguration h2() {
+        return new DatabaseConfiguration(DBType.H2, "localhost", 0, "h2", "h2", "h2");
     }
 
     private String host;
@@ -62,5 +59,13 @@ public class DatabaseConfiguration {
 
     public DBType getType() {
         return type;
+    }
+
+    public enum DBType {
+        POSTGRESQL,
+        MYSQL,
+        SQLSERVER,
+        ORACLE,
+        H2
     }
 }

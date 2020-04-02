@@ -89,7 +89,7 @@ class S3UploaderIT {
     }
 
     @Test
-    void uploadShouldUploadPathsFromQueueToS3() throws IOException, InterruptedException {
+    void uploadShouldUploadPathsFromQueueToS3() throws IOException, InterruptedException, FilesystemUploader.FileUploadException {
         final Path file = addFileToQueue("file");
         queue.finish();
 

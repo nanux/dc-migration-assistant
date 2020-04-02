@@ -202,6 +202,10 @@
             <artifactId>ssm</artifactId>
         </dependency>
         <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>secretsmanager</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-xml</artifactId>
             <version>${jackson.version}</version>
@@ -354,6 +358,8 @@
                 <version>${amps.version}</version>
                 <extensions>true</extensions>
                 <configuration>
+                    <jvmArgs>${amps.jvm.args}</jvmArgs>
+                    <!--                    Product should be in a product tag-->
                     <product>jira</product>
                     <enableQuickReload>true</enableQuickReload>
                     <instructions>
@@ -481,6 +487,11 @@
                         <goals>
                             <goal>compile</goal>
                         </goals>
+                        <configuration>
+                            <sourceDirs>
+                                <sourceDir>${project.basedir}/src/main/java</sourceDir>
+                            </sourceDirs>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>test-compile</id>
@@ -488,6 +499,11 @@
                         <goals>
                             <goal>test-compile</goal>
                         </goals>
+                        <configuration>
+                            <sourceDirs>
+                                <sourceDir>${project.basedir}/src/test/java</sourceDir>
+                            </sourceDirs>
+                        </configuration>
                     </execution>
                 </executions>
                 <configuration>
@@ -608,6 +624,6 @@
         <kotlin.version>1.3.70</kotlin.version>
         <jackson.version>2.10.3</jackson.version>
         <mockk.version>1.9.3</mockk.version>
+        <amps.jvm.args/>
     </properties>
-
 </project>

@@ -86,6 +86,7 @@ try:
 except ValueError:
     progress = {}
 
+result['status'] = progress
 
 print(json.dumps(result))
 exit(0)

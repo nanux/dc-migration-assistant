@@ -14,14 +14,12 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.core.exceptions;
+package com.atlassian.migration.datacenter.core.util;
 
-public class FileUploadException extends RuntimeException {
-    public FileUploadException(String message) {
-        super(message);
-    }
+import com.atlassian.scheduler.JobRunner;
+import com.atlassian.scheduler.config.JobId;
 
-    public FileUploadException(String message, Throwable cause) {
-        super(message, cause);
-    }
+public interface MigrationJobRunner extends JobRunner
+{
+    String getKey();
 }
