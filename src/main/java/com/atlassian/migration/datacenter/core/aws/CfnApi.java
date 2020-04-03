@@ -24,12 +24,16 @@ import software.amazon.awssdk.services.cloudformation.model.CreateStackRequest;
 import software.amazon.awssdk.services.cloudformation.model.CreateStackResponse;
 import software.amazon.awssdk.services.cloudformation.model.DescribeStacksRequest;
 import software.amazon.awssdk.services.cloudformation.model.DescribeStacksResponse;
+import software.amazon.awssdk.services.cloudformation.model.ListExportsRequest;
+import software.amazon.awssdk.services.cloudformation.model.ListExportsResponse;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackInstanceNotFoundException;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 import software.amazon.awssdk.services.cloudformation.model.Tag;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -114,6 +118,23 @@ public class CfnApi {
             return Optional.ofNullable(stackId);
         } catch (InterruptedException | ExecutionException e) {
             return Optional.empty();
+        }
+    }
+
+    /**
+     * Gets all Cloudformation exports. If there is an error retrieving the exports, an empty map will be returned
+     * @return A map containing all cloudformation exports for the current region in the current account.
+     */
+    public Map<String, String> getExports() {
+        CompletableFuture<ListExportsResponse> asyncResponse = getClient().listExports();
+
+        try {
+            ListExportsResponse response = asyncResponse.get();
+            HashMap<String, String> exportsMap = new HashMap<>();
+            response.exports().forEach(export -> exportsMap.put(export.name(), export.value()));
+            return exportsMap;
+        } catch (InterruptedException | ExecutionException e) {
+            return Collections.emptyMap();
         }
     }
 
