@@ -105,14 +105,6 @@ public class QuickstartDeploymentService extends CloudformationDeploymentService
             Map<String, String> applicationStackOutputsMap = new HashMap<>();
             applicationStack.outputs().forEach(output -> applicationStackOutputsMap.put(output.outputKey(), output.outputValue()));
 
-            String exportPrefix = applicationStack.parameters().stream()
-                    .filter(parameter -> parameter.parameterKey().equals("ExportPrefix"))
-                    .findFirst()
-                    .map(Parameter::parameterValue)
-                    .orElse("-ATL");
-
-            Map<String, String> cfnExports = cfnApi.getExports();
-
             Map<String, StackResource> applicationResources = cfnApi.getStackResources(applicationStackName);
 
             StackResource jiraStack = applicationResources.get("JiraDCStack");
@@ -121,15 +113,14 @@ public class QuickstartDeploymentService extends CloudformationDeploymentService
             Map<String, StackResource> jiraResources = cfnApi.getStackResources(jiraStackName);
             String efsId = jiraResources.get("ElasticFileSystem").physicalResourceId();
 
-
             HashMap<String, String> migrationStackParams = new HashMap<String, String>() {{
-               put("NetworkPrivateSubnet", cfnExports.get(exportPrefix + "PriNets").split(",")[0]);
+               put("NetworkPrivateSubnet", applicationStackOutputsMap.get("PrivateSubnets").split(",")[0]);
                put("EFSFileSystemId", efsId);
                put("EFSSecurityGroup", applicationStackOutputsMap.get("SGname"));
                put("RDSSecurityGroup", applicationStackOutputsMap.get("SGname"));
                put("RDSEndpoint", applicationStackOutputsMap.get("DBEndpointAddress"));
                put("HelperInstanceType", "c5.large");
-               put("HelperVpcId", cfnExports.get(exportPrefix + "VPCID"));
+               put("HelperVpcId", applicationStackOutputsMap.get("VPCID"));
             }};
 
         } catch (InvalidMigrationStageError invalidMigrationStageError) {
