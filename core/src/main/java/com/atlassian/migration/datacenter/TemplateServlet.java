@@ -70,7 +70,7 @@ public class TemplateServlet extends HttpServlet {
 
         templateRenderer.render(
                 response.getWriter(),
-                "com.atlassian.migration.datacenter.dc-migration-assistant:dc-migration-assistant-templates",
+                "com.atlassian.migration.datacenter.dc-migration-assistant.jira-plugin:dc-migration-assistant-templates",
                 "dcmigration.init",
                 Collections.emptyMap()
         );
