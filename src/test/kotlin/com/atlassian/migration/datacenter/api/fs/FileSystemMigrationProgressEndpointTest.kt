@@ -28,7 +28,6 @@ import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
 import io.mockk.mockk
-import org.hamcrest.MatcherAssert
 import org.hamcrest.MatcherAssert.assertThat
 import org.hamcrest.Matchers
 import org.junit.jupiter.api.Assertions.assertEquals

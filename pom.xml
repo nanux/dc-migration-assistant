@@ -487,6 +487,10 @@
                         <goals>
                             <goal>compile</goal>
                         </goals>
+                        <configuration>
+                            <sourceDirs>${project.basedir}/src/main/java</sourceDirs>
+                            <sourceDirs>${project.basedir}/src/main/kotlin</sourceDirs>
+                        </configuration>
                     </execution>
                     <execution>
                         <id>test-compile</id>
@@ -494,6 +498,10 @@
                         <goals>
                             <goal>test-compile</goal>
                         </goals>
+                        <configuration>
+                            <sourceDirs>${project.basedir}/src/main/java</sourceDirs>
+                            <sourceDirs>${project.basedir}/src/main/kotlin</sourceDirs>
+                        </configuration>
                     </execution>
                 </executions>
                 <configuration>
