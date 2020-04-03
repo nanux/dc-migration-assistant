@@ -68,9 +68,10 @@ public class TemplateServlet extends HttpServlet {
     private void render(HttpServletResponse response) throws IOException {
         response.setContentType(MediaType.TEXT_HTML);
 
+//        TODO: Core module is aware of plugin namespace here.This is referencing a web-resource definition in atlassian-plugin.xml. This needs to be referenced in a better manner
         templateRenderer.render(
                 response.getWriter(),
-                "com.atlassian.migration.datacenter.dc-migration-assistant:dc-migration-assistant-templates",
+                "com.atlassian.migration.datacenter.migration-assistant.plugin:dc-migration-assistant-templates",
                 "dcmigration.init",
                 Collections.emptyMap()
         );
