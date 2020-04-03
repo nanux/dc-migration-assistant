@@ -19,15 +19,34 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
-    <modules>
-        <module>frontend</module>
-        <module>core</module>
-    </modules>
     <parent>
         <groupId>com.atlassian.pom</groupId>
         <artifactId>public-pom</artifactId>
         <version>6.0.2</version>
     </parent>
+
+    <groupId>com.atlassian.migration.datacenter</groupId>
+    <artifactId>dc-migration-assistant</artifactId>
+    <version>1.0.0</version>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <organization>
+        <name>Atlassian</name>
+        <url>https://www.atlassian.com</url>
+    </organization>
+    <name>Atlassian Data Center Migration Assistant</name>
+    <description>This is the officially supported DC Migration plugin for Atlassian JIRA.</description>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>frontend</module>
+        <module>core</module>
+    </modules>
 
     <repositories>
         <repository>
@@ -61,170 +80,8 @@
         </pluginRepository>
     </pluginRepositories>
 
-    <groupId>com.atlassian.migration.datacenter</groupId>
-    <artifactId>dc-migration-assistant</artifactId>
-    <version>1.0.0</version>
-    <licenses>
-        <license>
-            <name>The Apache Software License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
-    <organization>
-        <name>Atlassian</name>
-        <url>https://www.atlassian.com</url>
-    </organization>
-    <name>Atlassian Data Center Migration Assistant</name>
-    <description>This is the officially supported DC Migration plugin for Atlassian JIRA.</description>
-    <packaging>pom</packaging>
 
     <dependencies>
-        <dependency>
-            <groupId>com.atlassian.activeobjects</groupId>
-            <artifactId>activeobjects-plugin</artifactId>
-            <version>${ao.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.sal</groupId>
-            <artifactId>sal-api</artifactId>
-            <version>${sal.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-            <version>1.3.2</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>jsr311-api</artifactId>
-            <version>1.1.1</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.framework</artifactId>
-            <version>${apache.felix.framework.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-beans</artifactId>
-            <version>${spring.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-            <version>${spring.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.plugins</groupId>
-            <artifactId>atlassian-plugins-osgi-javaconfig</artifactId>
-            <version>${atlassian.plugins.osgi.javaconfig.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
-            <version>2.4</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.plugins</groupId>
-            <artifactId>atlassian-plugins-api</artifactId>
-            <version>${atlassian.plugins.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.soy</groupId>
-            <artifactId>soy-template-renderer-api</artifactId>
-            <version>${soy.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.plugins</groupId>
-            <artifactId>atlassian-plugins-webfragment-api</artifactId>
-            <version>${webfragments.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.scheduler</groupId>
-            <artifactId>atlassian-scheduler-api</artifactId>
-            <version>3.0.0</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.jira</groupId>
-            <artifactId>jira-api</artifactId>
-            <version>7.13.12</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.woodstox</groupId>
-            <artifactId>woodstox-core</artifactId>
-            <version>6.0.3</version>
-        </dependency>
-        <dependency>
-            <groupId>jta</groupId>
-            <artifactId>jta</artifactId>
-            <version>1.0.1b</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-crypto</artifactId>
-            <version>${spring.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>cloudformation</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>apache-client</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>s3</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>ec2</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>regions</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>ssm</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>secretsmanager</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-xml</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-kotlin</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jdk8</artifactId>
-            <version>${kotlin.version}</version>
-        </dependency>
-
         <!-- Test Dependencies follow -->
         <dependency>
             <groupId>org.mockito</groupId>
