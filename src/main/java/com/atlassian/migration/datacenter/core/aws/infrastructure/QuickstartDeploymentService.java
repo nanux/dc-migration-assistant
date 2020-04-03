@@ -109,7 +109,7 @@ public class QuickstartDeploymentService extends CloudformationDeploymentService
                     .filter(parameter -> parameter.parameterKey().equals("ExportPrefix"))
                     .findFirst()
                     .map(Parameter::parameterValue)
-                    .orElse("-ATL");
+                    .orElse("ATL-");
 
             Map<String, String> cfnExports = cfnApi.getExports();
 
@@ -131,6 +131,8 @@ public class QuickstartDeploymentService extends CloudformationDeploymentService
                put("HelperInstanceType", "c5.large");
                put("HelperVpcId", cfnExports.get(exportPrefix + "VPCID"));
             }};
+
+            migrationHelperDeploymentService.deployMigrationInfrastructure(migrationStackParams);
 
         } catch (InvalidMigrationStageError invalidMigrationStageError) {
             logger.error("tried to transition migration from {} but got error: {}.", MigrationStage.PROVISION_APPLICATION_WAIT, invalidMigrationStageError.getMessage());
