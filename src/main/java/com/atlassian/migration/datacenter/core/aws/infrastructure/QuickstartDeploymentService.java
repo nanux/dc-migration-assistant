@@ -18,6 +18,7 @@ package com.atlassian.migration.datacenter.core.aws.infrastructure;
 
 import com.atlassian.migration.datacenter.core.aws.CfnApi;
 import com.atlassian.migration.datacenter.core.aws.db.restore.TargetDbCredentialsStorageService;
+import com.atlassian.migration.datacenter.core.exceptions.InfrastructureProvisioningError;
 import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
@@ -26,9 +27,11 @@ import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeployme
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -42,12 +45,16 @@ public class QuickstartDeploymentService extends CloudformationDeploymentService
 
     private final MigrationService migrationService;
     private final TargetDbCredentialsStorageService dbCredentialsStorageService;
+    private final AWSMigrationHelperDeploymentService migrationHelperDeploymentService;
+    private final CfnApi cfnApi;
 
-    public QuickstartDeploymentService(CfnApi cfnApi, MigrationService migrationService, TargetDbCredentialsStorageService dbCredentialsStorageService) {
+    public QuickstartDeploymentService(CfnApi cfnApi, MigrationService migrationService, TargetDbCredentialsStorageService dbCredentialsStorageService, AWSMigrationHelperDeploymentService migrationHelperDeploymentService) {
         super(cfnApi);
 
+        this.cfnApi = cfnApi;
         this.migrationService = migrationService;
         this.dbCredentialsStorageService = dbCredentialsStorageService;
+        this.migrationHelperDeploymentService = migrationHelperDeploymentService;
     }
 
     /**
@@ -83,6 +90,12 @@ public class QuickstartDeploymentService extends CloudformationDeploymentService
         try {
             logger.debug("application stack deployment succeeded");
             migrationService.transition(MigrationStage.PROVISION_MIGRATION_STACK);
+
+            Optional<Stack> maybeStack = cfnApi.getStack(migrationService.getCurrentContext().getApplicationDeploymentId());
+            if (!maybeStack.isPresent()) {
+                throw new RuntimeException(new InfrastructureProvisioningError("could not get details of application stack after deploying it"));
+            }
+            
         } catch (InvalidMigrationStageError invalidMigrationStageError) {
             logger.error("tried to transition migration from {} but got error: {}.", MigrationStage.PROVISION_APPLICATION_WAIT, invalidMigrationStageError.getMessage());
         }
