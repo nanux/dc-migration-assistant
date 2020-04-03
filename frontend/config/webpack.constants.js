@@ -22,7 +22,7 @@ const srcDir = path.join(rootDir, 'src', 'main');
 const I18N_SRC_DIR = path.join(srcDir, 'resources');
 const FRONTEND_SRC_DIR = path.join(srcDir, 'dc-migration-assistant-fe');
 const FRONTEND_OUTPUT_DIR = path.join(rootDir, 'target', 'classes');
-const PLUGIN_KEY = 'com.atlassian.migration.datacenter.dc-migration-assistant';
+const PLUGIN_KEY = 'com.atlassian.migration.datacenter.migration-assistant.plugin';
 const ENTRY_POINT = { 'dc-migration-assistant': path.join(FRONTEND_SRC_DIR, 'index.tsx') };
 
 const MY_I18N_FILES = ['dc-migration-assistant.properties'].map(file => path.join(I18N_SRC_DIR, 'i18n', file));
