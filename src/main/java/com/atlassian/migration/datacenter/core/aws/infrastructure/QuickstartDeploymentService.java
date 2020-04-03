@@ -28,6 +28,7 @@ import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeplo
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
+import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
@@ -102,14 +103,22 @@ public class QuickstartDeploymentService extends CloudformationDeploymentService
             Map<String, String> applicationStackOutputsMap = new HashMap<>();
             applicationStack.outputs().forEach(output -> applicationStackOutputsMap.put(output.outputKey(), output.outputValue()));
 
+            String exportPrefix = applicationStack.parameters().stream()
+                    .filter(parameter -> parameter.parameterKey().equals("ExportPrefix"))
+                    .findFirst()
+                    .map(Parameter::parameterValue)
+                    .orElse("-ATL");
+
+            Map<String, String> cfnExports = cfnApi.getExports();
+
             HashMap<String, String> migrationStackParams = new HashMap<String, String>() {{
-               put("NetworkPrivateSubnet","");
+               put("NetworkPrivateSubnet", cfnExports.get(exportPrefix + "PriNets").split(",")[0]);
                put("EFSFileSystemId", "");
                put("EFSSecurityGroup", applicationStackOutputsMap.get("SGname"));
                put("RDSSecurityGroup", applicationStackOutputsMap.get("SGname"));
                put("RDSEndpoint", applicationStackOutputsMap.get("DBEndpointAddress"));
                put("HelperInstanceType", "c5.large");
-               put("HelperVpcId", "");
+               put("HelperVpcId", cfnExports.get(exportPrefix + "VPCID"));
             }};
 
         } catch (InvalidMigrationStageError invalidMigrationStageError) {
