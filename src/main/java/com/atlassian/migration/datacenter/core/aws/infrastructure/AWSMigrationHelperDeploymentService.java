@@ -40,6 +40,11 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
         this.migrationService = migrationService;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * Will name the stack [application-stack-name]-migration
+     */
     @Override
     public void deployMigrationInfrastructure(Map<String, String> params) throws InvalidMigrationStageError {
         String applicationDeploymentId = migrationService.getCurrentContext().getApplicationDeploymentId();

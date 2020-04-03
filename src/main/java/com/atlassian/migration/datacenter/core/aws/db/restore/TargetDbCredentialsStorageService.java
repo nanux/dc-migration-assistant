@@ -63,9 +63,10 @@ public class TargetDbCredentialsStorageService {
         CreateSecretRequest request = CreateSecretRequest.builder()
                 /*
                 The secret is named like this because it makes it easier for the migration stack to download
-                the secret. The migration stack name is static so we use it here even though it hasn't been
-                deployed yet. this allows the migration stack to use "atl-${AWS::StackName}-app-rds-password" as
-                the secret name.
+                the secret. This allows the migration stack to use "atl-${AWS::StackName}-app-rds-password" as the
+                secret name. The migration stack name is deterministic given the application stack name
+                (see AWSMigrationHelperDeploymentService#deployMigrationInfrastructure) so we use it here even though
+                it hasn't been deployed yet.
                 */
                 .name(String.format("atl-%s-migration-app-rds-password", context.getApplicationDeploymentId()))
                 .secretString(password)
