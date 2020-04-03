@@ -27,9 +27,11 @@ import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeployme
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -95,7 +97,21 @@ public class QuickstartDeploymentService extends CloudformationDeploymentService
             if (!maybeStack.isPresent()) {
                 throw new RuntimeException(new InfrastructureProvisioningError("could not get details of application stack after deploying it"));
             }
-            
+
+            Stack applicationStack = maybeStack.get();
+            Map<String, String> applicationStackOutputsMap = new HashMap<>();
+            applicationStack.outputs().forEach(output -> applicationStackOutputsMap.put(output.outputKey(), output.outputValue()));
+
+            HashMap<String, String> migrationStackParams = new HashMap<String, String>() {{
+               put("NetworkPrivateSubnet","");
+               put("EFSFileSystemId", "");
+               put("EFSSecurityGroup", applicationStackOutputsMap.get("SGname"));
+               put("RDSSecurityGroup", applicationStackOutputsMap.get("SGname"));
+               put("RDSEndpoint", applicationStackOutputsMap.get("DBEndpointAddress"));
+               put("HelperInstanceType", "c5.large");
+               put("HelperVpcId", "");
+            }};
+
         } catch (InvalidMigrationStageError invalidMigrationStageError) {
             logger.error("tried to transition migration from {} but got error: {}.", MigrationStage.PROVISION_APPLICATION_WAIT, invalidMigrationStageError.getMessage());
         }
