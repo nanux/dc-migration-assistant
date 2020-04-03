@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.cloudformation.CloudFormationClient;
 import software.amazon.awssdk.services.cloudformation.model.Parameter;
 import software.amazon.awssdk.services.cloudformation.model.Stack;
+import software.amazon.awssdk.services.cloudformation.model.StackResource;
 import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 import java.util.HashMap;
@@ -94,7 +95,8 @@ public class QuickstartDeploymentService extends CloudformationDeploymentService
             logger.debug("application stack deployment succeeded");
             migrationService.transition(MigrationStage.PROVISION_MIGRATION_STACK);
 
-            Optional<Stack> maybeStack = cfnApi.getStack(migrationService.getCurrentContext().getApplicationDeploymentId());
+            final String applicationStackName = migrationService.getCurrentContext().getApplicationDeploymentId();
+            Optional<Stack> maybeStack = cfnApi.getStack(applicationStackName);
             if (!maybeStack.isPresent()) {
                 throw new RuntimeException(new InfrastructureProvisioningError("could not get details of application stack after deploying it"));
             }
@@ -111,9 +113,18 @@ public class QuickstartDeploymentService extends CloudformationDeploymentService
 
             Map<String, String> cfnExports = cfnApi.getExports();
 
+            Map<String, StackResource> applicationResources = cfnApi.getStackResources(applicationStackName);
+
+            StackResource jiraStack = applicationResources.get("JiraDCStack");
+            String jiraStackName = jiraStack.physicalResourceId();
+
+            Map<String, StackResource> jiraResources = cfnApi.getStackResources(jiraStackName);
+            String efsId = jiraResources.get("ElasticFileSystem").physicalResourceId();
+
+
             HashMap<String, String> migrationStackParams = new HashMap<String, String>() {{
                put("NetworkPrivateSubnet", cfnExports.get(exportPrefix + "PriNets").split(",")[0]);
-               put("EFSFileSystemId", "");
+               put("EFSFileSystemId", efsId);
                put("EFSSecurityGroup", applicationStackOutputsMap.get("SGname"));
                put("RDSSecurityGroup", applicationStackOutputsMap.get("SGname"));
                put("RDSEndpoint", applicationStackOutputsMap.get("DBEndpointAddress"));
