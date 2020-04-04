@@ -16,7 +16,8 @@
 
 package com.atlassian.migration.datacenter.spi.infrastructure;
 
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 
 import java.util.Map;
 

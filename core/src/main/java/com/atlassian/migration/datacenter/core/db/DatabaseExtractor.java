@@ -16,7 +16,8 @@
 
 package com.atlassian.migration.datacenter.core.db;
 
-import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
+
+import com.atlassian.migration.datacenter.spi.exceptions.DatabaseMigrationFailure;
 
 import java.nio.file.Path;
 

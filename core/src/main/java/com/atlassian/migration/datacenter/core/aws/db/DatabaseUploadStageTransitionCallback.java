@@ -13,9 +13,9 @@
 package com.atlassian.migration.datacenter.core.aws.db;
 
 import com.atlassian.migration.datacenter.core.aws.MigrationStageCallback;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 
 public class DatabaseUploadStageTransitionCallback implements MigrationStageCallback {
     private final MigrationService migrationService;
@@ -25,7 +25,8 @@ public class DatabaseUploadStageTransitionCallback implements MigrationStageCall
     }
 
     @Override
-    public void assertInStartingStage() throws InvalidMigrationStageError {
+    public void assertInStartingStage() throws InvalidMigrationStageError
+    {
         this.migrationService.assertCurrentStage(MigrationStage.DB_MIGRATION_UPLOAD);
     }
 

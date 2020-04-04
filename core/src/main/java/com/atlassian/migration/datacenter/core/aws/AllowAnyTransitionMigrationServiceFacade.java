@@ -13,10 +13,10 @@
 package com.atlassian.migration.datacenter.core.aws;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 
 public class AllowAnyTransitionMigrationServiceFacade extends AWSMigrationService implements MigrationService {
     public AllowAnyTransitionMigrationServiceFacade(ActiveObjects activeObjects) {
@@ -24,7 +24,8 @@ public class AllowAnyTransitionMigrationServiceFacade extends AWSMigrationServic
     }
 
     @Override
-    public void transition(MigrationStage to) throws InvalidMigrationStageError {
+    public void transition(MigrationStage to) throws InvalidMigrationStageError
+    {
         Migration currentMigration = findFirstOrCreateMigration();
         setCurrentStage(currentMigration, to);
     }

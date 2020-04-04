@@ -18,9 +18,9 @@ package com.atlassian.migration.datacenter.core.aws.db.restore;
 
 import com.atlassian.migration.datacenter.core.aws.ssm.SSMApi;
 import com.atlassian.migration.datacenter.core.aws.ssm.SuccessfulSSMCommandConsumer;
-import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.fs.download.s3sync.EnsureSuccessfulSSMCommandConsumer;
+import com.atlassian.migration.datacenter.spi.exceptions.DatabaseMigrationFailure;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 
 import java.util.Collections;
 
@@ -43,7 +43,8 @@ public class SsmPsqlDatabaseRestoreService {
         this(ssm, 10);
     }
 
-    public void restoreDatabase(DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback) throws DatabaseMigrationFailure, InvalidMigrationStageError {
+    public void restoreDatabase(DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback) throws DatabaseMigrationFailure, InvalidMigrationStageError
+    {
         restoreStageTransitionCallback.assertInStartingStage();
 
         String commandId = ssm.runSSMDocument(SSM_PLAYBOOK, MIGRATION_STACK_INSTANCE, Collections.emptyMap());

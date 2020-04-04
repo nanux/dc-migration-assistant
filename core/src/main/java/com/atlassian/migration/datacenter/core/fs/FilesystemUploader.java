@@ -16,8 +16,8 @@
 
 package com.atlassian.migration.datacenter.core.fs;
 
-import com.atlassian.migration.datacenter.core.exceptions.FileSystemMigrationFailure;
 import com.atlassian.migration.datacenter.core.util.UploadQueue;
+import com.atlassian.migration.datacenter.spi.exceptions.FileSystemMigrationFailure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +74,8 @@ public class FilesystemUploader {
         logger.warn("Shut down executors, list of task not commenced: {}", runnables);
     }
 
-    public static class FileUploadException extends FileSystemMigrationFailure {
+    public static class FileUploadException extends FileSystemMigrationFailure
+    {
         public FileUploadException(String message) {
             super(message);
         }

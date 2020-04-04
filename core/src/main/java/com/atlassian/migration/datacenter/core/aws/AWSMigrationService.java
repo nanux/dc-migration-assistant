@@ -17,13 +17,13 @@
 package com.atlassian.migration.datacenter.core.aws;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
-import com.atlassian.migration.datacenter.core.exceptions.MigrationAlreadyExistsException;
 import com.atlassian.migration.datacenter.core.proxy.ReadOnlyEntityInvocationHandler;
 import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.MigrationAlreadyExistsException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +49,8 @@ public class AWSMigrationService implements MigrationService {
     }
 
     @Override
-    public Migration createMigration() throws MigrationAlreadyExistsException {
+    public Migration createMigration() throws MigrationAlreadyExistsException
+    {
         Migration migration = findFirstOrCreateMigration();
         if (migration.getStage().equals(NOT_STARTED)) {
             return migration;
@@ -63,7 +64,8 @@ public class AWSMigrationService implements MigrationService {
     }
 
     @Override
-    public void assertCurrentStage(MigrationStage expected) throws InvalidMigrationStageError {
+    public void assertCurrentStage(MigrationStage expected) throws InvalidMigrationStageError
+    {
         MigrationStage currentStage = getCurrentStage();
         if (currentStage != expected) {
             throw new InvalidMigrationStageError(String.format("wanted to be in stage %s but was in stage %s", expected, currentStage));

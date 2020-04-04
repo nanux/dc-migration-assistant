@@ -12,14 +12,16 @@
 
 package com.atlassian.migration.datacenter.core.db;
 
-import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
+
+import com.atlassian.migration.datacenter.spi.exceptions.DatabaseMigrationFailure;
 
 import java.nio.file.Path;
 
 public class UnSupportedDatabaseExtractor implements DatabaseExtractor {
 
     @Override
-    public Process startDatabaseDump(Path target) throws DatabaseMigrationFailure {
+    public Process startDatabaseDump(Path target) throws DatabaseMigrationFailure
+    {
         throw new UnsupportedOperationException("Not implemented");
     }
 

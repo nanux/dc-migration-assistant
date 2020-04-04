@@ -18,7 +18,7 @@ package com.atlassian.migration.datacenter.core.fs.download.s3sync;
 
 import com.atlassian.migration.datacenter.core.aws.ssm.SSMApi;
 import com.atlassian.migration.datacenter.core.aws.ssm.SuccessfulSSMCommandConsumer;
-import com.atlassian.migration.datacenter.core.exceptions.FileSystemMigrationFailure;
+import com.atlassian.migration.datacenter.spi.exceptions.FileSystemMigrationFailure;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,7 +84,8 @@ public class S3SyncFileSystemDownloader {
         }
     }
 
-    public static class IndeterminateS3SyncStatusException extends FileSystemMigrationFailure {
+    public static class IndeterminateS3SyncStatusException extends FileSystemMigrationFailure
+    {
         IndeterminateS3SyncStatusException(String message) {
             super(message);
         }

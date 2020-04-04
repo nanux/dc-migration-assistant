@@ -18,7 +18,7 @@ package com.atlassian.migration.datacenter.core.db;
 
 import com.atlassian.migration.datacenter.core.application.ApplicationConfiguration;
 import com.atlassian.migration.datacenter.core.application.DatabaseConfiguration;
-import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
+import com.atlassian.migration.datacenter.spi.exceptions.DatabaseMigrationFailure;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,7 +46,8 @@ public class PostgresExtractor implements DatabaseExtractor {
     }
 
     @Override
-    public Process startDatabaseDump(Path target) throws DatabaseMigrationFailure {
+    public Process startDatabaseDump(Path target) throws DatabaseMigrationFailure
+    {
         return startDatabaseDump(target, false);
     }
 

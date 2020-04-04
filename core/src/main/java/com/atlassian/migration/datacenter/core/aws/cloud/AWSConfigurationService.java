@@ -19,10 +19,10 @@ package com.atlassian.migration.datacenter.core.aws.cloud;
 import com.atlassian.migration.datacenter.core.aws.auth.WriteCredentialsService;
 import com.atlassian.migration.datacenter.core.aws.region.InvalidAWSRegionException;
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.cloud.CloudProviderConfigurationService;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +48,8 @@ public class AWSConfigurationService implements CloudProviderConfigurationServic
      * @throws InvalidMigrationStageError when not in {@link MigrationStage#AUTHENTICATION}
      */
     @Override
-    public void configureCloudProvider(String entity, String secret, String geography) throws InvalidMigrationStageError {
+    public void configureCloudProvider(String entity, String secret, String geography) throws InvalidMigrationStageError
+    {
         final MigrationStage currentStage = migrationService.getCurrentStage();
         if (!currentStage.equals(MigrationStage.AUTHENTICATION)) {
             logger.error("tried to configure AWS when in invalid stage {}", currentStage);

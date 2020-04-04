@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.core.exceptions;
+package com.atlassian.migration.datacenter.spi.exceptions;
 
 public class MigrationAlreadyExistsException extends Exception {
     public MigrationAlreadyExistsException(String message) {

@@ -14,8 +14,8 @@ package com.atlassian.migration.datacenter.core.aws.db;
 
 import com.atlassian.migration.datacenter.core.aws.MigrationStageCallback;
 import com.atlassian.migration.datacenter.core.db.DatabaseExtractor;
-import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.DatabaseMigrationFailure;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 
 import java.nio.file.Path;
 
@@ -27,7 +27,8 @@ public class DatabaseArchivalService {
         this.databaseExtractor = databaseExtractor;
     }
 
-    public Path archiveDatabase(Path tempDirectory, MigrationStageCallback archiveStageCallback) throws InvalidMigrationStageError {
+    public Path archiveDatabase(Path tempDirectory, MigrationStageCallback archiveStageCallback) throws InvalidMigrationStageError
+    {
         Path target = tempDirectory.resolve("db.dump");
 
         archiveStageCallback.assertInStartingStage();

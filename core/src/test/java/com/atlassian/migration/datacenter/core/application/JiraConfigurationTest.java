@@ -17,8 +17,8 @@
 package com.atlassian.migration.datacenter.core.application;
 
 import com.atlassian.jira.config.util.JiraHome;
-import com.atlassian.migration.datacenter.core.exceptions.ConfigurationReadException;
-import com.atlassian.migration.datacenter.core.exceptions.UnsupportedPasswordEncodingException;
+import com.atlassian.migration.datacenter.spi.exceptions.ConfigurationReadException;
+import com.atlassian.migration.datacenter.spi.exceptions.UnsupportedPasswordEncodingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

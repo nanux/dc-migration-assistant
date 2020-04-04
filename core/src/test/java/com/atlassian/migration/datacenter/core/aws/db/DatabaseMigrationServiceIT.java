@@ -22,9 +22,9 @@ import com.atlassian.migration.datacenter.core.aws.db.restore.DatabaseRestoreSta
 import com.atlassian.migration.datacenter.core.aws.db.restore.SsmPsqlDatabaseRestoreService;
 import com.atlassian.migration.datacenter.core.aws.ssm.SSMApi;
 import com.atlassian.migration.datacenter.core.db.DatabaseExtractorFactory;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.core.util.MigrationRunner;
 import com.atlassian.migration.datacenter.spi.MigrationService;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationErrorReport;
 import com.atlassian.migration.datacenter.util.AwsCredentialsProviderShim;
 import org.junit.jupiter.api.BeforeEach;
@@ -54,7 +54,6 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
@@ -116,7 +115,8 @@ class DatabaseMigrationServiceIT {
 
 
     @Test
-    void testDatabaseMigration() throws ExecutionException, InterruptedException, InvalidMigrationStageError {
+    void testDatabaseMigration() throws ExecutionException, InterruptedException, InvalidMigrationStageError
+    {
         DatabaseArchivalService databaseArchivalService = new DatabaseArchivalService(DatabaseExtractorFactory.getExtractor(configuration));
         DatabaseArchiveStageTransitionCallback archiveStageTransitionCallback = new DatabaseArchiveStageTransitionCallback(migrationService);
 

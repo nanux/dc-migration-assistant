@@ -16,13 +16,10 @@
 
 package com.atlassian.migration.datacenter.core.aws.db.restore;
 
-import com.atlassian.activeobjects.external.ActiveObjects;
-import com.atlassian.migration.datacenter.core.exceptions.DatabaseMigrationFailure;
-import com.atlassian.migration.datacenter.core.util.EncryptionManager;
 import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
+import com.atlassian.migration.datacenter.spi.exceptions.DatabaseMigrationFailure;
 import com.atlassian.util.concurrent.Supplier;
-import org.apache.commons.lang3.tuple.Pair;
 import software.amazon.awssdk.http.SdkHttpResponse;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.CreateSecretRequest;

@@ -18,11 +18,11 @@ package com.atlassian.migration.datacenter.core.aws;
 
 import com.atlassian.activeobjects.external.ActiveObjects;
 import com.atlassian.activeobjects.test.TestActiveObjects;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
-import com.atlassian.migration.datacenter.core.exceptions.MigrationAlreadyExistsException;
 import com.atlassian.migration.datacenter.dto.Migration;
 import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.MigrationAlreadyExistsException;
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService;
 import com.atlassian.scheduler.SchedulerService;
 import net.java.ao.EntityManager;
@@ -84,7 +84,8 @@ public class AWSMigrationServiceTest {
     }
 
     @Test
-    public void shouldTransitionWhenSourceStageIsCurrentStage() throws InvalidMigrationStageError {
+    public void shouldTransitionWhenSourceStageIsCurrentStage() throws InvalidMigrationStageError
+    {
         initializeAndCreateSingleMigrationWithStage(AUTHENTICATION);
         assertEquals(AUTHENTICATION, sut.getCurrentStage());
 
@@ -103,7 +104,8 @@ public class AWSMigrationServiceTest {
     }
 
     @Test
-    public void shouldCreateMigrationInNotStarted() throws MigrationAlreadyExistsException {
+    public void shouldCreateMigrationInNotStarted() throws MigrationAlreadyExistsException
+    {
         Migration migration = sut.createMigration();
 
         assertEquals(NOT_STARTED, migration.getStage());

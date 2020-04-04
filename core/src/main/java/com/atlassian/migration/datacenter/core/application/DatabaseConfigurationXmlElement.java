@@ -13,8 +13,8 @@
 package com.atlassian.migration.datacenter.core.application;
 
 
-import com.atlassian.migration.datacenter.core.exceptions.ConfigurationReadException;
-import com.atlassian.migration.datacenter.core.exceptions.UnsupportedPasswordEncodingException;
+import com.atlassian.migration.datacenter.spi.exceptions.ConfigurationReadException;
+import com.atlassian.migration.datacenter.spi.exceptions.UnsupportedPasswordEncodingException;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty;
 import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlRootElement;
 import org.apache.commons.lang3.StringUtils;
@@ -51,7 +51,8 @@ public class DatabaseConfigurationXmlElement {
         return new DatabaseConfiguration(type, host, port, name, userName, password);
     }
 
-    private void validateRequiredValues(String... values) throws ConfigurationReadException {
+    private void validateRequiredValues(String... values) throws ConfigurationReadException
+    {
 
         boolean allValuesValid = Stream.of(values).allMatch(StringUtils::isNotBlank);
         if (!allValuesValid) {
@@ -85,7 +86,8 @@ class DbConfigXmlElement {
         return userName;
     }
 
-    public String getPassword() throws UnsupportedPasswordEncodingException {
+    public String getPassword() throws UnsupportedPasswordEncodingException
+    {
         if (cipher != null) {
             if (!cipher.equals(BASE64_CLASS)) {
                 throw new UnsupportedPasswordEncodingException("Unsupported database password encryption in dbconfig.xml; see documentation for detail: " + cipher);

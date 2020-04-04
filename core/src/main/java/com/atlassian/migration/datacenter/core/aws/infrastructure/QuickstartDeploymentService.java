@@ -18,22 +18,16 @@ package com.atlassian.migration.datacenter.core.aws.infrastructure;
 
 import com.atlassian.migration.datacenter.core.aws.CfnApi;
 import com.atlassian.migration.datacenter.core.aws.db.restore.TargetDbCredentialsStorageService;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.infrastructure.ApplicationDeploymentService;
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.cloudformation.model.StackStatus;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 public class QuickstartDeploymentService extends CloudformationDeploymentService implements ApplicationDeploymentService {
 
@@ -60,7 +54,8 @@ public class QuickstartDeploymentService extends CloudformationDeploymentService
      *                     should be the parameter value.
      */
     @Override
-    public void deployApplication(String deploymentId, Map<String, String> params) throws InvalidMigrationStageError {
+    public void deployApplication(String deploymentId, Map<String, String> params) throws InvalidMigrationStageError
+    {
         logger.info("received request to deploy application");
         migrationService.transition(MigrationStage.PROVISION_APPLICATION_WAIT);
 

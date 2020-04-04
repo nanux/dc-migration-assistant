@@ -47,6 +47,7 @@
         <module>frontend</module>
         <module>core</module>
         <module>jira-plugin</module>
+        <module>spi</module>
     </modules>
 
     <repositories>

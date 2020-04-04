@@ -10,10 +10,15 @@
  *  See the License for the specific language governing permissions and  limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.core.exceptions;
+package com.atlassian.migration.datacenter.spi.exceptions;
 
-public class UnsupportedPasswordEncodingException extends RuntimeException {
-    public UnsupportedPasswordEncodingException(String message) {
+public class ConfigurationReadException extends RuntimeException {
+    public ConfigurationReadException(String message) {
         super(message);
     }
+
+    public ConfigurationReadException(String message, Throwable cause) {
+        super(message, cause);
+    }
 }
+

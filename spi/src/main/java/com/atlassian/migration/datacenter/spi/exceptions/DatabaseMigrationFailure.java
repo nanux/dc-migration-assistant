@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.datacenter.spi.infrastructure;
+package com.atlassian.migration.datacenter.spi.exceptions;
 
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
+public class DatabaseMigrationFailure extends RuntimeException {
+    public DatabaseMigrationFailure(String message) {
+        super(message);
+    }
 
-import java.util.Map;
-
-public interface ApplicationDeploymentService {
-
-    void deployApplication(String deploymentId, Map<String, String> params) throws InvalidMigrationStageError;
-
-    InfrastructureDeploymentStatus getDeploymentStatus();
+    public DatabaseMigrationFailure(String message, Throwable cause) {
+        super(message, cause);
+    }
 }

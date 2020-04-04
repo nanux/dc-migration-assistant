@@ -17,7 +17,7 @@
 package com.atlassian.migration.datacenter.core.application;
 
 import com.atlassian.jira.config.util.JiraHome;
-import com.atlassian.migration.datacenter.core.exceptions.ConfigurationReadException;
+import com.atlassian.migration.datacenter.spi.exceptions.ConfigurationReadException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
 
@@ -38,7 +38,8 @@ public class JiraConfiguration implements ApplicationConfiguration {
     }
 
     @Override
-    public DatabaseConfiguration getDatabaseConfiguration() throws ConfigurationReadException {
+    public DatabaseConfiguration getDatabaseConfiguration() throws ConfigurationReadException
+    {
         if (!databaseConfiguration.isPresent()) {
             databaseConfiguration = Optional.of(parseDatabaseConfigurationFromXmlFile());
         }

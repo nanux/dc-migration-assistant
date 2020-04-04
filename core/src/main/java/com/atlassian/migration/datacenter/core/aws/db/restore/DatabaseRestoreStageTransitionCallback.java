@@ -17,9 +17,9 @@
 package com.atlassian.migration.datacenter.core.aws.db.restore;
 
 import com.atlassian.migration.datacenter.core.aws.MigrationStageCallback;
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
 
 public class DatabaseRestoreStageTransitionCallback implements MigrationStageCallback {
 
@@ -30,7 +30,8 @@ public class DatabaseRestoreStageTransitionCallback implements MigrationStageCal
     }
 
     @Override
-    public void assertInStartingStage() throws InvalidMigrationStageError {
+    public void assertInStartingStage() throws InvalidMigrationStageError
+    {
         migrationService.assertCurrentStage(MigrationStage.DATA_MIGRATION_IMPORT);
     }
 
