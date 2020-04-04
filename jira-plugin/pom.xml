@@ -51,6 +51,12 @@
             <version>${soy.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>jta</groupId>
+            <artifactId>jta</artifactId>
+            <version>1.0.1b</version>
+            <scope>provided</scope>
+        </dependency>
 
     </dependencies>
 
