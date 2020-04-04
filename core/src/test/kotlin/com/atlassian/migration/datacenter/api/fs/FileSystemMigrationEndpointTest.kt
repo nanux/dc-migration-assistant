@@ -1,6 +1,6 @@
 package com.atlassian.migration.datacenter.api.fs
 
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService
 import io.mockk.MockKAnnotations
 import io.mockk.every

@@ -15,11 +15,11 @@
  */
 package com.atlassian.migration.datacenter.api
 
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError
-import com.atlassian.migration.datacenter.core.exceptions.MigrationAlreadyExistsException
 import com.atlassian.migration.datacenter.dto.Migration
 import com.atlassian.migration.datacenter.spi.MigrationService
 import com.atlassian.migration.datacenter.spi.MigrationStage
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError
+import com.atlassian.migration.datacenter.spi.exceptions.MigrationAlreadyExistsException
 import io.mockk.MockKAnnotations
 import io.mockk.Runs
 import io.mockk.every

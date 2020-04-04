@@ -15,7 +15,7 @@
  */
 package com.atlassian.migration.datacenter.api.fs
 
-import com.atlassian.migration.datacenter.core.exceptions.InvalidMigrationStageError
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError
 import com.atlassian.migration.datacenter.spi.fs.FilesystemMigrationService
 import com.fasterxml.jackson.annotation.JsonAutoDetect
 import com.fasterxml.jackson.annotation.PropertyAccessor
