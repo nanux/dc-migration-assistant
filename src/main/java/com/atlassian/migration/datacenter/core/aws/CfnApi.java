@@ -17,6 +17,8 @@
 package com.atlassian.migration.datacenter.core.aws;
 
 import com.atlassian.migration.datacenter.core.aws.region.RegionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cloudformation.CloudFormationAsyncClient;
@@ -47,6 +49,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 public class CfnApi {
+    private static final Logger logger = LoggerFactory.getLogger(CfnApi.class);
+
     private AwsCredentialsProvider credentialsProvider;
     private RegionService regionManager;
 
@@ -96,6 +100,7 @@ public class CfnApi {
     }
 
     public Optional<String> provisionStack(String templateUrl, String stackName, Map<String, String> params) {
+        logger.trace("received request to create stack {} from template {}", stackName, templateUrl);
         Set<Parameter> parameters = params.entrySet()
                 .stream()
                 .map(e -> Parameter.builder().parameterKey(e.getKey()).parameterValue(e.getValue()).build())
@@ -105,7 +110,6 @@ public class CfnApi {
                 .key("created_by")
                 .value("atlassian-dcmigration")
                 .build();
-
         CreateStackRequest createStackRequest = CreateStackRequest.builder()
                 .templateURL(templateUrl)
                 .stackName(stackName)
@@ -114,12 +118,18 @@ public class CfnApi {
                 .build();
 
         try {
-            String stackId = this.getClient()
+            CreateStackResponse response = this.getClient()
                     .createStack(createStackRequest)
-                    .thenApply(CreateStackResponse::stackId)
                     .get();
-            return Optional.ofNullable(stackId);
+
+            if (!response.sdkHttpResponse().isSuccessful()) {
+                logger.error("create stack {} http response failed with reason: {}", stackName, response.sdkHttpResponse().statusText());
+                return Optional.empty();
+            }
+            logger.info("stack {} creation succeeded", stackName);
+            return Optional.ofNullable(response.stackId());
         } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error deploying cloudformation stack {}", stackName, e);
             return Optional.empty();
         }
     }
@@ -137,6 +147,7 @@ public class CfnApi {
             response.exports().forEach(export -> exportsMap.put(export.name(), export.value()));
             return exportsMap;
         } catch (InterruptedException | ExecutionException e) {
+            logger.error("Unable to get cloudformation exports", e);
             return Collections.emptyMap();
         }
     }
@@ -160,6 +171,7 @@ public class CfnApi {
             response.stackResources().forEach(resource -> resources.put(resource.logicalResourceId(), resource));
             return resources;
         } catch (InterruptedException | ExecutionException e) {
+            logger.error("Error getting stack {} resources", stackName, e);
             return Collections.emptyMap();
         }
     }
@@ -177,6 +189,7 @@ public class CfnApi {
             Stack stack = response.stacks().get(0);
             return Optional.ofNullable(stack);
         } catch (CompletionException | CancellationException e) {
+            logger.error("Error getting stack {}", stackName, e);
             return Optional.empty();
         }
     }
