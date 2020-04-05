@@ -17,6 +17,11 @@
             <artifactId>spi</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>com.atlassian.migration.datacenter</groupId>
+            <artifactId>api</artifactId>
+            <version>${project.version}</version>
+        </dependency>
 
         <dependency>
             <groupId>com.atlassian.activeobjects</groupId>
