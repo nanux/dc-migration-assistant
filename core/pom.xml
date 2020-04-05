@@ -17,11 +17,6 @@
             <artifactId>spi</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <dependency>
-            <groupId>com.atlassian.migration.datacenter</groupId>
-            <artifactId>api</artifactId>
-            <version>${project.version}</version>
-        </dependency>
 
         <dependency>
             <groupId>com.atlassian.activeobjects</groupId>
@@ -162,12 +157,6 @@
             <artifactId>jackson-module-kotlin</artifactId>
             <version>${jackson.version}</version>
         </dependency>
-        <dependency>
-            <groupId>org.jetbrains.kotlin</groupId>
-            <artifactId>kotlin-stdlib-jdk8</artifactId>
-            <version>${kotlin.version}</version>
-        </dependency>
-
 
     </dependencies>
 
