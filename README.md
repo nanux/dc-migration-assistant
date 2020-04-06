@@ -45,8 +45,10 @@ If you want to test in-app, run `mvn amps:run --product [jira|refapp|confluence]
 
 Here are the SDK commands you'll use immediately:
 
-* Run the plugin in a product: `mvn amps:run -Dproduct=[jira|confluence|refapp] -Dproduct.version=<version e.g. 8.5.0>`
-    * If you want to remotely debug your code running in the product, run `mvn amps:debug -Dproduct=[jira|confluence|refapp]` and create IDEA _Remote_ run configuration (defaults are ok)
+* Run the unit-test suite: `mvn clean verify -P '!integration'`
+* Run the integration-test suite: `mvn clean verify -P 'integration'`
+* Run the plugin in a product: `cd jira-plugin && mvn amps:run -Dproduct.version=<version e.g. 8.5.0> -DskipTests`
+    * If you want to remotely debug your code running in the product, run `mvn amps:debug` and create IDEA _Remote_ run configuration (defaults are ok)
     * To run the plugin in `development` mode that allows access to the `/develop/migration/stage` endpoint you need a spring profile titled `allowAnyTransition` to be enabled. To do so during development or testing, either -
         - Add the following command suffix `-Damps.jvm.args="-Dspring.profiles.active=allowAnyTransition"` to `amps:run` or `amps:debug`
         - Set an environment variable to enable the spring profile. i.e.  `SPRING_PROFILES_ACTIVE=allowAnyTransition mvn amps:run ...`
