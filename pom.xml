@@ -236,7 +236,7 @@
                 <version>3.0.0-M4</version>
                 <configuration>
                     <includes>
-                        <include>**/*Test*.java</include>
+                        <include>**/*Test*</include>
                     </includes>
                 </configuration>
             </plugin>
@@ -263,8 +263,8 @@
                             <goal>test-compile</goal>
                         </goals>
                         <configuration>
-                            <sourceDirs>${project.basedir}/src/main/java</sourceDirs>
-                            <sourceDirs>${project.basedir}/src/main/kotlin</sourceDirs>
+                            <sourceDirs>${project.basedir}/src/test/java</sourceDirs>
+                            <sourceDirs>${project.basedir}/src/test/kotlin</sourceDirs>
                         </configuration>
                     </execution>
                 </executions>
@@ -313,7 +313,7 @@
                         <version>3.0.0-M4</version>
                         <configuration>
                             <includes>
-                                <include>**/*IT.java</include>
+                                <include>**/*IT*</include>
                             </includes>
                         </configuration>
                     </plugin>
@@ -387,5 +387,7 @@
         <jackson.version>2.10.3</jackson.version>
         <mockk.version>1.9.3</mockk.version>
         <amps.jvm.args/>
+
+        <kotlin.compiler.incremental>true</kotlin.compiler.incremental>
     </properties>
 </project>
