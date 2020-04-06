@@ -3,7 +3,7 @@ name: Tests
 on: [push]
 
 env:
-  DOGFOODING_BRANCH: 'refs/heads/test-env-'
+  DOGFOODING_REF: ${{ secrets.DOGFOODING_REF }}
 
 jobs:
   run_tests:
@@ -47,7 +47,7 @@ jobs:
       - name: Test with maven
         run: mvn -B clean verify -P ${{ matrix.profile}}
       - name: Upload
-        if: github.ref == env.DOGFOODING_BRANCH && matrix.profile == '!integration' && matrix.java == 11
+        if: github.ref == env.DOGFOODING_REF && matrix.profile == '!integration' && matrix.java == 11
         uses: actions/upload-artifact@v1
         with:
           name: plugin-jar
@@ -61,12 +61,12 @@ jobs:
 
     steps:
       - name: Download plugin jar file from the previous job
-        if: github.ref == env.DOGFOODING_BRANCH
+        if: github.ref == env.DOGFOODING_REF
         uses: actions/download-artifact@v1
         with:
           name: plugin-jar
       - name: Deploy to dogfooding
-        if: github.ref == env.DOGFOODING_BRANCH
+        if: github.ref == env.DOGFOODING_REF
         env:
           DOGFOODING_URL: ${{ secrets.DOGFOODING_URL }}
           DOGFOODING_USER: ${{ secrets.DOGFOODING_USER }}
