@@ -53,16 +53,17 @@ jobs:
 
   deploy:
     name: Deploy to dogfooding instance
-    if: github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     needs: run_tests
 
     steps:
       - name: Download plugin jar file from the previous job
+        if: github.ref == 'refs/heads/master'
         uses: actions/download-artifact@v1
         with:
           name: plugin-jar
       - name: Deploy to dogfooding
+        if: github.ref == 'refs/heads/master'
         env:
           DOGFOODING_URL: ${{ secrets.DOGFOODING_URL }}
           DOGFOODING_USER: ${{ secrets.DOGFOODING_USER }}
