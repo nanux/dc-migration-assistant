@@ -44,7 +44,7 @@ jobs:
       - name: Test with maven
         run: mvn -B clean verify -P ${{ matrix.profile}}
       - name: Upload
-        if: github.ref == 'refs/heads/CHET-183-update-dogfooding'
+        if: github.ref == 'refs/heads/CHET-183-update-dogfooding' && matrix.profile == '!integration' && matrix.java == 11
         uses: actions/upload-artifact@v1
         with:
           name: plugin-jar
