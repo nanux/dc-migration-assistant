@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <artifactId>parent</artifactId>
+        <groupId>com.atlassian.migration.datacenter</groupId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>jira-plugin</artifactId>
+    <packaging>atlassian-plugin</packaging>
+
+    <name>Atlassian Data Center Migration Assistant for Jira</name>
+    <description>This is the officially supported DC Migration plugin for Atlassian JIRA.</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.atlassian.migration.datacenter</groupId>
+            <artifactId>core</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.migration.datacenter</groupId>
+            <artifactId>frontend</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+            <version>${spring.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.activeobjects</groupId>
+            <artifactId>activeobjects-plugin</artifactId>
+            <version>${ao.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.jira</groupId>
+            <artifactId>jira-api</artifactId>
+            <version>7.13.12</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.soy</groupId>
+            <artifactId>soy-template-renderer-api</artifactId>
+            <version>${soy.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>jta</groupId>
+            <artifactId>jta</artifactId>
+            <version>1.0.1b</version>
+            <scope>provided</scope>
+        </dependency>
+
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.atlassian.maven.plugins</groupId>
+                <artifactId>amps-maven-plugin</artifactId>
+                <version>${amps.version}</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <jvmArgs>${amps.jvm.args}</jvmArgs>
+                    <product>jira</product>
+                    <enableQuickReload>true</enableQuickReload>
+                    <instructions>
+                        <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
+                        <Atlassian-Scan-Folders>META-INF/plugin-descriptors</Atlassian-Scan-Folders>
+                        <Spring-Context>*</Spring-Context>
+                        <Import-Package>
+                            org.springframework.osgi.*;resolution:="optional",
+                            org.eclipse.gemini.blueprint.*;resolution:="optional",
+                            com.atlassian.crowd*;resolution:="optional",
+                            com.atlassian.user*;resolution:="optional",
+                            com.atlassian.jira.*;resolution:="optional",
+                            com.atlassian.analytics.api.annotations;resolution:="optional",
+                            com.atlassian.confluence.*;resolution:="optional",
+                            org.slf4j,
+                            !com.sun.activation.*,
+                            !com.google.protobuf.*,
+                            !com.jcraft.jzlib,
+                            !com.ning.compress.*,
+                            !com.oracle.svm.core.*,
+                            !io.netty.internal.tcnative,
+                            !lzma.sdk.*,
+                            !net.jpountz.*,
+                            !org.apache.logging.log4j.*,
+                            !org.bouncycastle.cert.*,
+                            !org.bouncycastle.operator.*,
+                            !org.conscrypt.*,
+                            !org.eclipse.jetty.*,
+                            !org.jboss.*,
+                            !sun.misc.*,
+                            !sun.security.*,
+                            !org.apache.avalon.framework.logger.*,
+                            !org.apache.log.*;
+                            !com.conversantmedia.util.concurrent.*,
+                            !org.apache.logging.log4j.core.async.*,
+                            !org.joda.convert.*,
+                            !com.sun.org.apache.xml.internal.resolver.*,
+                            *
+                        </Import-Package>
+                    </instructions>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>

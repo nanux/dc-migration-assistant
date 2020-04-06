@@ -25,6 +25,32 @@
         <version>6.0.2</version>
     </parent>
 
+    <groupId>com.atlassian.migration.datacenter</groupId>
+    <artifactId>parent</artifactId>
+    <version>1.0.0</version>
+    <licenses>
+        <license>
+            <name>The Apache Software License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+            <distribution>repo</distribution>
+        </license>
+    </licenses>
+    <organization>
+        <name>Atlassian</name>
+        <url>https://www.atlassian.com</url>
+    </organization>
+    <name>Atlassian Data Center Migration Assistant</name>
+    <description>This is the officially supported DC Migration plugin for Atlassian JIRA.</description>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>api</module>
+        <module>frontend</module>
+        <module>core</module>
+        <module>jira-plugin</module>
+        <module>spi</module>
+    </modules>
+
     <repositories>
         <repository>
             <id>atlassian-public</id>
@@ -57,163 +83,14 @@
         </pluginRepository>
     </pluginRepositories>
 
-    <groupId>com.atlassian.migration.datacenter</groupId>
-    <artifactId>dc-migration-assistant</artifactId>
-    <version>1.0.0</version>
-    <licenses>
-        <license>
-            <name>The Apache Software License, Version 2.0</name>
-            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
-            <distribution>repo</distribution>
-        </license>
-    </licenses>
-    <organization>
-        <name>Atlassian</name>
-        <url>https://www.atlassian.com</url>
-    </organization>
-    <name>Atlassian Data Center Migration Assistant</name>
-    <description>This is the officially supported DC Migration plugin for Atlassian JIRA.</description>
-    <packaging>atlassian-plugin</packaging>
 
     <dependencies>
+        <!-- Dependencies common to all modules -->
         <dependency>
-            <groupId>com.atlassian.activeobjects</groupId>
-            <artifactId>activeobjects-plugin</artifactId>
-            <version>${ao.version}</version>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>1.7.30</version>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.sal</groupId>
-            <artifactId>sal-api</artifactId>
-            <version>${sal.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>javax.annotation</groupId>
-            <artifactId>javax.annotation-api</artifactId>
-            <version>1.3.2</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>jsr311-api</artifactId>
-            <version>1.1.1</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.felix</groupId>
-            <artifactId>org.apache.felix.framework</artifactId>
-            <version>${apache.felix.framework.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-beans</artifactId>
-            <version>${spring.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-            <version>${spring.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.plugins</groupId>
-            <artifactId>atlassian-plugins-osgi-javaconfig</artifactId>
-            <version>${atlassian.plugins.osgi.javaconfig.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>servlet-api</artifactId>
-            <version>2.4</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.plugins</groupId>
-            <artifactId>atlassian-plugins-api</artifactId>
-            <version>${atlassian.plugins.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.soy</groupId>
-            <artifactId>soy-template-renderer-api</artifactId>
-            <version>${soy.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.plugins</groupId>
-            <artifactId>atlassian-plugins-webfragment-api</artifactId>
-            <version>${webfragments.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.scheduler</groupId>
-            <artifactId>atlassian-scheduler-api</artifactId>
-            <version>3.0.0</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.atlassian.jira</groupId>
-            <artifactId>jira-api</artifactId>
-            <version>7.13.12</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.woodstox</groupId>
-            <artifactId>woodstox-core</artifactId>
-            <version>6.0.3</version>
-        </dependency>
-        <dependency>
-            <groupId>jta</groupId>
-            <artifactId>jta</artifactId>
-            <version>1.0.1b</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-crypto</artifactId>
-            <version>${spring.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>cloudformation</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>software.amazon.awssdk</groupId>
-                    <artifactId>apache-client</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>s3</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>ec2</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>regions</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>ssm</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>software.amazon.awssdk</groupId>
-            <artifactId>secretsmanager</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-xml</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-kotlin</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.kotlin</groupId>
@@ -277,12 +154,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-simple</artifactId>
-            <version>1.7.30</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>cloud.localstack</groupId>
             <artifactId>localstack-utils</artifactId>
             <version>${localstack.version}</version>
@@ -319,6 +190,12 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>javax.ws.rs</groupId>
+            <artifactId>jsr311-api</artifactId>
+            <version>1.1.1</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>org.hamcrest</groupId>
             <artifactId>java-hamcrest</artifactId>
             <version>2.0.0.0</version>
@@ -352,119 +229,6 @@
 
     <build>
         <plugins>
-            <plugin>
-                <groupId>com.atlassian.maven.plugins</groupId>
-                <artifactId>amps-maven-plugin</artifactId>
-                <version>${amps.version}</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <jvmArgs>${amps.jvm.args}</jvmArgs>
-                    <!--                    Product should be in a product tag-->
-                    <product>jira</product>
-                    <enableQuickReload>true</enableQuickReload>
-                    <instructions>
-                        <Atlassian-Plugin-Key>${atlassian.plugin.key}</Atlassian-Plugin-Key>
-                        <Atlassian-Scan-Folders>META-INF/plugin-descriptors</Atlassian-Scan-Folders>
-                        <Spring-Context>*</Spring-Context>
-                        <Import-Package>
-                            org.springframework.osgi.*;resolution:="optional",
-                            org.eclipse.gemini.blueprint.*;resolution:="optional",
-                            com.atlassian.crowd*;resolution:="optional",
-                            com.atlassian.user*;resolution:="optional",
-                            com.atlassian.jira.*;resolution:="optional",
-                            com.atlassian.analytics.api.annotations;resolution:="optional",
-                            com.atlassian.confluence.*;resolution:="optional",
-                            org.slf4j,
-                            !com.sun.activation.*,
-                            !com.google.protobuf.*,
-                            !com.jcraft.jzlib,
-                            !com.ning.compress.*,
-                            !com.oracle.svm.core.*,
-                            !io.netty.internal.tcnative,
-                            !lzma.sdk.*,
-                            !net.jpountz.*,
-                            !org.apache.logging.log4j.*,
-                            !org.bouncycastle.cert.*,
-                            !org.bouncycastle.operator.*,
-                            !org.conscrypt.*,
-                            !org.eclipse.jetty.*,
-                            !org.jboss.*,
-                            !sun.misc.*,
-                            !sun.security.*,
-                            !org.apache.avalon.framework.logger.*,
-                            !org.apache.log.*;
-                            !com.conversantmedia.util.concurrent.*,
-                            !org.apache.logging.log4j.core.async.*,
-                            !org.joda.convert.*,
-                            !com.sun.org.apache.xml.internal.resolver.*,
-                            *
-                        </Import-Package>
-                    </instructions>
-                </configuration>
-            </plugin>
-
-
-            <plugin>
-                <!-- Install front-end modules and run ESLint -->
-                <groupId>com.github.eirslett</groupId>
-                <artifactId>frontend-maven-plugin</artifactId>
-                <version>${frontend.maven.plugin.version}</version>
-                <configuration>
-                    <nodeVersion>${nodeVersion}</nodeVersion>
-                    <yarnVersion>${yarnVersion}</yarnVersion>
-                    <installDirectory>${frontend.maven.plugin.install.directory}</installDirectory>
-                    <workingDirectory>${frontend.working.directory}</workingDirectory>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>install-node-and-yarn</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>install-node-and-yarn</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>install-prod-dependencies</id>
-                        <phase>generate-sources</phase>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>${yarn.cmd.install}</arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>compile-the-ui</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>${yarn.cmd.build}</arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>lint</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>lint</arguments>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>run-tests</id>
-                        <phase>test</phase>
-                        <goals>
-                            <goal>yarn</goal>
-                        </goals>
-                        <configuration>
-                            <arguments>test</arguments>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
