@@ -45,7 +45,7 @@ If you want to test in-app, run `mvn amps:run --product [jira|refapp|confluence]
 
 Here are the SDK commands you'll use immediately:
 
-* Run the unit-test suite: `mvn clean verify -P '!integration'`
+* Run the unit-test suite: `mvn clean verify`
 * Run the integration-test suite: `mvn clean verify -P 'integration'`
 * Run the plugin in a product: `cd jira-plugin && mvn amps:run -Dproduct.version=<version e.g. 8.5.0> -DskipTests`
     * If you want to remotely debug your code running in the product, run `mvn amps:debug` and create IDEA _Remote_ run configuration (defaults are ok)
