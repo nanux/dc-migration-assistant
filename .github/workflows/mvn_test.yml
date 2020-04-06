@@ -3,7 +3,7 @@ name: Tests
 on: [push]
 
 env:
-  DOGFOODING_BRANCH='refs/heads/master'
+  DOGFOODING_BRANCH: 'refs/heads/master'
 
 jobs:
   run_tests:
