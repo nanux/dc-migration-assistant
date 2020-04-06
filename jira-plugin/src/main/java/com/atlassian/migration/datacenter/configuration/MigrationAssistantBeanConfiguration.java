@@ -37,6 +37,7 @@ import com.atlassian.migration.datacenter.core.aws.db.DatabaseUploadStageTransit
 import com.atlassian.migration.datacenter.core.aws.db.restore.DatabaseRestoreStageTransitionCallback;
 import com.atlassian.migration.datacenter.core.aws.db.restore.SsmPsqlDatabaseRestoreService;
 import com.atlassian.migration.datacenter.core.aws.db.restore.TargetDbCredentialsStorageService;
+import com.atlassian.migration.datacenter.core.aws.infrastructure.AWSMigrationHelperDeploymentService;
 import com.atlassian.migration.datacenter.core.aws.infrastructure.QuickstartDeploymentService;
 import com.atlassian.migration.datacenter.core.aws.region.AvailabilityZoneManager;
 import com.atlassian.migration.datacenter.core.aws.region.PluginSettingsRegionManager;
@@ -59,6 +60,7 @@ import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.s3.S3AsyncClient;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.ssm.SsmClient;
@@ -89,6 +91,13 @@ public class MigrationAssistantBeanConfiguration {
     @Bean
     public Supplier<SecretsManagerClient> secretsManagerClient(AwsCredentialsProvider credentialsProvider, RegionService regionService) {
         return () -> SecretsManagerClient.builder()
+                .credentialsProvider(credentialsProvider)
+                .region(Region.of(regionService.getRegion()))
+                .build();
+    }
+
+    @Bean Supplier<AutoScalingClient> autoScalingClient(AwsCredentialsProvider credentialsProvider, RegionService regionService) {
+        return () -> AutoScalingClient.builder()
                 .credentialsProvider(credentialsProvider)
                 .region(Region.of(regionService.getRegion()))
                 .build();
@@ -239,5 +248,10 @@ public class MigrationAssistantBeanConfiguration {
     @Bean
     public QuickstartDeploymentService quickstartDeploymentService(CfnApi cfnApi, MigrationService migrationService, TargetDbCredentialsStorageService dbCredentialsStorageService) {
         return new QuickstartDeploymentService(cfnApi, migrationService, dbCredentialsStorageService);
+    }
+
+    @Bean
+    public AWSMigrationHelperDeploymentService awsMigrationHelperDeploymentService(CfnApi cfnApi, MigrationService migrationService, Supplier<AutoScalingClient> autoScalingClientFactory) {
+        return new AWSMigrationHelperDeploymentService(cfnApi, autoScalingClientFactory, migrationService);
     }
 }

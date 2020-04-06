@@ -30,32 +30,22 @@
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-context</artifactId>
-            <version>${spring.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.atlassian.activeobjects</groupId>
             <artifactId>activeobjects-plugin</artifactId>
-            <version>${ao.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.atlassian.jira</groupId>
             <artifactId>jira-api</artifactId>
-            <version>7.13.12</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>com.atlassian.soy</groupId>
             <artifactId>soy-template-renderer-api</artifactId>
-            <version>${soy.version}</version>
-            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>jta</groupId>
             <artifactId>jta</artifactId>
-            <version>1.0.1b</version>
-            <scope>provided</scope>
         </dependency>
 
     </dependencies>
