@@ -45,10 +45,11 @@ public class TargetDbCredentialsStorageService {
     /**
      * Stores the given database password in AWS <a href="https://aws.amazon.com/secrets-manager/">Secrets Manager</a>
      * to be used later to restore the database. Will be stored under the key:
-     *          com.atlassian.migration.db.target.[migration_deployment_id].applicationPassword
-     * @see MigrationContext#getApplicationDeploymentId()
+     * com.atlassian.migration.db.target.[migration_deployment_id].applicationPassword
+     *
      * @param password the database password
      * @throws NullPointerException if the password is null
+     * @see MigrationContext#getApplicationDeploymentId()
      */
     public void storeCredentials(String password) {
         requireNonNull(password);
@@ -57,7 +58,14 @@ public class TargetDbCredentialsStorageService {
 
         SecretsManagerClient client = clientFactory.get();
         CreateSecretRequest request = CreateSecretRequest.builder()
-                .name(String.format("atl-%s-app-rds-password", context.getApplicationDeploymentId()))
+                /*
+                The secret is named like this because it makes it easier for the migration stack to download
+                the secret. This allows the migration stack to use "atl-${AWS::StackName}-app-rds-password" as the
+                secret name. The migration stack name is deterministic given the application stack name
+                (see AWSMigrationHelperDeploymentService#deployMigrationInfrastructure) so we use it here even though
+                it hasn't been deployed yet.
+                */
+                .name(String.format("atl-%s-migration-app-rds-password", context.getApplicationDeploymentId()))
                 .secretString(password)
                 .description("password for the application user in you new AWS deployment")
                 .build();
