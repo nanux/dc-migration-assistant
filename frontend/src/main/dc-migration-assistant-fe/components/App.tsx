@@ -18,8 +18,9 @@ import React, { FunctionComponent } from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { I18n } from '@atlassian/wrm-react-i18n';
 
-import { overviewPath, homePath, awsBasePath } from '../utils/RoutePaths';
+import { overviewPath, homePath, awsBasePath, fsPath } from '../utils/RoutePaths';
 import { MigrationOverview } from './MigrationOverview';
+import { FileSystemTransferPage } from './fs/FileSystemTransfer';
 import { Home } from './Home';
 import { AWSRoutes } from './aws/AwsRoutes';
 
@@ -31,6 +32,9 @@ export const App: FunctionComponent = () => (
             </Route>
             <Route path={awsBasePath}>
                 <AWSRoutes />
+            </Route>
+            <Route path={fsPath}>
+                <FileSystemTransferPage />
             </Route>
             <Route exact path={homePath}>
                 <Home
