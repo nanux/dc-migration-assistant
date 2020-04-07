@@ -25,10 +25,6 @@
         <version>6.0.2</version>
     </parent>
 
-<<<<<<< HEAD
-    <modules>
-        <module>filesystem-processor</module>
-=======
     <groupId>com.atlassian.migration.datacenter</groupId>
     <artifactId>parent</artifactId>
     <version>1.0.0</version>
@@ -53,7 +49,6 @@
         <module>core</module>
         <module>jira-plugin</module>
         <module>spi</module>
->>>>>>> master
     </modules>
 
     <repositories>
