@@ -5,8 +5,7 @@ Resources:
 
   MigrationBucket:
     Type: AWS::S3::Bucket
-    DependsOn:
-      - QueuePolicy
+    DependsOn: QueuePolicy
     Properties:
       BucketName: !Sub 'atl-migrationbucket-${AWS::StackName}'
       BucketEncryption:
@@ -21,6 +20,7 @@ Resources:
 
   QueuePolicy:
     Type: AWS::SQS::QueuePolicy
+    DependsOn: MigrationQueue
     Properties:
       PolicyDocument:
         Id: !Sub "MigrationQueue_Policy_${AWS::AccountId}"
@@ -29,13 +29,13 @@ Resources:
           - Sid: "MigrationQueue_SendMessage"
             Effect: Allow
             Principal:
-              AWS: '*'
+              AWS: !Ref AWS::AccountId
             Action:
               - SQS:SendMessage
             Resource: !GetAtt MigrationQueue.Arn
             Condition:
               ArnEquals:
-                aws:SourceArn: !Join ["", ["arn:aws:s3:::",!Sub 'atl-migrationbucket-${AWS::StackName}']]
+                aws:SourceArn: !GetAtt MigrationBucket.Arn
       Queues:
         - !Ref MigrationQueue
 
