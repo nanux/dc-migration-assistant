@@ -64,6 +64,11 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
         this.autoscalingClientFactory = autoScalingClientFactory;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * Will name the stack [application-stack-name]-migration
+    */
     @Override
     public void deployMigrationInfrastructure(Map<String, String> params) throws InvalidMigrationStageError {
         resetStackOutputs();
