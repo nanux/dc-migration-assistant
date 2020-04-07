@@ -24,7 +24,7 @@ import io.restassured.module.kotlin.extensions.When
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 
-@Tag("REST")
+@Tag("rest")
 class AWSGlobalInfrastructureEndpointRestTest {
     private val username: String = System.getProperty("JIRA_USERNAME", "admin")
     private val password: String = System.getProperty("JIRA_PASSWORD", "admin")

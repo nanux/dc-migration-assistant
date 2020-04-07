@@ -52,6 +52,13 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>${surefire.version}</version>
+                <configuration>
+                    <groups>!rest</groups>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
@@ -70,4 +77,19 @@
         </dependency>
     </dependencies>
 
+    <profiles>
+        <profile>
+            <id>rest</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <groups>rest</groups>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>
