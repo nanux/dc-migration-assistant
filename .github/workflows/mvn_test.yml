@@ -57,7 +57,7 @@ jobs:
   deploy:
     name: Deploy to dogfooding instance
     runs-on: ubuntu-latest
-    if: github.ref == env.DOGFOODING_REF
+    if: github.ref == secrets.DOGFOODING_REF
     needs: run_tests
 
     steps:
