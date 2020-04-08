@@ -21,6 +21,8 @@ import io.restassured.RestAssured.basic
 import io.restassured.module.kotlin.extensions.Given
 import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
+import org.hamcrest.Matchers.greaterThanOrEqualTo
+import org.hamcrest.core.IsIterableContaining.hasItems
 import org.junit.jupiter.api.Tag
 import org.junit.jupiter.api.Test
 
@@ -38,12 +40,13 @@ class AWSGlobalInfrastructureEndpointRestTest {
     @Test
     fun `GET AWS Regions should respond 200 HTTP`() {
         Given {
-            log().all()
             param("os_authType", "basic")
         } When {
             get("/aws/global-infrastructure/regions")
         } Then {
             statusCode(200)
+            body("$", hasItems("eu-west-1", "ap-southeast-2", "us-east-2"))
+            body("size()", greaterThanOrEqualTo(17))
         }
     }
 }
