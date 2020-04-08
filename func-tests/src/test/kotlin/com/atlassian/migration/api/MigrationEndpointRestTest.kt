@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.atlassian.migration.api.aws
+package com.atlassian.migration.api
 
 import com.atlassian.migration.test.BaseRestTest
 import io.restassured.module.kotlin.extensions.Given
@@ -23,16 +23,16 @@ import io.restassured.module.kotlin.extensions.When
 import org.junit.jupiter.api.Test
 import javax.ws.rs.core.Response
 
-class AWSGlobalInfrastructureEndpointRestTest : BaseRestTest() {
+class MigrationEndpointRestTest : BaseRestTest() {
 
     @Test
-    fun `GET AWS Regions should respond 200 HTTP`() {
+    fun `Migration endpoint should return 404 if not initialised`() {
         Given {
             param("os_authType", "basic")
         } When {
-            get("/aws/global-infrastructure/regions")
+            get("/migration")
         } Then {
-            statusCode(Response.Status.OK.statusCode)
+            statusCode(Response.Status.NOT_FOUND.statusCode)
         }
     }
 }
