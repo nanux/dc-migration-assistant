@@ -45,7 +45,7 @@ public class S3SyncFileSystemDownloader {
     }
 
     public void initiateFileSystemDownload() throws CannotLaunchCommandException {
-        String fsRestoreDocument = System.getProperty("com.atlassian.migration.s3sync.documentName", migrationHelperDeploymentService.getFsRestoreDocument());
+        String fsRestoreDocument = migrationHelperDeploymentService.getFsRestoreDocument();
         String migrationHost = getMigrationHostId();
 
         String commandID = ssmApi.runSSMDocument(fsRestoreDocument, migrationHost, Collections.emptyMap());
@@ -67,7 +67,7 @@ public class S3SyncFileSystemDownloader {
      * @return the status of the S3 sync or null if the status was not able to be retrieved.
      */
     public S3SyncCommandStatus getFileSystemDownloadStatus() {
-        String fsRestoreStatusDocument = System.getProperty("com.atlassian.migration.s3sync.statusDocmentName", migrationHelperDeploymentService.getFsRestoreStatusDocument());
+        String fsRestoreStatusDocument = migrationHelperDeploymentService.getFsRestoreStatusDocument();
         String migrationHostId = getMigrationHostId();
 
         String statusCommandId = ssmApi.runSSMDocument(fsRestoreStatusDocument, migrationHostId, Collections.emptyMap());
@@ -86,7 +86,7 @@ public class S3SyncFileSystemDownloader {
     }
 
     private String getMigrationHostId() {
-        return System.getProperty("com.atlassian.migration.instanceId", migrationHelperDeploymentService.getMigrationHostInstanceId());
+        return migrationHelperDeploymentService.getMigrationHostInstanceId();
     }
 
     public static class IndeterminateS3SyncStatusException extends FileSystemMigrationFailure {

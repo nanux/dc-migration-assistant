@@ -173,7 +173,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
     }
 
     private String getS3Bucket() {
-        return System.getProperty("S3_TARGET_BUCKET_NAME", migrationHelperDeploymentService.getMigrationS3BucketName());
+        return migrationHelperDeploymentService.getMigrationS3BucketName();
     }
 
     private JobId getScheduledJobId() {

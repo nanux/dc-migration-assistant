@@ -16,6 +16,7 @@
 
 package com.atlassian.migration.datacenter.core.aws.ssm;
 
+import com.atlassian.migration.datacenter.core.aws.infrastructure.AWSMigrationHelperDeploymentService;
 import com.atlassian.util.concurrent.Supplier;
 import software.amazon.awssdk.services.ssm.SsmClient;
 import software.amazon.awssdk.services.ssm.model.GetCommandInvocationRequest;

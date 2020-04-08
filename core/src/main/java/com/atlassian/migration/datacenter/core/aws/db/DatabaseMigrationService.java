@@ -89,7 +89,7 @@ public class DatabaseMigrationService
 
         migrationService.transition(MigrationStage.DB_MIGRATION_UPLOAD);
 
-        String bucketName = System.getProperty("S3_TARGET_BUCKET_NAME", migrationHelperDeploymentService.getMigrationS3BucketName());
+        String bucketName = migrationHelperDeploymentService.getMigrationS3BucketName();
 
         try {
             report = s3UploadService.upload(pathToDatabaseFile, bucketName, this.uploadStageTransitionCallback);

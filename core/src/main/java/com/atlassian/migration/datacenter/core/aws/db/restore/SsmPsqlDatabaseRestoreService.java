@@ -43,8 +43,8 @@ public class SsmPsqlDatabaseRestoreService {
     }
 
     public void restoreDatabase(DatabaseRestoreStageTransitionCallback restoreStageTransitionCallback) throws DatabaseMigrationFailure, InvalidMigrationStageError {
-        String dbRestorePlaybook = System.getProperty("com.atlassian.migration.psql.documentName", migrationHelperDeploymentService.getDbRestoreDocument());
-        String migrationInstanceId = System.getProperty("com.atlassian.migration.instanceId", migrationHelperDeploymentService.getMigrationHostInstanceId());
+        String dbRestorePlaybook = migrationHelperDeploymentService.getDbRestoreDocument();
+        String migrationInstanceId = migrationHelperDeploymentService.getMigrationHostInstanceId();
 
         restoreStageTransitionCallback.assertInStartingStage();
 
