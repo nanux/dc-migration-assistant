@@ -30,9 +30,11 @@ import java.util.Map;
 public class SSMApi {
 
     private Supplier<SsmClient> clientFactory;
+    private final AWSMigrationHelperDeploymentService migrationHelperDeploymentService;
 
-    public SSMApi(Supplier<SsmClient> clientFactory) {
+    public SSMApi(Supplier<SsmClient> clientFactory, AWSMigrationHelperDeploymentService migrationHelperDeploymentService) {
         this.clientFactory = clientFactory;
+        this.migrationHelperDeploymentService = migrationHelperDeploymentService;
     }
 
     /**
@@ -54,10 +56,8 @@ public class SSMApi {
                 .parameters(commandParameters)
                 .timeoutSeconds(600)
                 .comment("command run by Jira DC Migration Assistant")
-                // FIXME: Pending migration stack
-                .outputS3BucketName(System.getProperty("ssmDocumentLoggingBucket", "migration-bucket"))
+                .outputS3BucketName(migrationHelperDeploymentService.getMigrationS3BucketName())
                 .outputS3KeyPrefix("trebuchet-ssm-document-logs")
-                // END FIXME
                 .build();
 
         SendCommandResponse response = client.sendCommand(request);

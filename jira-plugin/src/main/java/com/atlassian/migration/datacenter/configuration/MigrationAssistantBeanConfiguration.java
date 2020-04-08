@@ -197,8 +197,8 @@ public class MigrationAssistantBeanConfiguration {
     }
 
     @Bean
-    public SSMApi ssmApi(Supplier<SsmClient> client) {
-        return new SSMApi(client);
+    public SSMApi ssmApi(Supplier<SsmClient> client, AWSMigrationHelperDeploymentService migrationHelperDeploymentService) {
+        return new SSMApi(client, migrationHelperDeploymentService);
     }
 
     @Bean
