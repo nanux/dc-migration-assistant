@@ -2,8 +2,6 @@ package com.atlassian.migration.datacenter.fs.processor.configuration;
 
 import com.amazonaws.services.s3.event.S3EventNotification;
 import com.amazonaws.services.sqs.AmazonSQSAsync;
-import com.google.gson.Gson;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.aws.core.env.ResourceIdResolver;
 import org.springframework.cloud.aws.messaging.support.destination.DynamicQueueUrlDestinationResolver;
 import org.springframework.context.annotation.Bean;
@@ -18,9 +16,6 @@ import org.springframework.scheduling.support.PeriodicTrigger;
 
 @Configuration
 public class TestMessagingConfig {
-
-    @Autowired
-    private Gson mapper;
 
     @Bean(name = PollerMetadata.DEFAULT_POLLER)
     public PollerMetadata defaultPoller() {
