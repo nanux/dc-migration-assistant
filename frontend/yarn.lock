@@ -100,6 +100,16 @@
     "@emotion/core" "^10.0.9"
     tslib "^1.9.3"
 
+"@atlaskit/section-message@^4.1.7":
+  version "4.1.7"
+  resolved "https://packages.atlassian.com/api/npm/npm-remote/@atlaskit/section-message/-/section-message-4.1.7.tgz#a3a009568ca539946801a17ffca1ec19645215fd"
+  integrity sha1-o6AJVoylOZRoAaF//KHsGWRSFf0=
+  dependencies:
+    "@atlaskit/button" "^13.3.9"
+    "@atlaskit/icon" "^20.1.0"
+    "@atlaskit/theme" "^9.5.1"
+    tslib "^1.9.3"
+
 "@atlaskit/select@^11.0.5":
   version "11.0.9"
   resolved "https://packages.atlassian.com/api/npm/npm-remote/@atlaskit/select/-/select-11.0.9.tgz#9c512c2a74c97bf03a23d217d5df47e2a7f6a1f5"
