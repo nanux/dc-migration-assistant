@@ -21,7 +21,8 @@ import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
 import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentError;
-import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.exceptions.InvalidError;
+import com.atlassian.migration.datacenter.spi.infrastructure.;
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import com.atlassian.migration.datacenter.spi.infrastructure.MigrationInfrastructureDeploymentService;
 import com.atlassian.util.concurrent.Supplier;
@@ -57,7 +58,6 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
     private String migrationStackASG;
     private String migrationBucket;
 
-
     public AWSMigrationHelperDeploymentService(CfnApi cfnApi, Supplier<AutoScalingClient> autoScalingClientFactory, MigrationService migrationService) {
         this(cfnApi, autoScalingClientFactory, migrationService, 30);
     }
@@ -69,6 +69,11 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
         this.autoscalingClientFactory = autoScalingClientFactory;
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Will name the stack [application-stack-name]-migration
+     */
     @Override
     public void deployMigrationInfrastructure(Map<String, String> params) throws InvalidMigrationStageError {
         resetStackOutputs();
@@ -127,38 +132,49 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
     }
 
     public String getFsRestoreDocument() {
-        ensureStackOutputsAreSet();
-        return fsRestoreDocument;
+        return getMigrationStackPropertyOrOverride(fsRestoreDocument, "com.atlassian.migration.s3sync.documentName");
     }
 
     public String getFsRestoreStatusDocument() {
-        ensureStackOutputsAreSet();
-        return fsRestoreStatusDocument;
+        return getMigrationStackPropertyOrOverride(fsRestoreStatusDocument, "com.atlassian.migration.s3sync.statusDocmentName");
     }
 
     public String getDbRestoreDocument() {
-        ensureStackOutputsAreSet();
-        return rdsRestoreDocument;
+        return getMigrationStackPropertyOrOverride(rdsRestoreDocument, "com.atlassian.migration.psql.documentName");
     }
 
     public String getMigrationS3BucketName() {
-        ensureStackOutputsAreSet();
-        return migrationBucket;
+        return getMigrationStackPropertyOrOverride(migrationBucket, "S3_TARGET_BUCKET_NAME");
     }
 
     public String getMigrationHostInstanceId() {
-        ensureStackOutputsAreSet();
+        final String documentOverride = System.getProperty("com.atlassian.migration.instanceId");
+        if (documentOverride != null) {
+            return documentOverride;
+        } else {
+            ensureStackOutputsAreSet();
 
-        AutoScalingClient client = autoscalingClientFactory.get();
-        DescribeAutoScalingGroupsResponse response = client.describeAutoScalingGroups(
-                DescribeAutoScalingGroupsRequest.builder()
-                        .autoScalingGroupNames(migrationStackASG)
-                        .build());
+            AutoScalingClient client = autoscalingClientFactory.get();
+            DescribeAutoScalingGroupsResponse response = client.describeAutoScalingGroups(
+                    DescribeAutoScalingGroupsRequest.builder()
+                            .autoScalingGroupNames(migrationStackASG)
+                            .build());
 
-        AutoScalingGroup migrationStackGroup = response.autoScalingGroups().get(0);
-        Instance migrationInstance = migrationStackGroup.instances().get(0);
+            AutoScalingGroup migrationStackGroup = response.autoScalingGroups().get(0);
+            Instance migrationInstance = migrationStackGroup.instances().get(0);
 
-        return migrationInstance.instanceId();
+            return migrationInstance.instanceId();
+        }
+    }
+
+    private String getMigrationStackPropertyOrOverride(String migrationStackProperty, String migrationStackPropertySystemOverrideKey) {
+        final String documentOverride = System.getProperty(migrationStackPropertySystemOverrideKey);
+        if (documentOverride != null) {
+            return documentOverride;
+        } else {
+            ensureStackOutputsAreSet();
+            return migrationStackProperty;
+        }
     }
 
     private void ensureStackOutputsAreSet() {

@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cloudformation.CloudFormationAsyncClient;
+import software.amazon.awssdk.services.cloudformation.model.Capability;
 import software.amazon.awssdk.services.cloudformation.model.CreateStackRequest;
 import software.amazon.awssdk.services.cloudformation.model.CreateStackResponse;
 import software.amazon.awssdk.services.cloudformation.model.DescribeStackResourcesRequest;
@@ -112,6 +113,7 @@ public class CfnApi {
                 .build();
         CreateStackRequest createStackRequest = CreateStackRequest.builder()
                 .templateURL(templateUrl)
+                .capabilities(Capability.CAPABILITY_AUTO_EXPAND, Capability.CAPABILITY_IAM)
                 .stackName(stackName)
                 .parameters(parameters)
                 .tags(tag)
