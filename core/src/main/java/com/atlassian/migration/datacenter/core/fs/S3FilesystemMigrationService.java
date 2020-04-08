@@ -63,7 +63,8 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
                                         JiraHome jiraHome,
                                         S3SyncFileSystemDownloadManager fileSystemDownloadManager,
                                         MigrationService migrationService,
-                                        MigrationRunner migrationRunner, AWSMigrationHelperDeploymentService migrationHelperDeploymentService) {
+                                        MigrationRunner migrationRunner,
+                                        AWSMigrationHelperDeploymentService migrationHelperDeploymentService) {
         this.s3AsyncClientSupplier = s3AsyncClientSupplier;
         this.jiraHome = jiraHome;
         this.migrationService = migrationService;
