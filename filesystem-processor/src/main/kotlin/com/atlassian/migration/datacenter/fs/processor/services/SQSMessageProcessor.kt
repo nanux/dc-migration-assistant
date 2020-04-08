@@ -2,7 +2,6 @@ package com.atlassian.migration.datacenter.fs.processor.services
 
 import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.event.S3EventNotification
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.messaging.Message
@@ -15,17 +14,23 @@ import java.util.function.Consumer
 @Component
 class SQSMessageProcessor(private val s3Client: AmazonS3?, private val threadPoolTaskExecutor: ThreadPoolTaskExecutor?, @Value("\${app.jira.file.path}") private val jiraHome: String) : MessageHandler {
 
-    private val log = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)
+    private val log = LoggerFactory.getLogger(SQSMessageProcessor::class.java)
 
     override fun handleMessage(message: Message<*>) {
         val s3EventNotificationRecord: S3EventNotification = message.payload as S3EventNotification
-        log.debug("Received SQS message {}", s3EventNotificationRecord.toJson())
+        if (log.isDebugEnabled) {
+            log.debug("Received SQS message {}", s3EventNotificationRecord.toJson())
+        }
         val s3EventNotificationRecords = s3EventNotificationRecord.records
-        log.debug("Received " + s3EventNotificationRecords.size.toString() + " records from S3.")
+        if (log.isDebugEnabled) {
+            log.debug("Received " + s3EventNotificationRecords.size.toString() + " records from S3.")
+        }
         val jiraHomePath = File(this.jiraHome)
         if (!jiraHomePath.exists()) {
             if (jiraHomePath.mkdir()) {
-                log.debug("Created Jira Home path " + jiraHomePath.absolutePath)
+                if (log.isDebugEnabled) {
+                    log.debug("Created Jira Home path " + jiraHomePath.absolutePath)
+                }
             }
         }
         if (s3EventNotificationRecords.size == 1) {

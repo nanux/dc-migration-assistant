@@ -6,9 +6,12 @@ import com.amazonaws.services.cloudformation.AmazonCloudFormation
 import com.amazonaws.services.cloudformation.AmazonCloudFormationAsyncClient
 import com.amazonaws.services.ec2.AmazonEC2
 import com.amazonaws.services.ec2.AmazonEC2AsyncClient
+import com.amazonaws.services.s3.AmazonS3
+import com.amazonaws.services.s3.AmazonS3Client
 import com.amazonaws.services.sqs.AmazonSQS
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient
 import com.atlassian.migration.datacenter.fs.processor.configuration.AWSServicesConfiguration.Companion.STACK_NAME
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.aws.context.annotation.ConditionalOnMissingAmazonClient
 import org.springframework.cloud.aws.context.config.annotation.EnableStackConfiguration
 import org.springframework.cloud.aws.core.config.AmazonWebserviceClientFactoryBean
@@ -25,8 +28,8 @@ import org.springframework.context.annotation.Profile
 open class AWSServicesConfiguration {
 
     @Bean
-    open fun regionProvider(): RegionProvider? {
-        return StaticRegionProvider("eu-central-1")
+    open fun regionProvider(@Value("\${app.region.id}") regionId: String): RegionProvider? {
+        return StaticRegionProvider(regionId)
     }
 
     @Bean
@@ -47,6 +50,13 @@ open class AWSServicesConfiguration {
     @ConditionalOnMissingAmazonClient(AmazonSQS::class)
     open fun awsSqsClientProd(regionProvider: RegionProvider?, credentialsProvider: AWSCredentialsProvider?): AmazonWebserviceClientFactoryBean<AmazonSQSAsyncClient?>? {
         return AmazonWebserviceClientFactoryBean(AmazonSQSAsyncClient::class.java, credentialsProvider, regionProvider)
+    }
+
+    @Bean
+    @Primary
+    @ConditionalOnMissingAmazonClient(AmazonS3::class)
+    open fun amazonS3ClientProd(regionProvider: RegionProvider?, credentialsProvider: AWSCredentialsProvider?): AmazonWebserviceClientFactoryBean<AmazonS3Client?>? {
+        return AmazonWebserviceClientFactoryBean(AmazonS3Client::class.java, credentialsProvider, regionProvider)
     }
 
     @Bean

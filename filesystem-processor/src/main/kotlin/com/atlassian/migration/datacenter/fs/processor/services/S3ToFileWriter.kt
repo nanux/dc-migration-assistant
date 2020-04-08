@@ -4,7 +4,6 @@ import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.event.S3EventNotification
 import lombok.SneakyThrows
 import org.apache.commons.io.IOUtils
-import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URLDecoder
@@ -16,7 +15,7 @@ import java.nio.file.StandardOpenOption
 
 class S3ToFileWriter(private val s3Client: AmazonS3?, private val entity: S3EventNotification.S3Entity?, private val jiraHome: String?) : Runnable {
 
-    private val log = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)
+    private val log = LoggerFactory.getLogger(S3ToFileWriter::class.java)
 
     @SneakyThrows
     override fun run() {
