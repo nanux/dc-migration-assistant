@@ -34,9 +34,6 @@ import org.slf4j.LoggerFactory;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-/**
- * Copyright Atlassian: 10/03/2020
- */
 public class DatabaseMigrationService
 {
     private static Logger logger = LoggerFactory.getLogger(DatabaseMigrationService.class);
