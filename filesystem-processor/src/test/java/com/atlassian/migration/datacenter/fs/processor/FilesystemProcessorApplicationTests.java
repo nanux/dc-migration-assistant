@@ -7,21 +7,24 @@ import com.amazonaws.services.sqs.model.ListQueuesResult;
 import com.atlassian.migration.datacenter.fs.processor.services.SQSMessageProcessor;
 import org.apache.commons.lang3.RandomUtils;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.cloud.aws.messaging.core.QueueMessagingTemplate;
+import org.springframework.messaging.SubscribableChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 @SpringBootTest()
-@ActiveProfiles("test")
+@ActiveProfiles("localstack")
 class FilesystemProcessorApplicationTests {
 
     @Autowired
@@ -31,7 +34,7 @@ class FilesystemProcessorApplicationTests {
     private String queueName;
 
     @Autowired
-    private QueueMessagingTemplate queueMessagingTemplate;
+    private SubscribableChannel subscribableChannel;
 
     @Autowired
     private SQSMessageProcessor sqsMessageProcessor;
@@ -62,21 +65,23 @@ class FilesystemProcessorApplicationTests {
         }
     }
 
+    @Disabled
     @Test
+    @Order(1)
     void testSendMessage() {
         try {
             S3EventNotification eventNotification = new S3EventNotification(new ArrayList<>());
-            this.queueMessagingTemplate.send(this.queueName, MessageBuilder.withPayload(eventNotification).build());
+            assertTrue(this.subscribableChannel.send(MessageBuilder.withPayload(eventNotification).build()));
         } catch (Exception ex) {
             fail(ex.getLocalizedMessage());
         }
     }
 
     @Test
+    @Order(99)
     void testReceiveMessage() {
         try {
             S3EventNotification eventNotification = new S3EventNotification(createNotifications());
-            //this.sqsMessageProcessor.receiveMessage(eventNotification);
         } catch (Exception ex) {
             fail(ex.getLocalizedMessage());
         }

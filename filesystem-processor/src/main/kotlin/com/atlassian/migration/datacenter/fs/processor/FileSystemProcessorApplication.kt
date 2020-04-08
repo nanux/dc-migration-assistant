@@ -1,20 +1,17 @@
 package com.atlassian.migration.datacenter.fs.processor
 
-import org.springframework.boot.CommandLineRunner
-import org.springframework.boot.SpringApplication
+import org.springframework.boot.WebApplicationType
 import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.runApplication
 
 @SpringBootApplication(scanBasePackages = ["com.atlassian.migration.datacenter"])
-open class FileSystemProcessorApplication : CommandLineRunner {
-    companion object {
-        @JvmStatic
-        fun main(args: Array<String>) {
-            SpringApplication.run(FileSystemProcessorApplication::class.java, *args)
+open class FileSystemProcessorApplication {
+
+    fun main(args: Array<String>) {
+        runApplication<FileSystemProcessorApplication>(*args) {
+            webApplicationType = WebApplicationType.NONE
         }
     }
 
-    override fun run(vararg args: String?) {
-        TODO("Not yet implemented")
-    }
 
 }

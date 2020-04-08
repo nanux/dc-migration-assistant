@@ -5,17 +5,20 @@ import com.amazonaws.services.s3.event.S3EventNotification
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.cloud.aws.messaging.listener.annotation.SqsListener
+import org.springframework.messaging.Message
+import org.springframework.messaging.MessageHandler
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
+import org.springframework.stereotype.Component
 import java.io.File
 import java.util.function.Consumer
 
-class SQSMessageProcessor(private val s3Client: AmazonS3?, private val threadPoolTaskExecutor: ThreadPoolTaskExecutor?, @Value("\${app.jira.file.path}") private val jiraHome: String) {
+@Component
+class SQSMessageProcessor(private val s3Client: AmazonS3?, private val threadPoolTaskExecutor: ThreadPoolTaskExecutor?, @Value("\${app.jira.file.path}") private val jiraHome: String) : MessageHandler {
 
     private val log = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME)
 
-    @SqsListener(QUEUE_LOGICAL_NAME)
-    fun receiveMessage(s3EventNotificationRecord: S3EventNotification) {
+    override fun handleMessage(message: Message<*>) {
+        val s3EventNotificationRecord: S3EventNotification = message.payload as S3EventNotification
         log.debug("Received SQS message {}", s3EventNotificationRecord.toJson())
         val s3EventNotificationRecords = s3EventNotificationRecord.records
         log.debug("Received " + s3EventNotificationRecords.size.toString() + " records from S3.")
@@ -37,8 +40,5 @@ class SQSMessageProcessor(private val s3Client: AmazonS3?, private val threadPoo
         threadPoolTaskExecutor!!.submit(fileWriter)
     }
 
-    companion object {
-        private const val QUEUE_LOGICAL_NAME: String = "MigrationQueue"
-    }
 
 }

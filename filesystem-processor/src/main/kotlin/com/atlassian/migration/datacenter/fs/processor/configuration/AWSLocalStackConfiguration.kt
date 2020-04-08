@@ -15,6 +15,8 @@ import com.amazonaws.services.sqs.AmazonSQSAsync
 import com.amazonaws.services.sqs.AmazonSQSAsyncClientBuilder
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.aws.context.annotation.ConditionalOnMissingAmazonClient
+import org.springframework.cloud.aws.core.region.RegionProvider
+import org.springframework.cloud.aws.core.region.StaticRegionProvider
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
@@ -35,6 +37,12 @@ open class AWSLocalStackConfiguration {
 
     @Value("\${app.aws.cloudformation.localStack.endpoint}")
     lateinit var awsCloudFormationLocalStackEndpoint: String
+
+    @Bean
+    @Primary
+    open fun regionProvider(): RegionProvider? {
+        return StaticRegionProvider("eu-central-1")
+    }
 
     @Bean
     @Primary
