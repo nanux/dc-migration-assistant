@@ -1,11 +1,14 @@
 package com.atlassian.migration.datacenter.fs.processor.configuration
 
+import com.amazonaws.services.cloudformation.AmazonCloudFormation
 import com.amazonaws.services.s3.event.S3EventNotification
 import com.amazonaws.services.sqs.AmazonSQSAsync
 import com.atlassian.migration.datacenter.fs.processor.configuration.AWSServicesConfiguration.Companion.STACK_NAME
 import com.atlassian.migration.datacenter.fs.processor.services.SQSMessageProcessor
 import org.springframework.cloud.aws.context.config.annotation.EnableStackConfiguration
 import org.springframework.cloud.aws.core.env.ResourceIdResolver
+import org.springframework.cloud.aws.core.env.stack.config.StackResourceRegistryFactoryBean
+import org.springframework.cloud.aws.core.env.stack.config.StaticStackNameProvider
 import org.springframework.cloud.aws.messaging.support.destination.DynamicQueueUrlDestinationResolver
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
@@ -31,6 +34,12 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 @EnableStackConfiguration(stackName = STACK_NAME)
 @Profile("production", "localStack")
 open class FileSystemProcessorConfiguration {
+
+    @Bean
+    open fun stackResourceRegistry(cloudFormation: AmazonCloudFormation?): StackResourceRegistryFactoryBean? {
+        val provider = StaticStackNameProvider(AWSServicesConfiguration.STACK_NAME)
+        return StackResourceRegistryFactoryBean(cloudFormation, provider)
+    }
 
     @Bean
     open fun inboundChannel(threadPoolTaskExecutor: ThreadPoolTaskExecutor): SubscribableChannel? {
