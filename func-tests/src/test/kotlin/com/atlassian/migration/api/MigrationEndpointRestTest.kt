@@ -17,6 +17,8 @@
 package com.atlassian.migration.api
 
 import com.atlassian.migration.test.BaseRestTest
+import io.restassured.builder.RequestSpecBuilder
+import io.restassured.filter.log.LogDetail
 import io.restassured.module.kotlin.extensions.Given
 import io.restassured.module.kotlin.extensions.Then
 import io.restassured.module.kotlin.extensions.When
@@ -28,7 +30,7 @@ class MigrationEndpointRestTest : BaseRestTest() {
     @Test
     fun `Migration endpoint should return 404 if not initialised`() {
         Given {
-            param("os_authType", "basic")
+            spec(requestSpec)
         } When {
             get("/migration")
         } Then {

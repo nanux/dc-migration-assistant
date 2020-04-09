@@ -28,7 +28,7 @@ class AWSGlobalInfrastructureEndpointRestTest : BaseRestTest() {
     @Test
     fun `GET AWS Regions should respond 200 HTTP`() {
         Given {
-            param("os_authType", "basic")
+            spec(requestSpec)
         } When {
             get("/aws/global-infrastructure/regions")
         } Then {
