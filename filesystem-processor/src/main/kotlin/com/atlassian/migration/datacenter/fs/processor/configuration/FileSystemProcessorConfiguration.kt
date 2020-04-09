@@ -86,5 +86,4 @@ open class FileSystemProcessorConfiguration {
         private const val QUEUE_LOGICAL_NAME: String = "MigrationQueue"
         private const val STACK_NAME: String = "migration-helper"
     }
-
 }

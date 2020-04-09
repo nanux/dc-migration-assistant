@@ -4,7 +4,6 @@ import cloud.localstack.docker.LocalstackDockerExtension;
 import cloud.localstack.docker.annotation.LocalstackDockerProperties;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.event.S3EventNotification;
-import com.amazonaws.services.sqs.AmazonSQSAsync;
 import com.atlassian.migration.datacenter.fs.processor.configuration.LocalStackEnvironmentVars;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -27,16 +26,13 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Slf4j
 @SpringBootTest()
 @ActiveProfiles("localstack,test")
-@Slf4j
 @EnableStackConfiguration(stackName = "migration-helper")
 @ExtendWith(LocalstackDockerExtension.class)
 @LocalstackDockerProperties(environmentVariableProvider = LocalStackEnvironmentVars.class, useSingleDockerContainer = true, services = "sqs,s3,ssm,cfn,ec2,cloudformation", imageTag = "0.10.8")
 class FilesystemProcessorApplicationTests {
-
-    @Autowired
-    private AmazonSQSAsync sqsClient;
 
     @Autowired
     private AmazonS3 s3Client;
