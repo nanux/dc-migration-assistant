@@ -23,6 +23,7 @@ import { Link } from 'react-router-dom';
 import { overviewPath } from '../../utils/RoutePaths';
 import { I18n } from '../../atlassian/mocks/@atlassian/wrm-react-i18n';
 import moment from 'moment';
+import Spinner from '@atlaskit/spinner';
 
 const POLL_INTERVAL_MILLIS = 60000;
 
@@ -91,12 +92,16 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
     getProgress,
 }) => {
     const [progress, setProgress] = useState<Progress>();
-    const [loading, setLoading] = useState<Boolean>(true);
+    const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
         const updateProgress = () => {
+            setLoading(true);
             return getProgress()
-                .then(setProgress)
+                .then(result => {
+                    setLoading(false);
+                    setProgress(result);
+                })
                 .catch(console.error);
         };
 
@@ -122,8 +127,8 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                 <SectionMessage title={infoTitle} actions={infoActions || []}>
                     {infoContent}
                 </SectionMessage>
-                <h4>{progress?.phase}</h4>
-                <ProgressBar value={progress?.completeness} />
+                {loading ? <Spinner /> : <h4>{progress?.phase}</h4>}
+                <ProgressBar isIndeterminate={loading} value={progress?.completeness} />
                 <p>
                     {I18n.getText(
                         'atlassian.migration.datacenter.common.progress.started',
@@ -137,7 +142,7 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                         `${elapsedMins}`
                     )}
                 </p>
-                <p>{progress?.progress}</p>
+                <p>{loading ? <Spinner /> : progress?.progress}</p>
             </TransferContentContainer>
             <TransferActionsContainer>
                 <Link to={overviewPath}>
