@@ -1,3 +1,19 @@
+/*
+ * Copyright 2020 Atlassian
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import React, { FunctionComponent } from 'react';
 import ProgressBar, { SuccessProgressBar } from '@atlaskit/progress-bar';
 import SectionMessage from '@atlaskit/section-message';
@@ -5,6 +21,24 @@ import styled from 'styled-components';
 import { Button } from '@atlaskit/button/dist/cjs/components/Button';
 import { Link } from 'react-router-dom';
 import { overviewPath } from '../../utils/RoutePaths';
+import { I18n } from '../../atlassian/mocks/@atlassian/wrm-react-i18n';
+
+type Action = {
+    text: React.ReactNode;
+    onClick?: () => void;
+    href?: string;
+    key: string;
+    testId?: string;
+};
+
+export type MigrationTransferProps = {
+    heading: string;
+    description: string;
+    infoTitle: string;
+    infoContent: string;
+    infoActions?: Action[];
+    nextText: string;
+};
 
 const TransferPageContainer = styled.div`
     display: flex;
@@ -31,24 +65,22 @@ const TransferActionsContainer = styled.div`
     margin-top: 20px;
 `;
 
-export const MigrationTransferPage: FunctionComponent<{}> = ({ children }) => {
+export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = ({
+    children,
+    description,
+    heading,
+    infoContent,
+    infoTitle,
+    infoActions,
+    nextText,
+}) => {
     return (
         <TransferPageContainer>
             <TransferContentContainer>
-                <h1>Copy Over files</h1>
-                <p>Text describing the step</p>
-                <SectionMessage
-                    title="Copying over files takes ~ time depending on the size of your instance"
-                    actions={[
-                        {
-                            key: 'learn',
-                            href: 'https://en.wikipedia.org/wiki/Mary_Shelley',
-                            text: 'Learn more',
-                        },
-                    ]}
-                >
-                    You can close this window and get back to it at any time. We recommend to start
-                    planning simulatde downtime at this point of time i.e. informing your users etc.
+                <h1>{heading}</h1>
+                <p>{description}</p>
+                <SectionMessage title={infoTitle} actions={infoActions || []}>
+                    {infoContent}
                 </SectionMessage>
                 <h4>Phase of copying</h4>
                 <ProgressBar isIndeterminate />
@@ -58,9 +90,9 @@ export const MigrationTransferPage: FunctionComponent<{}> = ({ children }) => {
             </TransferContentContainer>
             <TransferActionsContainer>
                 <Link to={overviewPath}>
-                    <Button>Cancel migration</Button>
+                    <Button>{I18n.getText('atlassian.migration.datacenter.generic.cancel')}</Button>
                 </Link>
-                <Button appearance="primary">Start downtime</Button>
+                <Button appearance="primary">{nextText}</Button>
             </TransferActionsContainer>
         </TransferPageContainer>
     );

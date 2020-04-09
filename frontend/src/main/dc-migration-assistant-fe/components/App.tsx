@@ -23,7 +23,6 @@ import { MigrationOverview } from './MigrationOverview';
 import { FileSystemTransferPage } from './fs/FileSystemTransfer';
 import { Home } from './Home';
 import { AWSRoutes } from './aws/AwsRoutes';
-import { MigrationTransferPage } from './shared/MigrationTransferPage';
 
 export const App: FunctionComponent = () => (
     <Router>
@@ -35,7 +34,7 @@ export const App: FunctionComponent = () => (
                 <AWSRoutes />
             </Route>
             <Route path={fsPath}>
-                <MigrationTransferPage />
+                <FileSystemTransferPage />
             </Route>
             <Route exact path={homePath}>
                 <Home
