@@ -29,7 +29,6 @@ public class LocalStackEnvAutoConfiguration {
 
     private final static String STACK_NAME = "migration-helper";
 
-
     @Bean
     @SneakyThrows
     public CreateStackResult setupCloudFormation(AmazonCloudFormation amazonCloudFormation) {

@@ -1,19 +1,15 @@
 package com.atlassian.migration.datacenter.fs.processor.configuration
 
-import com.amazonaws.services.cloudformation.AmazonCloudFormation
 import com.amazonaws.services.s3.event.S3EventNotification
 import com.amazonaws.services.sqs.AmazonSQSAsync
 import com.atlassian.migration.datacenter.fs.processor.configuration.AWSServicesConfiguration.Companion.STACK_NAME
 import com.atlassian.migration.datacenter.fs.processor.services.SQSMessageProcessor
 import org.springframework.cloud.aws.context.config.annotation.EnableStackConfiguration
 import org.springframework.cloud.aws.core.env.ResourceIdResolver
-import org.springframework.cloud.aws.core.env.stack.config.StackResourceRegistryFactoryBean
-import org.springframework.cloud.aws.core.env.stack.config.StaticStackNameProvider
 import org.springframework.cloud.aws.messaging.support.destination.DynamicQueueUrlDestinationResolver
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
-import org.springframework.context.annotation.Profile
 import org.springframework.integration.annotation.ServiceActivator
 import org.springframework.integration.annotation.Transformer
 import org.springframework.integration.aws.inbound.SqsMessageDrivenChannelAdapter
@@ -32,13 +28,15 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 @Configuration
 @ComponentScan
 @EnableStackConfiguration(stackName = STACK_NAME)
-@Profile("production", "localStack")
 open class FileSystemProcessorConfiguration {
 
     @Bean
-    open fun stackResourceRegistry(cloudFormation: AmazonCloudFormation?): StackResourceRegistryFactoryBean? {
-        val provider = StaticStackNameProvider(AWSServicesConfiguration.STACK_NAME)
-        return StackResourceRegistryFactoryBean(cloudFormation, provider)
+    @ServiceActivator(inputChannel = "errorChannel")
+    open fun logging(): LoggingHandler? {
+        val adapter = LoggingHandler(LoggingHandler.Level.INFO)
+        adapter.setLoggerName("ERROR_LOGGER")
+        adapter.setLogExpressionString("headers.id + ': ' + payload")
+        return adapter
     }
 
     @Bean
@@ -46,14 +44,14 @@ open class FileSystemProcessorConfiguration {
         return ExecutorChannel(threadPoolTaskExecutor, RoundRobinLoadBalancingStrategy())
     }
 
-    @Bean
-    open fun inboundTransformChannel(threadPoolTaskExecutor: ThreadPoolTaskExecutor): SubscribableChannel? {
-        return ExecutorChannel(threadPoolTaskExecutor, RoundRobinLoadBalancingStrategy())
-    }
-
     @Transformer(inputChannel = "inboundChannel", outputChannel = "inboundTransformChannel")
     open fun transformPayload(raw: String?): S3EventNotification? {
         return S3EventNotification.parseJson(raw)
+    }
+
+    @Bean
+    open fun inboundTransformChannel(threadPoolTaskExecutor: ThreadPoolTaskExecutor): SubscribableChannel? {
+        return ExecutorChannel(threadPoolTaskExecutor, RoundRobinLoadBalancingStrategy())
     }
 
     @Bean
@@ -67,22 +65,13 @@ open class FileSystemProcessorConfiguration {
     }
 
     @Bean
-    open fun dynamicQueueUrlDestinationResolver(idResolver: ResourceIdResolver, amazonSqs: AmazonSQSAsync): DynamicQueueUrlDestinationResolver? {
-        return DynamicQueueUrlDestinationResolver(amazonSqs, idResolver)
-    }
-
-    @Bean
     open fun consumer(inboundTransformChannel: SubscribableChannel?, sqsMessageProcessor: SQSMessageProcessor?): EventDrivenConsumer {
         return EventDrivenConsumer(inboundTransformChannel, sqsMessageProcessor)
     }
 
     @Bean
-    @ServiceActivator(inputChannel = "errorChannel")
-    open fun logging(): LoggingHandler? {
-        val adapter = LoggingHandler(LoggingHandler.Level.INFO)
-        adapter.setLoggerName("ERROR_LOGGER")
-        adapter.setLogExpressionString("headers.id + ': ' + payload")
-        return adapter
+    open fun dynamicQueueUrlDestinationResolver(idResolver: ResourceIdResolver, amazonSqs: AmazonSQSAsync): DynamicQueueUrlDestinationResolver? {
+        return DynamicQueueUrlDestinationResolver(amazonSqs, idResolver)
     }
 
     @Bean
