@@ -20,10 +20,11 @@ import SectionMessage from '@atlaskit/section-message';
 import styled from 'styled-components';
 import { Button } from '@atlaskit/button/dist/cjs/components/Button';
 import { Link } from 'react-router-dom';
-import { overviewPath } from '../../utils/RoutePaths';
-import { I18n } from '../../atlassian/mocks/@atlassian/wrm-react-i18n';
 import moment from 'moment';
 import Spinner from '@atlaskit/spinner';
+
+import { I18n } from '../../atlassian/mocks/@atlassian/wrm-react-i18n';
+import { overviewPath } from '../../utils/RoutePaths';
 
 const POLL_INTERVAL_MILLIS = 60000;
 
@@ -99,8 +100,8 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
             setLoading(true);
             return getProgress()
                 .then(result => {
-                    setLoading(false);
                     setProgress(result);
+                    setLoading(false);
                 })
                 .catch(console.error);
         };
@@ -128,7 +129,13 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                     {infoContent}
                 </SectionMessage>
                 {loading ? <Spinner /> : <h4>{progress?.phase}</h4>}
-                <ProgressBar isIndeterminate={loading} value={progress?.completeness} />
+                {loading ? (
+                    <ProgressBar isIndeterminate />
+                ) : progress.completeness == 1 ? (
+                    <SuccessProgressBar value={1} />
+                ) : (
+                    <ProgressBar isIndeterminate={loading} value={progress?.completeness} />
+                )}
                 <p>
                     {I18n.getText(
                         'atlassian.migration.datacenter.common.progress.started',
