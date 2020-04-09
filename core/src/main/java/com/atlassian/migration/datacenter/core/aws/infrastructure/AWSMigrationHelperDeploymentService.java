@@ -19,11 +19,14 @@ package com.atlassian.migration.datacenter.core.aws.infrastructure;
 import com.atlassian.migration.datacenter.core.aws.CfnApi;
 import com.atlassian.migration.datacenter.dto.MigrationContext;
 import com.atlassian.migration.datacenter.spi.MigrationService;
-import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentError;
+import com.atlassian.migration.datacenter.spi.MigrationStage;
 import com.atlassian.migration.datacenter.spi.exceptions.InvalidMigrationStageError;
+import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentError;
 import com.atlassian.migration.datacenter.spi.infrastructure.InfrastructureDeploymentStatus;
 import com.atlassian.migration.datacenter.spi.infrastructure.MigrationInfrastructureDeploymentService;
 import com.atlassian.util.concurrent.Supplier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
 import software.amazon.awssdk.services.autoscaling.model.AutoScalingGroup;
 import software.amazon.awssdk.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
@@ -42,6 +45,7 @@ import java.util.stream.Stream;
  */
 public class AWSMigrationHelperDeploymentService extends CloudformationDeploymentService implements MigrationInfrastructureDeploymentService {
 
+    private static final Logger logger = LoggerFactory.getLogger(AWSMigrationHelperDeploymentService.class);
     private static final String MIGRATION_HELPER_TEMPLATE_URL = "https://trebuchet-aws-resources.s3.amazonaws.com/migration-helper.yml";
 
     private final Supplier<AutoScalingClient> autoscalingClientFactory;
@@ -52,7 +56,6 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
     private String rdsRestoreDocument;
     private String migrationStackASG;
     private String migrationBucket;
-
 
     public AWSMigrationHelperDeploymentService(CfnApi cfnApi, Supplier<AutoScalingClient> autoScalingClientFactory, MigrationService migrationService) {
         this(cfnApi, autoScalingClientFactory, migrationService, 30);
@@ -67,16 +70,19 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
 
     /**
      * {@inheritDoc}
-     *
+     * <p>
      * Will name the stack [application-stack-name]-migration
-    */
+     */
     @Override
     public void deployMigrationInfrastructure(Map<String, String> params) throws InvalidMigrationStageError {
         resetStackOutputs();
 
+        migrationService.assertCurrentStage(MigrationStage.PROVISION_MIGRATION_STACK);
+
         String applicationDeploymentId = migrationService.getCurrentContext().getApplicationDeploymentId();
         String migrationStackDeploymentId = applicationDeploymentId + "-migration";
         super.deployCloudformationStack(MIGRATION_HELPER_TEMPLATE_URL, migrationStackDeploymentId, params);
+        migrationService.transition(MigrationStage.PROVISION_MIGRATION_STACK_WAIT);
 
         final MigrationContext context = migrationService.getCurrentContext();
         context.setHelperStackDeploymentId(migrationStackDeploymentId);
@@ -110,46 +116,64 @@ public class AWSMigrationHelperDeploymentService extends CloudformationDeploymen
         rdsRestoreDocument = outputsMap.get("RdsRestoreSSMDocument");
         migrationStackASG = outputsMap.get("ServerGroup");
         migrationBucket = outputsMap.get("MigrationBucket");
+
+        try {
+            migrationService.transition(MigrationStage.FS_MIGRATION_COPY);
+        } catch (InvalidMigrationStageError invalidMigrationStageError) {
+            logger.error("error transitioning to FS_MIGRATION_COPY stage after successful migration stack deployment");
+            migrationService.error();
+        }
     }
 
     @Override
     protected void handleFailedDeployment() {
-
+        migrationService.error();
     }
 
     public String getFsRestoreDocument() {
-        ensureStackOutputsAreSet();
-        return fsRestoreDocument;
+        return getMigrationStackPropertyOrOverride(fsRestoreDocument, "com.atlassian.migration.s3sync.documentName");
     }
 
     public String getFsRestoreStatusDocument() {
-        ensureStackOutputsAreSet();
-        return fsRestoreStatusDocument;
+        return getMigrationStackPropertyOrOverride(fsRestoreStatusDocument, "com.atlassian.migration.s3sync.statusDocmentName");
     }
 
     public String getDbRestoreDocument() {
-        ensureStackOutputsAreSet();
-        return rdsRestoreDocument;
+        return getMigrationStackPropertyOrOverride(rdsRestoreDocument, "com.atlassian.migration.psql.documentName");
     }
 
     public String getMigrationS3BucketName() {
-        ensureStackOutputsAreSet();
-        return migrationBucket;
+        return getMigrationStackPropertyOrOverride(migrationBucket, "S3_TARGET_BUCKET_NAME");
     }
 
     public String getMigrationHostInstanceId() {
-        ensureStackOutputsAreSet();
+        final String documentOverride = System.getProperty("com.atlassian.migration.instanceId");
+        if (documentOverride != null) {
+            return documentOverride;
+        } else {
+            ensureStackOutputsAreSet();
 
-        AutoScalingClient client = autoscalingClientFactory.get();
-        DescribeAutoScalingGroupsResponse response = client.describeAutoScalingGroups(
-                DescribeAutoScalingGroupsRequest.builder()
-                        .autoScalingGroupNames(migrationStackASG)
-                        .build());
+            AutoScalingClient client = autoscalingClientFactory.get();
+            DescribeAutoScalingGroupsResponse response = client.describeAutoScalingGroups(
+                    DescribeAutoScalingGroupsRequest.builder()
+                            .autoScalingGroupNames(migrationStackASG)
+                            .build());
 
-        AutoScalingGroup migrationStackGroup = response.autoScalingGroups().get(0);
-        Instance migrationInstance = migrationStackGroup.instances().get(0);
+            AutoScalingGroup migrationStackGroup = response.autoScalingGroups().get(0);
+            Instance migrationInstance = migrationStackGroup.instances().get(0);
 
-        return migrationInstance.instanceId();
+            return migrationInstance.instanceId();
+        }
+    }
+
+    private String getMigrationStackPropertyOrOverride(String migrationStackProperty, String migrationStackPropertySystemOverrideKey) {
+        final String documentOverride = System.getProperty(migrationStackPropertySystemOverrideKey);
+        if (documentOverride != null) {
+            return documentOverride;
+        } else {
+            ensureStackOutputsAreSet();
+            return migrationStackProperty;
+        }
     }
 
     private void ensureStackOutputsAreSet() {
