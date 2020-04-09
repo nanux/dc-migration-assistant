@@ -22,6 +22,7 @@ import { Button } from '@atlaskit/button/dist/cjs/components/Button';
 import { Link } from 'react-router-dom';
 import { overviewPath } from '../../utils/RoutePaths';
 import { I18n } from '../../atlassian/mocks/@atlassian/wrm-react-i18n';
+import * as moment from 'moment';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -40,7 +41,7 @@ export type MigrationTransferProps = {
     infoContent: string;
     infoActions?: Action[];
     nextText: string;
-    started: Date;
+    started: moment.Moment;
 };
 
 const TransferPageContainer = styled.div`
@@ -87,11 +88,7 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                 </SectionMessage>
                 <h4>Phase of copying</h4>
                 <ProgressBar isIndeterminate />
-                <p>
-                    Started {started.getDate()}/{MONTHS[started.getMonth() - 1]}/
-                    {started.getFullYear()} {started.getHours() % 12}:{started.getMinutes()}{' '}
-                    {started.getHours() > 12 ? 'PM' : 'AM'}
-                </p>
+                <p>Started {started.format('D/MMM/YY h:m A')}</p>
                 <p>10 hours, 15 minutes elapsed</p>
                 <p>45 000 files copied</p>
             </TransferContentContainer>
