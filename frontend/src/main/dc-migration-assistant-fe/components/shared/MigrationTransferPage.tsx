@@ -93,7 +93,12 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                 </SectionMessage>
                 <h4>Phase of copying</h4>
                 <ProgressBar isIndeterminate />
-                <p>Started {started.format('D/MMM/YY h:m A')}</p>
+                <p>
+                    {I18n.getText(
+                        'atlassian.migration.datacenter.common.progress.started',
+                        started.format('D/MMM/YY h:m A')
+                    )}
+                </p>
                 <p>
                     {I18n.getText(
                         'atlassian.migration.datacenter.common.progress.mins_elapsed',
