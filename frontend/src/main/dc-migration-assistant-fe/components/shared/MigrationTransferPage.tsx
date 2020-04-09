@@ -3,6 +3,8 @@ import ProgressBar, { SuccessProgressBar } from '@atlaskit/progress-bar';
 import SectionMessage from '@atlaskit/section-message';
 import styled from 'styled-components';
 import { Button } from '@atlaskit/button/dist/cjs/components/Button';
+import { Link } from 'react-router-dom';
+import { overviewPath } from '../../utils/RoutePaths';
 
 const TransferPageContainer = styled.div`
     display: flex;
@@ -55,7 +57,9 @@ export const MigrationTransferPage: FunctionComponent<{}> = ({ children }) => {
                 <p>45 000 files copied</p>
             </TransferContentContainer>
             <TransferActionsContainer>
-                <Button>Cancel migration</Button>
+                <Link to={overviewPath}>
+                    <Button>Cancel migration</Button>
+                </Link>
                 <Button appearance="primary">Start downtime</Button>
             </TransferActionsContainer>
         </TransferPageContainer>
