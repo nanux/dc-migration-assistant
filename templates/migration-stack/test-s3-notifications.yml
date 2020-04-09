@@ -3,39 +3,108 @@ Description: Jira / Confluence Server to DC (AWS) Helper
 
 Resources:
 
+  EncryptionKey:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: Symmetric CMK for SQS and S3
+      KeyPolicy:
+        Version: '2012-10-17'
+        Id: migration-helper-key
+        Statement:
+          - Sid: Enable IAM User Permissions
+            Effect: Allow
+            Principal:
+              AWS:
+                Fn::Join:
+                  - ''
+                  - - 'arn:aws:iam::'
+                    - Ref: AWS::AccountId
+                    - ':root'
+            Action: kms:*
+            Resource: '*'
+          - Sid: S3 Use of Key
+            Effect: Allow
+            Principal:
+              Service: "s3.amazonaws.com"
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:GenerateDataKey:*
+            Resource: '*'
+          - Sid: SQS Use of Key
+            Effect: Allow
+            Principal:
+              Service: "sqs.amazonaws.com"
+            Action:
+              - kms:Encrypt
+              - kms:Decrypt
+              - kms:GenerateDataKey:*
+            Resource: '*'
+
   MigrationBucket:
     Type: AWS::S3::Bucket
     DependsOn: QueuePolicy
     Properties:
       BucketName: !Sub 'atl-migrationbucket-${AWS::StackName}'
+      AccessControl: BucketOwnerFullControl
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256
+              KMSMasterKeyID: !Ref EncryptionKey
+              SSEAlgorithm: aws:kms
       NotificationConfiguration:
         QueueConfigurations:
           - Queue: !GetAtt MigrationQueue.Arn
             Event: s3:ObjectCreated:*
     DeletionPolicy: Delete
 
+  ForceEncryption:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MigrationBucket
+      PolicyDocument:
+        Version: "2008-10-17"
+        Statement:
+          - Sid: DenyIncorrectEncryptionHeader
+            Effect: Deny
+            Principal: "*"
+            Action:
+              - s3:PutObject
+            Resource:
+              - !Sub 'arn:aws:s3:::${MigrationBucket}/*'
+            Condition:
+              StringNotEquals:
+                's3:x-amz-server-side-encryption': 'aws:kms'
+          - Sid: DenyUnEncryptedObjectUploads
+            Effect: Deny
+            Principal: "*"
+            Action:
+              - s3:PutObject
+            Resource:
+              - !Join ["", ["arn:aws:s3:::", !Ref MigrationBucket, "/*"]]
+            Condition:
+              StringNotEquals:
+                "s3:x-amz-server-side-encryption":
+                  - "aws:kms"
+    DependsOn: MigrationBucket
+
   QueuePolicy:
     Type: AWS::SQS::QueuePolicy
-    DependsOn: MigrationQueue
     Properties:
       PolicyDocument:
         Id: !Sub "MigrationQueue_Policy_${AWS::AccountId}"
         Version: 2012-10-17
         Statement:
-          - Sid: "MigrationQueue_SendMessage"
+          - Sid: "MigrationQueue_SendMessage_Bucket"
             Effect: Allow
             Principal:
-              AWS: !Ref AWS::AccountId
+              AWS: "*"
             Action:
               - SQS:SendMessage
             Resource: !GetAtt MigrationQueue.Arn
             Condition:
               ArnEquals:
-                aws:SourceArn: !GetAtt MigrationBucket.Arn
+                aws:SourceArn: !Join ["", ["arn:aws:s3:::",!Sub 'atl-migrationbucket-${AWS::StackName}']]
       Queues:
         - !Ref MigrationQueue
 
@@ -44,18 +113,47 @@ Resources:
     Properties:
       DelaySeconds: 0
       MaximumMessageSize: 262144
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
+        maxReceiveCount: 5
       MessageRetentionPeriod: 864000
       QueueName: !Sub 'atl-migration-queue-${AWS::StackName}'
       ReceiveMessageWaitTimeSeconds: 0
-      VisibilityTimeout: 90
+      VisibilityTimeout: 43200
+
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      DelaySeconds: 0
+      MaximumMessageSize: 262144
+      MessageRetentionPeriod: 864000
+      QueueName: !Sub 'atl-migration-dlq-${AWS::StackName}'
+      ReceiveMessageWaitTimeSeconds: 0
+      VisibilityTimeout: 43200
+
+  StackNameParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /config/migration-helper/cloud.aws.stack.name
+      Type: String
+      Value: !Ref AWS::StackName
+      Description: CloudFormation Stack Name
 
   JiraFilePathParameter:
     Type: AWS::SSM::Parameter
     Properties:
       Name: /config/migration-helper/app.jira.file.path
       Type: String
-      Value: '/efs/jira/shared'
+      Value: "atl-migration-queue-migration-helper"
       Description: File Path
+
+  VPCIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /config/migration-helper/app.vpc.id
+      Type: String
+      Value: "vpc-02a66f2c3b0b1f599"
+      Description: Helper VPC Id
 
   RegionParameter:
     Type: AWS::SSM::Parameter

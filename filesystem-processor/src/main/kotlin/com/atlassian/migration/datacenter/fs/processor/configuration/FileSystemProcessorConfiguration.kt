@@ -40,11 +40,16 @@ open class FileSystemProcessorConfiguration {
     }
 
     @Bean
-    open fun inboundChannel(threadPoolTaskExecutor: ThreadPoolTaskExecutor): SubscribableChannel? {
-        return ExecutorChannel(threadPoolTaskExecutor, RoundRobinLoadBalancingStrategy())
+    open fun inboundChannel(): SubscribableChannel? {
+        return PublishSubscribeChannel()
     }
 
-    @Transformer(inputChannel = "inboundChannel", outputChannel = "inboundTransformChannel")
+    @Bean
+    open fun routingChannel(): SubscribableChannel? {
+        return PublishSubscribeChannel()
+    }
+
+    @Transformer(inputChannel = "routingChannel", outputChannel = "inboundTransformChannel")
     open fun transformPayload(raw: String?): S3EventNotification? {
         return S3EventNotification.parseJson(raw)
     }

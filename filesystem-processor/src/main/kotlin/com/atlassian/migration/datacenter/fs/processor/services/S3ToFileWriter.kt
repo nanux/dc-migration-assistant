@@ -11,6 +11,7 @@ import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
 import java.nio.channels.CompletionHandler
 import java.nio.charset.Charset
+import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 
 class S3ToFileWriter(private val s3Client: AmazonS3?, private val entity: S3EventNotification.S3Entity?, private val jiraHome: String?) : Runnable {
@@ -24,25 +25,30 @@ class S3ToFileWriter(private val s3Client: AmazonS3?, private val entity: S3Even
             s3Client!!.getObject(entity.bucket.name, key).use { s3object ->
                 s3object.objectContent.use { inputStream ->
                     val localPath = File("$jiraHome/$key")
-                    if (!localPath.parentFile.exists()) {
-                        if (localPath.parentFile.mkdirs()) {
+                    val keyFile: String = Paths.get(localPath.path).fileName.toString()
+                    if (keyFile.contains(".")) {
+                        if (!localPath.parentFile.exists()) {
+                            if (localPath.parentFile.mkdirs()) {
 
-                            log.debug("Made the directory {}", localPath.path)
+                                log.debug("Made the directory {}", localPath.path)
+                            }
                         }
+                        val fileChannel = AsynchronousFileChannel.open(localPath.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
+                        val bytes = IOUtils.toByteArray(inputStream)
+                        val buffer = ByteBuffer.wrap(bytes)
+                        fileChannel.write(buffer, 0, buffer, object : CompletionHandler<Int?, ByteBuffer?> {
+                            override fun completed(result: Int?, attachment: ByteBuffer?) {
+                                log.debug("Wrote the file {}", localPath.toString())
+                            }
+
+                            override fun failed(exc: Throwable, attachment: ByteBuffer?) {
+                                log.error(exc.cause!!.localizedMessage)
+                                log.error("Failed to write the file {}", localPath.toString())
+                            }
+                        })
+                    } else {
+                        localPath.mkdirs()
                     }
-                    val fileChannel = AsynchronousFileChannel.open(localPath.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE)
-                    val bytes = IOUtils.toByteArray(inputStream)
-                    val buffer = ByteBuffer.wrap(bytes)
-                    fileChannel.write(buffer, 0, buffer, object : CompletionHandler<Int?, ByteBuffer?> {
-                        override fun completed(result: Int?, attachment: ByteBuffer?) {
-                            log.debug("Wrote the file {}", localPath.toString())
-                        }
-
-                        override fun failed(exc: Throwable, attachment: ByteBuffer?) {
-                            log.error(exc.cause!!.localizedMessage)
-                            log.error("Failed to write the file {}", localPath.toString())
-                        }
-                    })
                 }
             }
         } catch (ex: Exception) {

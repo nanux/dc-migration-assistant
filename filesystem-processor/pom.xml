@@ -178,7 +178,17 @@
                 <version>2.2.5.RELEASE</version>
                 <configuration>
                     <executable>true</executable>
+                    <mainClass>com.atlassian.migration.datacenter.fs.processor.FileSystemProcessorApplication
+                    </mainClass>
+                    <profiles>production</profiles>
                 </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
         <extensions>
