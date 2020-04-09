@@ -2,6 +2,7 @@ import React, { FunctionComponent } from 'react';
 import ProgressBar, { SuccessProgressBar } from '@atlaskit/progress-bar';
 import SectionMessage from '@atlaskit/section-message';
 import styled from 'styled-components';
+import { Button } from '@atlaskit/button/dist/cjs/components/Button';
 
 const TransferPageContainer = styled.div`
     display: flex;
@@ -18,6 +19,14 @@ const TransferContentContainer = styled.div`
 
     padding-bottom: 20px;
     border-bottom: 2px solid gray;
+`;
+
+const TransferActionsContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+
+    margin-top: 20px;
 `;
 
 export const MigrationTransferPage: FunctionComponent<{}> = ({ children }) => {
@@ -45,6 +54,10 @@ export const MigrationTransferPage: FunctionComponent<{}> = ({ children }) => {
                 <p>10 hours, 15 minutes elapsed</p>
                 <p>45 000 files copied</p>
             </TransferContentContainer>
+            <TransferActionsContainer>
+                <Button>Cancel migration</Button>
+                <Button appearance="primary">Start downtime</Button>
+            </TransferActionsContainer>
         </TransferPageContainer>
     );
 };
