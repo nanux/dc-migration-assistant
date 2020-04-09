@@ -1,10 +1,20 @@
 import React, { FunctionComponent } from 'react';
 import ProgressBar, { SuccessProgressBar } from '@atlaskit/progress-bar';
 import SectionMessage from '@atlaskit/section-message';
+import styled from 'styled-components';
+
+const TransferPageContainer = styled.div`
+    display: flex;
+    flex-direction: column;
+    width: 25%;
+    margin-right: auto;
+    margin-left: auto;
+    margin-bottom: auto;
+`;
 
 export const MigrationTransferPage: FunctionComponent<{}> = ({ children }) => {
     return (
-        <>
+        <TransferPageContainer>
             <h1>Copy Over files</h1>
             <p>Text describing the step</p>
             <SectionMessage
@@ -25,6 +35,6 @@ export const MigrationTransferPage: FunctionComponent<{}> = ({ children }) => {
             <p>Started today</p>
             <p>10 hours, 15 minutes elapsed</p>
             <p>45 000 files copied</p>
-        </>
+        </TransferPageContainer>
     );
 };
