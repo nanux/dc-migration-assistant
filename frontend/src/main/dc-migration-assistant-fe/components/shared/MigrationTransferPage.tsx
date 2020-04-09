@@ -22,7 +22,7 @@ import { Button } from '@atlaskit/button/dist/cjs/components/Button';
 import { Link } from 'react-router-dom';
 import { overviewPath } from '../../utils/RoutePaths';
 import { I18n } from '../../atlassian/mocks/@atlassian/wrm-react-i18n';
-import * as moment from 'moment';
+import moment from 'moment';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -78,6 +78,11 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
     nextText,
     started,
 }) => {
+    const elapsedTime = moment.duration(moment.now() - started.valueOf());
+    const elapsedDays = elapsedTime.days();
+    const elapsedHours = elapsedTime.hours();
+    const elapsedMins = elapsedTime.minutes();
+
     return (
         <TransferPageContainer>
             <TransferContentContainer>
@@ -89,7 +94,13 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                 <h4>Phase of copying</h4>
                 <ProgressBar isIndeterminate />
                 <p>Started {started.format('D/MMM/YY h:m A')}</p>
-                <p>10 hours, 15 minutes elapsed</p>
+                <p>
+                    {I18n.getText(
+                        'atlassian.migration.datacenter.common.progress.mins_elapsed',
+                        `${elapsedDays * 24 + elapsedHours}`,
+                        `${elapsedMins}`
+                    )}
+                </p>
                 <p>45 000 files copied</p>
             </TransferContentContainer>
             <TransferActionsContainer>

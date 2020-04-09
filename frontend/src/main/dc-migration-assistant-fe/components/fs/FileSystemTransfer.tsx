@@ -20,6 +20,11 @@ import { I18n } from '@atlassian/wrm-react-i18n';
 import { MigrationTransferProps, MigrationTransferPage } from '../shared/MigrationTransferPage';
 import moment from 'moment';
 
+const dummyStarted = moment();
+
+dummyStarted.subtract(49, 'hours');
+dummyStarted.subtract(23, 'minutes');
+
 const fsMigrationTranferPageProps: MigrationTransferProps = {
     heading: I18n.getText('atlassian.migration.datacenter.fs.title'),
     description: I18n.getText('atlassian.migration.datacenter.fs.description'),
@@ -34,7 +39,7 @@ const fsMigrationTranferPageProps: MigrationTransferProps = {
         },
     ],
     nextText: I18n.getText('atlassian.migration.datacenter.fs.nextStep'),
-    started: moment(),
+    started: dummyStarted,
 };
 
 export const FileSystemTransferPage: FunctionComponent = () => {
