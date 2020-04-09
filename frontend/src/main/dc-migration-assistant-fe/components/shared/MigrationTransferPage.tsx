@@ -24,13 +24,23 @@ import { overviewPath } from '../../utils/RoutePaths';
 import { I18n } from '../../atlassian/mocks/@atlassian/wrm-react-i18n';
 import moment from 'moment';
 
-type Action = {
+export type Progress = {
+    phase: string;
+    completeness: 0.0 | 0.1 | 0.2 | 0.3 | 0.4 | 0.5 | 0.6 | 0.7 | 0.8 | 0.9 | 1.0;
+    progress: string;
+};
+
+export interface ProgressCallback {
+    (): Promise<Progress>;
+}
+
+interface Action {
     text: React.ReactNode;
     onClick?: () => void;
     href?: string;
     key: string;
     testId?: string;
-};
+}
 
 export type MigrationTransferProps = {
     heading: string;
@@ -40,6 +50,7 @@ export type MigrationTransferProps = {
     infoActions?: Action[];
     nextText: string;
     started: moment.Moment;
+    getProgress: ProgressCallback;
 };
 
 const TransferPageContainer = styled.div`

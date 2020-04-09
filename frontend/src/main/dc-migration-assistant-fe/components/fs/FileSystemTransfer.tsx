@@ -40,6 +40,8 @@ const fsMigrationTranferPageProps: MigrationTransferProps = {
     ],
     nextText: I18n.getText('atlassian.migration.datacenter.fs.nextStep'),
     started: dummyStarted,
+    getProgress: () =>
+        Promise.resolve({ completeness: 0.5, phase: 'upload', progress: '45 000 files copied' }),
 };
 
 export const FileSystemTransferPage: FunctionComponent = () => {
