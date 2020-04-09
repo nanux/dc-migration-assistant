@@ -1,6 +1,7 @@
 AWSTemplateFormatVersion: 2010-09-09
 Description: Jira / Confluence Server to DC (AWS) Helper
 Parameters:
+
   NetworkPrivateSubnet:
     Description: "Private SubnetId where Migration helper will be placed - Must have connection to desitnation Storage"
     Type: AWS::EC2::Subnet::Id
@@ -9,13 +10,10 @@ Parameters:
     Type: String
   EFSSecurityGroup:
     Description: "The Security Group attached to EFS, access to NFS port will be open from Migration Helper Security Group"
-<<<<<<< HEAD
     Type: AWS::EC2::SecurityGroup::Id
-=======
-    Type: String
   RDSSecurityGroup:
     Description: "The Security Group attached to RDS, access to PostgreSQL port will be open from Migration Helper Security Group"
-    Type: String
+    Type: AWS::EC2::SecurityGroup::Id
   RDSEndpoint:
     Description: "The RDS endpoint address that hosts the database on AWS"
     Type: String
@@ -27,30 +25,20 @@ Parameters:
     Description: "The name of the database  on the RDS Server"
     Type: String
     Default: "jira"
->>>>>>> master
   HelperInstanceType:
     Description: "The Instance Type of Helper EC2 Instance"
     Type: String
-    Default: 'm5a.xlarge'
   HelperVpcId:
     Description: "The VPC for Helper EC2 Instance"
     Type: AWS::EC2::VPC::Id
   LatestAmiId:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
-<<<<<<< HEAD
-  MigrationFilePath:
-    Type: String
-    Description: 'The directory on the migration helper server to write the files to from S3'
-    Default: '/efs/jira/shared'
-
-=======
   PSQLVersion:
     Description: "The version of PSQL client installed on the Helper EC2 instance"
     Default: '11'
     AllowedValues: ['9.6', '10', '11']
     Type: String
->>>>>>> master
 Resources:
 
   #S3 Bucket for Database Transfer
@@ -58,21 +46,12 @@ Resources:
   # Until then, set the Deletion policy to retain
   MigrationBucket:
     Type: AWS::S3::Bucket
-    DependsOn:
-      - QueuePolicy
     Properties:
       BucketName: !Sub 'atl-migrationbucket-${AWS::StackName}'
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
               SSEAlgorithm: AES256
-<<<<<<< HEAD
-      NotificationConfiguration:
-        QueueConfigurations:
-          - Queue: !GetAtt MigrationQueue.Arn
-            Event: s3:ObjectCreated:*
-    DeletionPolicy: Delete
-=======
       LifecycleConfiguration:
         Rules:
           - AbortIncompleteMultipartUpload:
@@ -80,305 +59,234 @@ Resources:
             Status: "Enabled"
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
->>>>>>> master
-
-  QueuePolicy:
-    Type: AWS::SQS::QueuePolicy
-    Properties:
-      PolicyDocument:
-        Id: !Sub "MigrationQueue_Policy_${AWS::AccountId}"
-        Version: 2012-10-17
-        Statement:
-          - Sid: "MigrationQueue_SendMessage"
-            Effect: Allow
-            Principal:
-              AWS: '*'
-            Action:
-              - SQS:SendMessage
-            Resource: !GetAtt MigrationQueue.Arn
-            Condition:
-              ArnEquals:
-                aws:SourceArn: !Join ["", ["arn:aws:s3:::",!Sub 'atl-migrationbucket-${AWS::StackName}']]
-      Queues:
-        - !Ref MigrationQueue
-
-  MigrationQueue:
-    Type: AWS::SQS::Queue
-    Properties:
-      DelaySeconds: 0
-      MaximumMessageSize: 262144
-      MessageRetentionPeriod: 864000
-      QueueName: !Sub 'atl-migration-queue-${AWS::StackName}'
-      ReceiveMessageWaitTimeSeconds: 0
-      VisibilityTimeout: 90
-
-  StackNameParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: /config/migration-helper/cloud.aws.stack.name
-      Type: String
-      Value: !Ref AWS::StackName
-      Description: CloudFormation Stack Name
-
-  JiraFilePathParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: /config/migration-helper/app.jira.file.path
-      Type: String
-      Value: !Ref MigrationFilePath
-      Description: File Path
-
-  VPCIdParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: /config/migration-helper/app.vpc.id
-      Type: String
-      Value: !Ref HelperVpcId
-      Description: Helper VPC Id
-
-  RegionParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: /config/migration-helper/app.region.id
-      Type: String
-      Value: !Ref AWS::Region
-      Description: Region Name
 
   #EC2 Migration Helper
   HelperLaunchConfig:
     Type: AWS::AutoScaling::LaunchConfiguration
     Metadata:
-<<<<<<< HEAD
       AWS::CloudFormation::Init:
         configSets:
-          full_efs_config: [create_efs_script,mount_efs,prepare_efs_sync_script]
+          install_prerequisites: [create_efs_script,mount_efs,prepare_efs_sync_script,install_psql_client, create_rds_restore_script]
         create_efs_script:
           files:
-=======
-        AWS::CloudFormation::Init:
-          configSets:
-            install_prerequisites: [create_efs_script,mount_efs,prepare_efs_sync_script,install_psql_client, create_rds_restore_script]
-          create_efs_script:
-            files:
->>>>>>> master
-              /opt/atlassian/dc-migration-assistant/mount-efs.sh:
-                content: !Sub
-                  - |
-                    #!/bin/bash
+            /opt/atlassian/dc-migration-assistant/mount-efs.sh:
+              content: !Sub
+                - |
+                  #!/bin/bash
 
-                    EFS_REGION=${AWS::Region}
-                    EFS_MOUNT_DIR=/efs/
-                    EFS_FILE_SYSTEM_ID=${EFSID}
+                  EFS_REGION=${AWS::Region}
+                  EFS_MOUNT_DIR=/efs/
+                  EFS_FILE_SYSTEM_ID=${EFSID}
 
-                    echo "Mounting EFS filesystem $EFS_FILE_SYSTEM_ID to directory $EFS_MOUNT_DIR ..."
+                  echo "Mounting EFS filesystem $EFS_FILE_SYSTEM_ID to directory $EFS_MOUNT_DIR ..."
 
-                    echo 'Stopping NFS ID Mapper...'
-                    service rpcidmapd status &> /dev/null
-                    if [ $? -ne 0 ] ; then
-                        echo 'rpc.idmapd is already stopped!'
-                    else
-                        service rpcidmapd stop
-                        if [ $? -ne 0 ] ; then
-                            echo 'ERROR: Failed to stop NFS ID Mapper!'
-                            exit 1
-                        fi
-                    fi
+                  echo 'Stopping NFS ID Mapper...'
+                  service rpcidmapd status &> /dev/null
+                  if [ $? -ne 0 ] ; then
+                      echo 'rpc.idmapd is already stopped!'
+                  else
+                      service rpcidmapd stop
+                      if [ $? -ne 0 ] ; then
+                          echo 'ERROR: Failed to stop NFS ID Mapper!'
+                          exit 1
+                      fi
+                  fi
 
-                    echo 'Checking if EFS mount directory exists...'
-                    if [ ! -d $EFS_MOUNT_DIR ]; then
-                        echo "Creating directory $EFS_MOUNT_DIR ..."
-                        mkdir -p $EFS_MOUNT_DIR
-                        if [ $? -ne 0 ]; then
-                            echo 'ERROR: Directory creation failed!'
-                            exit 1
-                        fi
-                    else
-                        echo "Directory $EFS_MOUNT_DIR already exists!"
-                    fi
+                  echo 'Checking if EFS mount directory exists...'
+                  if [ ! -d $EFS_MOUNT_DIR ]; then
+                      echo "Creating directory $EFS_MOUNT_DIR ..."
+                      mkdir -p $EFS_MOUNT_DIR
+                      if [ $? -ne 0 ]; then
+                          echo 'ERROR: Directory creation failed!'
+                          exit 1
+                      fi
+                  else
+                      echo "Directory $EFS_MOUNT_DIR already exists!"
+                  fi
 
-                    mountpoint -q $EFS_MOUNT_DIR
-                    if [ $? -ne 0 ]; then
-                        echo "mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $EFS_FILE_SYSTEM_ID.efs.$EFS_REGION.amazonaws.com:/ $EFS_MOUNT_DIR"
-                        mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $EFS_FILE_SYSTEM_ID.efs.$EFS_REGION.amazonaws.com:/ $EFS_MOUNT_DIR
-                        if [ $? -ne 0 ] ; then
-                            echo 'ERROR: Mount command failed!'
-                            exit 1
-                        fi
-                        chmod 777 $EFS_MOUNT_DIR
-                        runuser -l  ec2-user -c "touch $EFS_MOUNT_DIR/mount_worked"
-                        if [[ $? -ne 0 ]]; then
-                            echo 'ERROR: Permission Error!'
-                            exit 1
-                        else
-                            runuser -l  ec2-user -c "rm -f $EFS_MOUNT_DIR/mount_worked"
-                        fi
-                    else
-                        echo "Directory $EFS_MOUNT_DIR is already a valid mountpoint!"
-                    fi
+                  mountpoint -q $EFS_MOUNT_DIR
+                  if [ $? -ne 0 ]; then
+                      echo "mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $EFS_FILE_SYSTEM_ID.efs.$EFS_REGION.amazonaws.com:/ $EFS_MOUNT_DIR"
+                      mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $EFS_FILE_SYSTEM_ID.efs.$EFS_REGION.amazonaws.com:/ $EFS_MOUNT_DIR
+                      if [ $? -ne 0 ] ; then
+                          echo 'ERROR: Mount command failed!'
+                          exit 1
+                      fi
+                      chmod 777 $EFS_MOUNT_DIR
+                      runuser -l  ec2-user -c "touch $EFS_MOUNT_DIR/mount_worked"
+                      if [[ $? -ne 0 ]]; then
+                          echo 'ERROR: Permission Error!'
+                          exit 1
+                      else
+                          runuser -l  ec2-user -c "rm -f $EFS_MOUNT_DIR/mount_worked"
+                      fi
+                  else
+                      echo "Directory $EFS_MOUNT_DIR is already a valid mountpoint!"
+                  fi
 
-                    echo 'EFS mount complete.'
-                  - { EFSID: !Ref EFSFileSystemId }
-                mode: "000755"
-          mount_efs:
-            commands:
-              01_mount:
-                command: /opt/atlassian/dc-migration-assistant/mount-efs.sh
-          install_psql_client:
-            commands:
-              01_install_psql:
-                command: !Sub
-                  - "amazon-linux-extras install -y postgresql${PSQLClientVersion}"
-                  - { PSQLClientVersion: !Ref PSQLVersion }
-          create_rds_restore_script:
-            files:
-              /opt/atlassian/dc-migration-assistant/restore-db-to-rds.sh:
-                content: !Sub
-                  - |
-                    #!/bin/bash
-                    DATABASE_DOWNLOAD_DIR="/efs/downloads/db.dump"
-                    mkdir -p $DATABASE_DOWNLOAD_DIR
-                    DB_DUMP_LOG_FILE="/var/atlassian/dc-migration-assistant/pg_dump-log.txt"
-                    SECRET_PASSWORD=`aws secretsmanager  get-secret-value --secret-id ${SecretIdentifier} --region ${AWS::Region} --output text --query "SecretString"`
-                    aws s3 sync s3://${MigrationBucket}/db.dump/ $DATABASE_DOWNLOAD_DIR --region ${AWS::Region} | tee $DB_DUMP_LOG_FILE
-                    echo "Restoring database from $DATABASE_DOWNLOAD_DIR to ${DBHost}:${DBPort}/$DBName" | tee $DB_DUMP_LOG_FILE
-                    PGPASSWORD=$SECRET_PASSWORD pg_restore -h ${DBHost} -U ${DBUser} -d ${DBName} -p ${DBPort} -F d --verbose $DATABASE_DOWNLOAD_DIR 2>&1 | tee $DB_DUMP_LOG_FILE
-                    PG_RESTORE_EXIT_CODE=$?
-                    ERRORS_EXIST=`grep -qiE 'error|warning' /var/atlassian/dc-migration-assistant/pg_dump-log.txt && echo 'true' || echo 'false'`
-                    RESTORE_COMPLETE=`grep -qiE 'pg_restore: finished main parallel loop' /var/atlassian/dc-migration-assistant/pg_dump-log.txt && echo 'true' || echo 'false'`
-                    echo -e "{\"is_restore_complete\":\""$RESTORE_COMPLETE"\",\"is_error_present\":\""$ERRORS_EXIST"\", "return_code":\""$PG_RESTORE_EXIT_CODE"\"}"
-                  - {
-                    SecretIdentifier: !Sub "atl-${AWS::StackName}-app-rds-password",
-                    MigrationBucket: !Ref MigrationBucket,
-                    DBHost: !Ref RDSEndpoint,
-                    DBPort: !Ref RDSPort,
-                    DBName: !Ref RDSDbName,
-                    DBUser: "atljira"
-                  }
-                mode: "000755"
-          prepare_efs_sync_script:
-            packages:
-              yum:
-                python3: []
-            files:
-              /opt/atlassian/dc-migration-assistant/copy-shared-home.sh:
-                content: !Sub
-                  - |
-                    #!/bin/bash
-                    SYNC_LOG_FILE="/var/atlassian/dc-migration-assistant/sync-log.txt"
-                    echo "beginning s3 sync with shared home" >> $SYNC_LOG_FILE
-                    aws s3 sync s3://${MigrationBucket} /efs/jira/shared >> $SYNC_LOG_FILE 2>/var/atlassian/dc-migration-assistant/sync-error.txt
-                    echo "s3 sync with shared home complete with exit code $?" >> $SYNC_LOG_FILE
-                  - { MigrationBucket: !Ref MigrationBucket }
-                mode: "000755"
-              /opt/atlassian/dc-migration-assistant/home-copy-status.py:
-                content: | 
-                    #!/usr/bin/python3
-                    
-                    import subprocess
-                    import re
-                    import json
-                    import sys
-                    
-                    # Uses the UNIX tail command to get the last line of the s3 sync output file
-                    def getLastLineOfSyncOutput(syncFilePath: str) -> str:
-                        last_line = subprocess.check_output(["tail", "-1", syncFilePath])
-                        return last_line.decode("utf-8")
-                    
-                    # Looks for the final log line left behind by the s3 sync SSM document to indicate if the sync completed successfully
-                    def checkIfSyncCompleted(last_line_of_output: str) -> (bool, int):
-                        match = re.search("s3 sync with shared home complete with exit code ([0-9]*)", last_line_of_output)
-                        if match is None:
-                            return False, 0
-                    
-                        return True, match.group(1)
-                    
-                    def getMultiplierForDataUnit(unit: str):
-                        if unit == "K":
-                            return 1024
-                        if unit == "M":
-                            return 1024 * 1024
-                        if unit == "G":
-                            return 1024 * 1024 * 1024
-                    
-                        raise ValueError('Must be K, M or G')
-                    
-                    def parseSyncOutput(last_line_of_output):
-                        match = re.search("Completed ([0-9]*\.[0-9]*) (M|K|G)iB\/~?([0-9]*\.[0-9]*) (M|K|G)iB \([0-9]*\.[0-9]* [MKG]iB\/s\) with ~?([0-9]*) file\(s\) remaining( \(calculating...\))?", last_line_of_output)
-                    
-                        if match is not None:
-                            progress_bytes_prefix = float(match.group(1))
-                            progress_bytes_multiplier = getMultiplierForDataUnit(match.group(2))
-                            progress = progress_bytes_prefix * progress_bytes_multiplier
-                    
-                            total_bytes_prefix = float(match.group(3))
-                            total_bytes_multiplier = getMultiplierForDataUnit(match.group(4))
-                            total_bytes = total_bytes_prefix * total_bytes_multiplier
-                    
-                            files_remaining = int(match.group(5))
-                            calculating = match.group(6) is not None
-                    
-                            status = {
-                                'progress': progress,
-                                'files_remaining': files_remaining,
-                                'total': total_bytes,
-                                'isCalculating': calculating
-                            }
-                            return status
-                    
-                        else:
-                            raise ValueError('could not find sync progress in sync output {}'.format(last_line_of_output))
-                    
-                    def parseError(error_file_path: str) -> str:
-                        with open(error_file_path) as errFile:
-                            return errFile.readlines()
-                    
-                    if len(sys.argv) != 3:
-                        print("Usage: {} <output file> <error file>".format(sys.argv[0]))
-                        exit(1)
-                    
-                    output_file_path = sys.argv[1]
-                    error_file_path = sys.argv[2]
-                    
-                    last_line = getLastLineOfSyncOutput(output_file_path)
-                    
-                    finished, exit_code = checkIfSyncCompleted(last_line)
-                    
-                    result = dict()
-                    
-                    try:
-                        errors = parseError(error_file_path)
-                        result['errors'] = errors
-                    except:
-                        pass
-                    
-                    if finished:
-                        result['finished'] = True
-                        result['code'] = exit_code
-                    
-                    try:
-                        progress = parseSyncOutput(last_line)
-                    except ValueError:
-                        progress = {}
-                    
-                    result['status'] = progress
-                    
-                    print(json.dumps(result))
-                    exit(0)
+                  echo 'EFS mount complete.'
+                - { EFSID: !Ref EFSFileSystemId }
+              mode: "000755"
+        mount_efs:
+          commands:
+            01_mount:
+              command: /opt/atlassian/dc-migration-assistant/mount-efs.sh
+        install_psql_client:
+          commands:
+            01_install_psql:
+              command: !Sub
+                - "amazon-linux-extras install -y postgresql${PSQLClientVersion}"
+                - { PSQLClientVersion: !Ref PSQLVersion }
+        create_rds_restore_script:
+          files:
+            /opt/atlassian/dc-migration-assistant/restore-db-to-rds.sh:
+              content: !Sub
+                - |
+                  #!/bin/bash
+                  DATABASE_DOWNLOAD_DIR="/efs/downloads/db.dump"
+                  mkdir -p $DATABASE_DOWNLOAD_DIR
+                  DB_DUMP_LOG_FILE="/var/atlassian/dc-migration-assistant/pg_dump-log.txt"
+                  SECRET_PASSWORD=`aws secretsmanager  get-secret-value --secret-id ${SecretIdentifier} --region ${AWS::Region} --output text --query "SecretString"`
+                  aws s3 sync s3://${MigrationBucket}/db.dump/ $DATABASE_DOWNLOAD_DIR --region ${AWS::Region} | tee $DB_DUMP_LOG_FILE
+                  echo "Restoring database from $DATABASE_DOWNLOAD_DIR to ${DBHost}:${DBPort}/$DBName" | tee $DB_DUMP_LOG_FILE
+                  PGPASSWORD=$SECRET_PASSWORD pg_restore -h ${DBHost} -U ${DBUser} -d ${DBName} -p ${DBPort} -F d --verbose $DATABASE_DOWNLOAD_DIR 2>&1 | tee $DB_DUMP_LOG_FILE
+                  PG_RESTORE_EXIT_CODE=$?
+                  ERRORS_EXIST=`grep -qiE 'error|warning' /var/atlassian/dc-migration-assistant/pg_dump-log.txt && echo 'true' || echo 'false'`
+                  RESTORE_COMPLETE=`grep -qiE 'pg_restore: finished main parallel loop' /var/atlassian/dc-migration-assistant/pg_dump-log.txt && echo 'true' || echo 'false'`
+                  echo -e "{\"is_restore_complete\":\""$RESTORE_COMPLETE"\",\"is_error_present\":\""$ERRORS_EXIST"\", "return_code":\""$PG_RESTORE_EXIT_CODE"\"}"
+                - {
+                  SecretIdentifier: !Sub "atl-${AWS::StackName}-app-rds-password",
+                  MigrationBucket: !Ref MigrationBucket,
+                  DBHost: !Ref RDSEndpoint,
+                  DBPort: !Ref RDSPort,
+                  DBName: !Ref RDSDbName,
+                  DBUser: "atljira"
+                }
+              mode: "000755"
+        prepare_efs_sync_script:
+          packages:
+            yum:
+              python3: []
+          files:
+            /opt/atlassian/dc-migration-assistant/copy-shared-home.sh:
+              content: !Sub
+                - |
+                  #!/bin/bash
+                  SYNC_LOG_FILE="/var/atlassian/dc-migration-assistant/sync-log.txt"
+                  echo "beginning s3 sync with shared home" >> $SYNC_LOG_FILE
+                  aws s3 sync s3://${MigrationBucket} /efs/jira/shared >> $SYNC_LOG_FILE 2>/var/atlassian/dc-migration-assistant/sync-error.txt
+                  echo "s3 sync with shared home complete with exit code $?" >> $SYNC_LOG_FILE
+                - { MigrationBucket: !Ref MigrationBucket }
+              mode: "000755"
+            /opt/atlassian/dc-migration-assistant/home-copy-status.py:
+              content: |
+                #!/usr/bin/python3
 
-            commands:
-              # Default UID from dc-deployments-automation (not set by quick start) https://bitbucket.org/atlassian/dc-deployments-automation/src/81c2bc9fe8bd3fd00f3538f8d5cc7c32d3e24898/group_vars/aws_node_local.yml#lines-18
-              # We need to use useradd because using a cfn-init user gives us a non-interactive user
-              01_create_jira_user:
-                test: "grep -qv jira /etc/passwd"
-                command: "useradd -u 2001 jira"
-                ignoreErrors: false
-              02_create_migration_dirs:
-                test: "test ! -d /var/atlassian/dc-migration-assistant"
-                command: mkdir -p /var/atlassian/dc-migration-assistant
-                ignoreErrors: false
-              03_set_migration_dir_perms:
-                command: chown jira:jira /var/atlassian/dc-migration-assistant
-                ignoreErrors: false
+                import subprocess
+                import re
+                import json
+                import sys
+
+                # Uses the UNIX tail command to get the last line of the s3 sync output file
+                def getLastLineOfSyncOutput(syncFilePath: str) -> str:
+                    last_line = subprocess.check_output(["tail", "-1", syncFilePath])
+                    return last_line.decode("utf-8")
+
+                # Looks for the final log line left behind by the s3 sync SSM document to indicate if the sync completed successfully
+                def checkIfSyncCompleted(last_line_of_output: str) -> (bool, int):
+                    match = re.search("s3 sync with shared home complete with exit code ([0-9]*)", last_line_of_output)
+                    if match is None:
+                        return False, 0
+
+                    return True, match.group(1)
+
+                def getMultiplierForDataUnit(unit: str):
+                    if unit == "K":
+                        return 1024
+                    if unit == "M":
+                        return 1024 * 1024
+                    if unit == "G":
+                        return 1024 * 1024 * 1024
+
+                    raise ValueError('Must be K, M or G')
+
+                def parseSyncOutput(last_line_of_output):
+                    match = re.search("Completed ([0-9]*\.[0-9]*) (M|K|G)iB\/~?([0-9]*\.[0-9]*) (M|K|G)iB \([0-9]*\.[0-9]* [MKG]iB\/s\) with ~?([0-9]*) file\(s\) remaining( \(calculating...\))?", last_line_of_output)
+
+                    if match is not None:
+                        progress_bytes_prefix = float(match.group(1))
+                        progress_bytes_multiplier = getMultiplierForDataUnit(match.group(2))
+                        progress = progress_bytes_prefix * progress_bytes_multiplier
+
+                        total_bytes_prefix = float(match.group(3))
+                        total_bytes_multiplier = getMultiplierForDataUnit(match.group(4))
+                        total_bytes = total_bytes_prefix * total_bytes_multiplier
+
+                        files_remaining = int(match.group(5))
+                        calculating = match.group(6) is not None
+
+                        status = {
+                            'progress': progress,
+                            'files_remaining': files_remaining,
+                            'total': total_bytes,
+                            'isCalculating': calculating
+                        }
+                        return status
+
+                    else:
+                        raise ValueError('could not find sync progress in sync output {}'.format(last_line_of_output))
+
+                def parseError(error_file_path: str) -> str:
+                    with open(error_file_path) as errFile:
+                        return errFile.readlines()
+
+                if len(sys.argv) != 3:
+                    print("Usage: {} <output file> <error file>".format(sys.argv[0]))
+                    exit(1)
+
+                output_file_path = sys.argv[1]
+                error_file_path = sys.argv[2]
+
+                last_line = getLastLineOfSyncOutput(output_file_path)
+
+                finished, exit_code = checkIfSyncCompleted(last_line)
+
+                result = dict()
+
+                try:
+                    errors = parseError(error_file_path)
+                    result['errors'] = errors
+                except:
+                    pass
+
+                if finished:
+                    result['finished'] = True
+                    result['code'] = exit_code
+
+                try:
+                    progress = parseSyncOutput(last_line)
+                except ValueError:
+                    progress = {}
+
+                result['status'] = progress
+
+                print(json.dumps(result))
+                exit(0)
+
+          commands:
+            # Default UID from dc-deployments-automation (not set by quick start) https://bitbucket.org/atlassian/dc-deployments-automation/src/81c2bc9fe8bd3fd00f3538f8d5cc7c32d3e24898/group_vars/aws_node_local.yml#lines-18
+            # We need to use useradd because using a cfn-init user gives us a non-interactive user
+            01_create_jira_user:
+              test: "grep -qv jira /etc/passwd"
+              command: "useradd -u 2001 jira"
+              ignoreErrors: false
+            02_create_migration_dirs:
+              test: "test ! -d /var/atlassian/dc-migration-assistant"
+              command: mkdir -p /var/atlassian/dc-migration-assistant
+              ignoreErrors: false
+            03_set_migration_dir_perms:
+              command: chown jira:jira /var/atlassian/dc-migration-assistant
+              ignoreErrors: false
 
     Properties:
       ImageId: !Ref LatestAmiId
@@ -536,12 +444,7 @@ Resources:
             except Exception as e:
                 responseData = {'Error': str(e)}
                 cfnresponse.send(event, context, cfnresponse.FAILED, responseData)
-<<<<<<< HEAD
-
-  OpenEFSAccessExecutionRole:
-=======
   MigrationStackResourceAccessExecutionRole:
->>>>>>> master
     Type: "AWS::IAM::Role"
     Properties:
       AssumeRolePolicyDocument:
@@ -574,14 +477,14 @@ Resources:
         schemaVersion: "2.2"
         description: "This document is used by the Atlassian DC Migration Assistant to copy down your Jira shared home from S3 to the new stack EFS"
         mainSteps:
-        - action: "aws:runShellScript"
-          name: "copySharedHomeFromS3ToEFS"
-          inputs:
-            runCommand:
-            - "#!/bin/bash"
-            - runuser -l jira -c 'at -f /opt/atlassian/dc-migration-assistant/copy-shared-home.sh now'
-            timeoutSeconds: "10"
-            workingDirectory: "/opt/atlassian/dc-migration-assistant/"
+          - action: "aws:runShellScript"
+            name: "copySharedHomeFromS3ToEFS"
+            inputs:
+              runCommand:
+                - "#!/bin/bash"
+                - runuser -l jira -c 'at -f /opt/atlassian/dc-migration-assistant/copy-shared-home.sh now'
+              timeoutSeconds: "10"
+              workingDirectory: "/opt/atlassian/dc-migration-assistant/"
       DocumentType: "Command"
 
   RdsRestoreDocument:
@@ -591,14 +494,14 @@ Resources:
         schemaVersion: "2.2"
         description: "This document is used by the Atlassian DC Migration Assistant to restore the database backup in S3 to a provisioned RDS instance"
         mainSteps:
-        - action: "aws:runShellScript"
-          name: "restoreDatabaseBackupToRDS"
-          inputs:
-            runCommand:
-            - "#!/bin/bash"
-            - runuser -l jira -c '/opt/atlassian/dc-migration-assistant/restore-db-to-rds.sh'
-            timeoutSeconds: "43200" #12 hours
-            workingDirectory: "/opt/atlassian/dc-migration-assistant/"
+          - action: "aws:runShellScript"
+            name: "restoreDatabaseBackupToRDS"
+            inputs:
+              runCommand:
+                - "#!/bin/bash"
+                - runuser -l jira -c '/opt/atlassian/dc-migration-assistant/restore-db-to-rds.sh'
+              timeoutSeconds: "43200" #12 hours
+              workingDirectory: "/opt/atlassian/dc-migration-assistant/"
       DocumentType: "Command"
 
   DownloadProgressDocument:
@@ -608,14 +511,14 @@ Resources:
         schemaVersion: "2.2"
         description: "This document is used by the Atlassian DC Migration Assistant to get the status of the copying of Jira shared home from S3 to EFS"
         mainSteps:
-        - action: "aws:runShellScript"
-          name: "getSharedHomeCopyStatus"
-          inputs:
-            runCommand:
-            - "#!/bin/bash"
-            - python3 /opt/atlassian/dc-migration-assistant/home-copy-status.py /var/atlassian/dc-migration-assistant/sync-log.txt /var/atlassian/dc-migration-assistant/sync-error.txt
-            timeoutSeconds: "60"
-            workingDirectory: "/opt/atlassian/dc-migration-assistant/"
+          - action: "aws:runShellScript"
+            name: "getSharedHomeCopyStatus"
+            inputs:
+              runCommand:
+                - "#!/bin/bash"
+                - python3 /opt/atlassian/dc-migration-assistant/home-copy-status.py /var/atlassian/dc-migration-assistant/sync-log.txt /var/atlassian/dc-migration-assistant/sync-error.txt
+              timeoutSeconds: "60"
+              workingDirectory: "/opt/atlassian/dc-migration-assistant/"
       DocumentType: "Command"
 
 Outputs:
@@ -634,10 +537,4 @@ Outputs:
   MigrationBucket:
     Description: "The name of the s3 bucket to be used for facilitating this migration"
     Value: !Ref MigrationBucket
-<<<<<<< HEAD
-  QueueARN:
-    Description: The queue events are sent to
-    Value: !GetAtt MigrationQueue.Arn
-=======
 
->>>>>>> master

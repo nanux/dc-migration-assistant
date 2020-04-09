@@ -22,6 +22,7 @@ rendertemplate:
 	sed -E "s/^/                    /g" pkg/parse_sync_output.py > render/tab_sync.py;
 	sed -f render/sed pkg/migration-helper.yml.src > migration-helper.yml
 	rm -rf render
+
 createstack:
 	aws cloudformation create-stack --stack-name $(STACK_NAME) --template-body file://migration-helper.yml --parameters $(PARAMS) --capabilities CAPABILITY_IAM --disable-rollback
 deletestack:

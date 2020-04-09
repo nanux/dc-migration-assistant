@@ -3,16 +3,11 @@ package com.atlassian.migration.datacenter.fs.processor.configuration
 import com.amazonaws.auth.AWSCredentialsProvider
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain
 import com.amazonaws.services.cloudformation.AmazonCloudFormationAsyncClient
-import com.amazonaws.services.ec2.AmazonEC2
 import com.amazonaws.services.ec2.AmazonEC2AsyncClient
-import com.amazonaws.services.s3.AmazonS3
 import com.amazonaws.services.s3.AmazonS3Client
-import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagement
 import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagementAsyncClient
-import com.amazonaws.services.sqs.AmazonSQS
 import com.amazonaws.services.sqs.AmazonSQSAsyncClient
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.cloud.aws.context.annotation.ConditionalOnMissingAmazonClient
 import org.springframework.cloud.aws.core.config.AmazonWebserviceClientFactoryBean
 import org.springframework.cloud.aws.core.region.RegionProvider
 import org.springframework.cloud.aws.core.region.StaticRegionProvider
@@ -53,16 +48,14 @@ open class AWSLocalStackConfiguration : IAWSServicesConfiguration {
 
     @Bean
     @Primary
-    @ConditionalOnMissingAmazonClient(AmazonEC2::class)
     override fun amazonEc2Client(regionProvider: RegionProvider?, credentialsProvider: AWSCredentialsProvider?): AmazonWebserviceClientFactoryBean<AmazonEC2AsyncClient?>? {
         return LocalStackClientFactoryBean(AmazonEC2AsyncClient::class.java, credentialsProvider, regionProvider, this.awsEC2LocalStackEndpoint)
     }
 
     @Bean
     @Primary
-    @ConditionalOnMissingAmazonClient(AmazonSQS::class)
     override fun awsSqsClient(regionProvider: RegionProvider?, credentialsProvider: AWSCredentialsProvider?): AmazonWebserviceClientFactoryBean<AmazonSQSAsyncClient?>? {
-        return LocalStackClientFactoryBean(AmazonEC2AsyncClient::class.java, credentialsProvider, regionProvider, this.awsSQSLocalStackEndpoint)
+        return LocalStackClientFactoryBean(AmazonSQSAsyncClient::class.java, credentialsProvider, regionProvider, this.awsSQSLocalStackEndpoint)
     }
 
     @Bean
@@ -73,20 +66,17 @@ open class AWSLocalStackConfiguration : IAWSServicesConfiguration {
 
     @Bean
     @Primary
-    @ConditionalOnMissingAmazonClient(AmazonS3::class)
     open fun awsS3Client(regionProvider: RegionProvider?, credentialsProvider: AWSCredentialsProvider?): AmazonWebserviceClientFactoryBean<AmazonS3Client?>? {
         return this.amazonS3Client(regionProvider, credentialsProvider)
     }
 
     @Bean
-    @ConditionalOnMissingAmazonClient(AmazonS3::class)
     override fun amazonS3Client(regionProvider: RegionProvider?, credentialsProvider: AWSCredentialsProvider?): AmazonWebserviceClientFactoryBean<AmazonS3Client?>? {
         return LocalStackClientFactoryBean(AmazonS3Client::class.java, credentialsProvider, regionProvider, this.awsS3LocalStackEndpoint)
     }
 
     @Bean
     @Primary
-    @ConditionalOnMissingAmazonClient(AWSSimpleSystemsManagement::class)
     open fun awsSSM(regionProvider: RegionProvider?, credentialsProvider: AWSCredentialsProvider?): AmazonWebserviceClientFactoryBean<AWSSimpleSystemsManagementAsyncClient?>? {
         return LocalStackClientFactoryBean(AWSSimpleSystemsManagementAsyncClient::class.java, credentialsProvider, regionProvider, this.awsSSMLocalStackEndpoint)
     }
