@@ -23,6 +23,8 @@ import { Link } from 'react-router-dom';
 import { overviewPath } from '../../utils/RoutePaths';
 import { I18n } from '../../atlassian/mocks/@atlassian/wrm-react-i18n';
 
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
 type Action = {
     text: React.ReactNode;
     onClick?: () => void;
@@ -38,6 +40,7 @@ export type MigrationTransferProps = {
     infoContent: string;
     infoActions?: Action[];
     nextText: string;
+    started: Date;
 };
 
 const TransferPageContainer = styled.div`
@@ -66,13 +69,13 @@ const TransferActionsContainer = styled.div`
 `;
 
 export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = ({
-    children,
     description,
     heading,
     infoContent,
     infoTitle,
     infoActions,
     nextText,
+    started,
 }) => {
     return (
         <TransferPageContainer>
@@ -84,7 +87,11 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                 </SectionMessage>
                 <h4>Phase of copying</h4>
                 <ProgressBar isIndeterminate />
-                <p>Started today</p>
+                <p>
+                    Started {started.getDate()}/{MONTHS[started.getMonth() - 1]}/
+                    {started.getFullYear()} {started.getHours() % 12}:{started.getMinutes()}{' '}
+                    {started.getHours() > 12 ? 'PM' : 'AM'}
+                </p>
                 <p>10 hours, 15 minutes elapsed</p>
                 <p>45 000 files copied</p>
             </TransferContentContainer>

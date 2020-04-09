@@ -33,6 +33,7 @@ const fsMigrationTranferPageProps: MigrationTransferProps = {
         },
     ],
     nextText: I18n.getText('atlassian.migration.datacenter.fs.nextStep'),
+    started: new Date(),
 };
 
 export const FileSystemTransferPage: FunctionComponent = () => {
