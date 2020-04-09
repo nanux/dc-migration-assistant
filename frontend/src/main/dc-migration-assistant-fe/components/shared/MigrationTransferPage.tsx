@@ -155,7 +155,9 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                 <Link to={overviewPath}>
                     <Button>{I18n.getText('atlassian.migration.datacenter.generic.cancel')}</Button>
                 </Link>
-                <Button appearance="primary">{nextText}</Button>
+                <Button appearance="primary" isDisabled={progress?.completeness != 1}>
+                    {nextText}
+                </Button>
             </TransferActionsContainer>
         </TransferPageContainer>
     );
