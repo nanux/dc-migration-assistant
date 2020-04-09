@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React, { FunctionComponent } from 'react';
+import React, { FunctionComponent, useState, useEffect } from 'react';
 import ProgressBar, { SuccessProgressBar } from '@atlaskit/progress-bar';
 import SectionMessage from '@atlaskit/section-message';
 import styled from 'styled-components';
@@ -23,6 +23,8 @@ import { Link } from 'react-router-dom';
 import { overviewPath } from '../../utils/RoutePaths';
 import { I18n } from '../../atlassian/mocks/@atlassian/wrm-react-i18n';
 import moment from 'moment';
+
+const POLL_INTERVAL_MILLIS = 60000;
 
 export type Progress = {
     phase: string;
@@ -86,7 +88,27 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
     infoActions,
     nextText,
     started,
+    getProgress,
 }) => {
+    const [progress, setProgress] = useState<Progress>();
+    const [loading, setLoading] = useState<Boolean>(true);
+
+    useEffect(() => {
+        const updateProgress = () => {
+            return getProgress()
+                .then(setProgress)
+                .catch(console.error);
+        };
+
+        const id = setInterval(async () => {
+            await updateProgress();
+        }, POLL_INTERVAL_MILLIS);
+
+        updateProgress();
+
+        return () => clearInterval(id);
+    }, []);
+
     const elapsedTime = moment.duration(moment.now() - started.valueOf());
     const elapsedDays = elapsedTime.days();
     const elapsedHours = elapsedTime.hours();
@@ -100,8 +122,8 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                 <SectionMessage title={infoTitle} actions={infoActions || []}>
                     {infoContent}
                 </SectionMessage>
-                <h4>Phase of copying</h4>
-                <ProgressBar isIndeterminate />
+                <h4>{progress?.phase}</h4>
+                <ProgressBar value={progress?.completeness} />
                 <p>
                     {I18n.getText(
                         'atlassian.migration.datacenter.common.progress.started',
@@ -115,7 +137,7 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                         `${elapsedMins}`
                     )}
                 </p>
-                <p>45 000 files copied</p>
+                <p>{progress?.progress}</p>
             </TransferContentContainer>
             <TransferActionsContainer>
                 <Link to={overviewPath}>
