@@ -1,1 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=com.atlassian.migration.datacenter.fs.processor.configuration.LocalStackEnvAutoConfiguration
