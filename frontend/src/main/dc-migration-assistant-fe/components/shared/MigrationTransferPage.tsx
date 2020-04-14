@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import React, { FunctionComponent, useState, useEffect } from 'react';
+import React, { FunctionComponent, useState, useEffect, ReactElement } from 'react';
 import ProgressBar, { SuccessProgressBar } from '@atlaskit/progress-bar';
 import SectionMessage from '@atlaskit/section-message';
 import styled from 'styled-components';
 import { Button } from '@atlaskit/button/dist/cjs/components/Button';
 import { Link } from 'react-router-dom';
-import moment from 'moment';
+import moment, { Moment } from 'moment';
 import Spinner from '@atlaskit/spinner';
 
 import { I18n } from '../../atlassian/mocks/@atlassian/wrm-react-i18n';
@@ -96,7 +96,7 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
     const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
-        const updateProgress = () => {
+        const updateProgress = (): Promise<void> => {
             setLoading(true);
             return getProgress()
                 .then(result => {
@@ -112,7 +112,7 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
 
         updateProgress();
 
-        return () => clearInterval(id);
+        return (): void => clearInterval(id);
     }, []);
 
     const elapsedTime = moment.duration(moment.now() - started.valueOf());
