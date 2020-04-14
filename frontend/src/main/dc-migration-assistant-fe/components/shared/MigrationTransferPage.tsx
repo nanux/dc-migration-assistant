@@ -82,6 +82,46 @@ const TransferActionsContainer = styled.div`
     margin-top: 20px;
 `;
 
+const renderContentIfLoading = (
+    loading: boolean,
+    progress: Progress,
+    started: Moment
+): ReactElement => {
+    if (loading) {
+        return (
+            <>
+                <Spinner />
+                <ProgressBar isIndeterminate />
+            </>
+        );
+    } else {
+        const elapsedTime = moment.duration(moment.now() - started.valueOf());
+        const elapsedDays = elapsedTime.days();
+        const elapsedHours = elapsedTime.hours();
+        const elapsedMins = elapsedTime.minutes();
+        return (
+            <>
+                <h4>{progress.phase}</h4>
+                <SuccessProgressBar value={progress.completeness} />
+                <p>
+                    {I18n.getText(
+                        'atlassian.migration.datacenter.common.progress.started',
+                        started.format('D/MMM/YY h:m A')
+                    )}
+                </p>
+                <p>
+                    {I18n.getText(
+                        'atlassian.migration.datacenter.common.progress.mins_elapsed',
+                        `${elapsedDays * 24 + elapsedHours}`,
+                        `${elapsedMins}`
+                    )}
+                </p>
+                <p>{loading ? <Spinner /> : progress?.progress}</p>
+            </>
+        );
+    }
+};
+
 export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = ({
     description,
     heading,
@@ -128,34 +168,13 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                 <SectionMessage title={infoTitle} actions={infoActions || []}>
                     {infoContent}
                 </SectionMessage>
-                {loading ? <Spinner /> : <h4>{progress?.phase}</h4>}
-                {loading ? (
-                    <ProgressBar isIndeterminate />
-                ) : progress.completeness == 1 ? (
-                    <SuccessProgressBar value={1} />
-                ) : (
-                    <ProgressBar isIndeterminate={loading} value={progress?.completeness} />
-                )}
-                <p>
-                    {I18n.getText(
-                        'atlassian.migration.datacenter.common.progress.started',
-                        started.format('D/MMM/YY h:m A')
-                    )}
-                </p>
-                <p>
-                    {I18n.getText(
-                        'atlassian.migration.datacenter.common.progress.mins_elapsed',
-                        `${elapsedDays * 24 + elapsedHours}`,
-                        `${elapsedMins}`
-                    )}
-                </p>
-                <p>{loading ? <Spinner /> : progress?.progress}</p>
+                {renderContentIfLoading(loading, progress, started)}
             </TransferContentContainer>
             <TransferActionsContainer>
                 <Link to={overviewPath}>
                     <Button>{I18n.getText('atlassian.migration.datacenter.generic.cancel')}</Button>
                 </Link>
-                <Button appearance="primary" isDisabled={progress?.completeness != 1}>
+                <Button appearance="primary" isDisabled={progress?.completeness !== 1}>
                     {nextText}
                 </Button>
             </TransferActionsContainer>
