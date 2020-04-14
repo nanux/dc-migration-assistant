@@ -18,9 +18,10 @@ import React, { FunctionComponent } from 'react';
 import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 import { I18n } from '@atlassian/wrm-react-i18n';
 
-import { overviewPath, homePath, awsBasePath, fsPath } from '../utils/RoutePaths';
+import { overviewPath, homePath, awsBasePath, fsPath, dbPath } from '../utils/RoutePaths';
 import { MigrationOverview } from './MigrationOverview';
 import { FileSystemTransferPage } from './fs/FileSystemTransfer';
+import { DatabaseTransferPage } from './db/DatabaseMigration';
 import { Home } from './Home';
 import { AWSRoutes } from './aws/AwsRoutes';
 
@@ -36,12 +37,15 @@ export const App: FunctionComponent = () => (
             <Route path={fsPath}>
                 <FileSystemTransferPage />
             </Route>
+            <Route path={dbPath}>
+                <DatabaseTransferPage />
+            </Route>
             <Route exact path={homePath}>
                 <Home
                     title={I18n.getText('atlassian.migration.datacenter.home.title')}
                     synopsis={I18n.getText('atlassian.migration.datacenter.home.synopsis')}
                     exploreMigrationButtonText={I18n.getText(
-                        'atlassian.migration.datacenter.home.explore.migration'
+                            'atlassian.migration.datacenter.home.explore.migration'
                     )}
                 />
             </Route>
