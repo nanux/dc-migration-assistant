@@ -44,4 +44,3 @@ const props: MigrationTransferProps = {
 export const DatabaseTransferPage: FunctionComponent = () => {
     return <MigrationTransferPage {...props} />;
 };
-
