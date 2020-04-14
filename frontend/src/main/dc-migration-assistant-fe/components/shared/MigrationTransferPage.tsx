@@ -92,34 +92,34 @@ const renderContentIfLoading = (
             <>
                 <Spinner />
                 <ProgressBar isIndeterminate />
-            </>
-        );
-    } else {
-        const elapsedTime = moment.duration(moment.now() - started.valueOf());
-        const elapsedDays = elapsedTime.days();
-        const elapsedHours = elapsedTime.hours();
-        const elapsedMins = elapsedTime.minutes();
-        return (
-            <>
-                <h4>{progress.phase}</h4>
-                <SuccessProgressBar value={progress.completeness} />
-                <p>
-                    {I18n.getText(
-                        'atlassian.migration.datacenter.common.progress.started',
-                        started.format('D/MMM/YY h:m A')
-                    )}
-                </p>
-                <p>
-                    {I18n.getText(
-                        'atlassian.migration.datacenter.common.progress.mins_elapsed',
-                        `${elapsedDays * 24 + elapsedHours}`,
-                        `${elapsedMins}`
-                    )}
-                </p>
-                <p>{loading ? <Spinner /> : progress?.progress}</p>
+                <Spinner />
             </>
         );
     }
+    const elapsedTime = moment.duration(moment.now() - started.valueOf());
+    const elapsedDays = elapsedTime.days();
+    const elapsedHours = elapsedTime.hours();
+    const elapsedMins = elapsedTime.minutes();
+    return (
+        <>
+            <h4>{progress.phase}</h4>
+            <SuccessProgressBar value={progress.completeness} />
+            <p>
+                {I18n.getText(
+                    'atlassian.migration.datacenter.common.progress.started',
+                    started.format('D/MMM/YY h:m A')
+                )}
+            </p>
+            <p>
+                {I18n.getText(
+                    'atlassian.migration.datacenter.common.progress.mins_elapsed',
+                    `${elapsedDays * 24 + elapsedHours}`,
+                    `${elapsedMins}`
+                )}
+            </p>
+            <p>{progress.progress}</p>
+        </>
+    );
 };
 
 export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = ({
@@ -154,11 +154,6 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
 
         return (): void => clearInterval(id);
     }, []);
-
-    const elapsedTime = moment.duration(moment.now() - started.valueOf());
-    const elapsedDays = elapsedTime.days();
-    const elapsedHours = elapsedTime.hours();
-    const elapsedMins = elapsedTime.minutes();
 
     return (
         <TransferPageContainer>
