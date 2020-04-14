@@ -20,24 +20,16 @@ import { BrowserRouter as Router, Route, Switch } from 'react-router-dom';
 
 import { DatabaseTransferPage } from './DatabaseMigration';
 
-
 describe('Database Migration page', () => {
     it('should render', () => {
-
         const { getByText } = render(
             <Router>
                 <DatabaseTransferPage />
             </Router>
         );
 
-        expect(
-            getByText('atlassian.migration.datacenter.db.title')
-        ).toBeTruthy();
-        expect(
-            getByText('atlassian.migration.datacenter.db.description')
-        ).toBeTruthy();
-        expect(
-            getByText('atlassian.migration.datacenter.common.can_close_window')
-        ).toBeTruthy();
+        expect(getByText('atlassian.migration.datacenter.db.title')).toBeTruthy();
+        expect(getByText('atlassian.migration.datacenter.db.description')).toBeTruthy();
+        expect(getByText('atlassian.migration.datacenter.common.can_close_window')).toBeTruthy();
     });
 });
