@@ -18,14 +18,10 @@ package com.atlassian.migration.datacenter.api.develop
 import com.atlassian.migration.datacenter.spi.MigrationService
 import com.atlassian.migration.datacenter.spi.MigrationStage
 import com.fasterxml.jackson.databind.ObjectMapper
-import io.mockk.MockKAnnotations
-import io.mockk.Runs
-import io.mockk.every
+import io.mockk.*
 import io.mockk.impl.annotations.InjectMockKs
 import io.mockk.impl.annotations.MockK
 import io.mockk.junit5.MockKExtension
-import io.mockk.just
-import io.mockk.verify
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -78,9 +74,23 @@ internal class DevelopEndpointTest {
         val response = endpoint.setMigrationStage(MigrationStage.FS_MIGRATION_COPY_WAIT)
 
         assertEquals(
-            Response.Status.NOT_FOUND.statusCode,
-            response.status
+                Response.Status.NOT_FOUND.statusCode,
+                response.status
         )
         verify(exactly = 0) { migrationService.transition(any()) }
+    }
+
+    @Test
+    fun shouldResetMigrations() {
+        every { environment.activeProfiles } returns arrayOf(DevelopEndpoint.ALLOW_ANY_TRANSITION_PROFILE)
+        every { migrationService.deleteMigrations() } just Runs
+
+        val response = endpoint.resetMigrations()
+
+        assertEquals(
+                Response.Status.OK.statusCode,
+                response.status
+        )
+        verify { migrationService.deleteMigrations() }
     }
 }

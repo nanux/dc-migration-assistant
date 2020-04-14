@@ -39,7 +39,7 @@ import static java.util.Objects.requireNonNull;
  */
 public class AWSMigrationService implements MigrationService {
     private static final Logger log = LoggerFactory.getLogger(AWSMigrationService.class);
-    private ActiveObjects ao;
+    private final ActiveObjects ao;
 
     /**
      * Creates a new, unstarted AWS Migration
@@ -84,8 +84,17 @@ public class AWSMigrationService implements MigrationService {
     }
 
     @Override
-    public synchronized void transition(MigrationStage to) throws InvalidMigrationStageError
-    {
+    public void deleteMigrations() {
+        final Migration[] migrations = ao.find(Migration.class);
+        for (Migration migration : migrations) {
+            ao.delete(migration.getContext());
+            ao.delete(migration);
+            log.warn("deleted migration {}", migration);
+        }
+    }
+
+    @Override
+    public synchronized void transition(MigrationStage to) throws InvalidMigrationStageError {
         Migration migration = findFirstOrCreateMigration();
         MigrationStage currentStage = migration.getStage();
 

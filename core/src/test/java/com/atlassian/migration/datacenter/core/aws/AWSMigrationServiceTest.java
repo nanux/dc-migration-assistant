@@ -35,14 +35,8 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import static com.atlassian.migration.datacenter.spi.MigrationStage.AUTHENTICATION;
-import static com.atlassian.migration.datacenter.spi.MigrationStage.ERROR;
-import static com.atlassian.migration.datacenter.spi.MigrationStage.NOT_STARTED;
-import static com.atlassian.migration.datacenter.spi.MigrationStage.PROVISION_APPLICATION;
-import static com.atlassian.migration.datacenter.spi.MigrationStage.PROVISION_APPLICATION_WAIT;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static com.atlassian.migration.datacenter.spi.MigrationStage.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 // We have to use the JUnit 4 API because there is no JUnit 5 active objects extension :(
@@ -84,8 +78,7 @@ public class AWSMigrationServiceTest {
     }
 
     @Test
-    public void shouldTransitionWhenSourceStageIsCurrentStage() throws InvalidMigrationStageError
-    {
+    public void shouldTransitionWhenSourceStageIsCurrentStage() throws InvalidMigrationStageError {
         initializeAndCreateSingleMigrationWithStage(AUTHENTICATION);
         assertEquals(AUTHENTICATION, sut.getCurrentStage());
 
@@ -104,8 +97,7 @@ public class AWSMigrationServiceTest {
     }
 
     @Test
-    public void shouldCreateMigrationInNotStarted() throws MigrationAlreadyExistsException
-    {
+    public void shouldCreateMigrationInNotStarted() throws MigrationAlreadyExistsException {
         Migration migration = sut.createMigration();
 
         assertEquals(NOT_STARTED, migration.getStage());
@@ -189,8 +181,24 @@ public class AWSMigrationServiceTest {
         assertEquals(newDeploymentId, sut.getCurrentMigration().getContext().getApplicationDeploymentId());
     }
 
+    @Test
+    public void shouldDeleteAllMigrationsAndAssociatedContexts() throws Exception {
+        sut.createMigration();
+        assertNumberOfMigrations(1);
+        assertNumberOfMigrationContexts(1);
+
+        sut.deleteMigrations();
+
+        assertNumberOfMigrations(0);
+        assertNumberOfMigrationContexts(0);
+    }
+
     private void assertNumberOfMigrations(int i) {
         assertEquals(i, ao.find(Migration.class).length);
+    }
+
+    private void assertNumberOfMigrationContexts(int i) {
+        assertEquals(i, ao.find(MigrationContext.class).length);
     }
 
     private Migration initializeAndCreateSingleMigrationWithStage(MigrationStage stage) {
