@@ -30,7 +30,7 @@ const POLL_INTERVAL_MILLIS = 60000;
 
 export type Progress = {
     phase: string;
-    completeness: 0.0 | 0.1 | 0.2 | 0.3 | 0.4 | 0.5 | 0.6 | 0.7 | 0.8 | 0.9 | 1.0;
+    completeness?: 0.0 | 0.1 | 0.2 | 0.3 | 0.4 | 0.5 | 0.6 | 0.7 | 0.8 | 0.9 | 1.0;
     progress: string;
 };
 
@@ -103,7 +103,11 @@ const renderContentIfLoading = (
     return (
         <>
             <h4>{progress.phase}</h4>
-            <SuccessProgressBar value={progress.completeness} />
+            {progress.completeness ? (
+                <SuccessProgressBar value={progress.completeness} />
+            ) : (
+                <ProgressBar isIndeterminate />
+            )}
             <p>
                 {I18n.getText(
                     'atlassian.migration.datacenter.common.progress.started',

@@ -16,6 +16,7 @@
 
 // eslint-disable-next-line import/no-unresolved
 import contextPath from 'wrm/context-path';
+import { Progress } from '../components/shared/MigrationTransferPage';
 
 type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
@@ -68,9 +69,14 @@ export enum RestApiPathConstants {
 }
 
 export const fs = {
-    getFsMigrationStatus: (): void => {
-        callAppRest('GET', RestApiPathConstants.fsStatusRestPath)
-            .then(result => {})
-            .catch(err => {});
+    getFsMigrationStatus: (): Promise<Progress> => {
+        return callAppRest('GET', RestApiPathConstants.fsStatusRestPath)
+            .then(result => result.json())
+            .then(result => {
+                return {
+                    phase: 'Copying files',
+                    progress: result.migratedFiles,
+                };
+            });
     },
 };
