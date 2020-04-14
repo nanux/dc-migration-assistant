@@ -35,12 +35,14 @@ public class S3SyncFileSystemDownloadManager {
     }
 
     public void downloadFileSystem() throws S3SyncFileSystemDownloader.CannotLaunchCommandException {
+        logger.debug("beginning file system download");
         downloader.initiateFileSystemDownload();
 
         CompletableFuture<?> syncCompleteFuture = new CompletableFuture<>();
 
 
         ScheduledFuture<?> scheduledFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
+            logger.debug("querying file system download status");
             S3SyncCommandStatus status = downloader.getFileSystemDownloadStatus();
 
             logger.debug("got status of file system download: " + status.toString());
