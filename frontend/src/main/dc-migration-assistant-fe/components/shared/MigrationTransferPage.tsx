@@ -141,7 +141,6 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
 
     useEffect(() => {
         const updateProgress = (): Promise<void> => {
-            setLoading(true);
             return getProgress()
                 .then(result => {
                     setProgress(result);
@@ -154,6 +153,7 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
             await updateProgress();
         }, POLL_INTERVAL_MILLIS);
 
+        setLoading(true);
         updateProgress();
 
         return (): void => clearInterval(id);
