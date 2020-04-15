@@ -52,4 +52,15 @@ public interface FileSystemMigrationProgress {
      * collection is thread safe as this may be called from multiple file upload threads.
      */
     void reportFileUploaded();
+
+    /**
+     * Gets the number of files that have been successfully downloaded on the remote application
+     */
+    @JsonProperty("downloadedFiles")
+    Long getCountOfDownloadFiles();
+
+    /**
+     * Sets the number of files which were downloaded on the remote application
+     */
+    void setNumberOfFilesDownloaded(long downloadedFiles);
 }

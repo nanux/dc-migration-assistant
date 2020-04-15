@@ -151,5 +151,15 @@ public class DefaultFileSystemMigrationReport implements FileSystemMigrationRepo
     public void reportFileUploaded() {
         progress.reportFileUploaded();
     }
+
+    @Override
+    public Long getCountOfDownloadFiles() {
+        return progress.getCountOfDownloadFiles();
+    }
+
+    @Override
+    public void setNumberOfFilesDownloaded(long downloadedFiles) {
+        progress.setNumberOfFilesDownloaded(downloadedFiles);
+    }
 }
 

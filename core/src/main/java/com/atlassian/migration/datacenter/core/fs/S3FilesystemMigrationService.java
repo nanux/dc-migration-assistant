@@ -143,7 +143,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
             fsUploader.uploadDirectory(getSharedHomeDir());
 
             logger.info("upload of shared home complete. commencing shared home download");
-            fileSystemDownloadManager.downloadFileSystem();
+            fileSystemDownloadManager.downloadFileSystem(report);
 
             report.setStatus(DONE);
 

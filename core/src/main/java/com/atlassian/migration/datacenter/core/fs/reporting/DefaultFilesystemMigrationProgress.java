@@ -28,6 +28,8 @@ public class DefaultFilesystemMigrationProgress implements FileSystemMigrationPr
 
     private AtomicLong fileUploadsCommenced = new AtomicLong(0);
 
+    private AtomicLong fileDownloadsCompleted = new AtomicLong(0);
+
     @Override
     public Long getNumberOfFilesFound() {
         return filesFound.get();
@@ -56,5 +58,15 @@ public class DefaultFilesystemMigrationProgress implements FileSystemMigrationPr
     @Override
     public void reportFileUploaded() {
         numFilesUploaded.incrementAndGet();
+    }
+
+    @Override
+    public Long getCountOfDownloadFiles() {
+        return fileDownloadsCompleted.get();
+    }
+
+    @Override
+    public void setNumberOfFilesDownloaded(long downloadedFiles) {
+        fileDownloadsCompleted.set(downloadedFiles);
     }
 }
