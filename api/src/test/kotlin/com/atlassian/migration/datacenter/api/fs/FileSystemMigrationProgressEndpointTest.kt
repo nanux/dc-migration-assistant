@@ -65,8 +65,9 @@ class FileSystemMigrationProgressEndpointTest {
             every { numberOfCommencedFileUploads } returns 1L
             every { numberOfFilesFound } returns 1L
             every { failedFiles } returns failedFilesCollection
-            every { countOfMigratedFiles } returns 1L
+            every { countOfUploadedFiles } returns 1L
             every { elapsedTime } returns Duration.ofMinutes(1)
+            every { countOfDownloadFiles } returns 1L
         }
 
         val response = endpoint.getFilesystemMigrationStatus()
@@ -79,12 +80,14 @@ class FileSystemMigrationProgressEndpointTest {
         val responseStatus = tree.at("/status").asText()
         val responseReason = tree.at("/failedFiles/0/reason").asText()
         val responseFailedFile = tree.at("/failedFiles/0/filePath").asText()
-        val responseSuccessFileCount = tree.at("/migratedFiles").asLong()
+        val responseSuccessFileCount = tree.at("/uploadedFiles").asLong()
+        val responseDownloadFileCount = tree.at("/downloadedFiles").asLong()
 
         assertEquals(FilesystemMigrationStatus.RUNNING.name, responseStatus)
         assertEquals(testReason, responseReason)
         assertEquals(testFile.toUri().toString(), responseFailedFile)
         assertEquals(1, responseSuccessFileCount)
+        assertEquals(1, responseDownloadFileCount)
     }
 
     @Test
@@ -94,6 +97,7 @@ class FileSystemMigrationProgressEndpointTest {
         every { report.elapsedTime } returns Duration.ofMinutes(1)
         every { report.numberOfFilesFound } returns 1000000L
         every { report.numberOfCommencedFileUploads } returns 1000000L
+        every { report.countOfDownloadFiles } returns 1000000L
         val failedFiles: MutableSet<FailedFileMigration?> = HashSet()
         val testReason = "test reason"
         val testFile = Paths.get("file")
@@ -102,7 +106,7 @@ class FileSystemMigrationProgressEndpointTest {
             failedFiles.add(failedFileMigration)
         }
         every { report.failedFiles } returns failedFiles
-        every { report.countOfMigratedFiles } returns 1000000L
+        every { report.countOfUploadedFiles } returns 1000000L
 
         val response = endpoint.getFilesystemMigrationStatus()
 
@@ -114,11 +118,14 @@ class FileSystemMigrationProgressEndpointTest {
         val responseStatus = tree.at("/status").asText()
         val responseReason = tree.at("/failedFiles/99/reason").asText()
         val responseFailedFile = tree.at("/failedFiles/99/filePath").asText()
-        val responseSuccessFileCount = tree.at("/migratedFiles").asLong()
+        val responseSuccessFileCount = tree.at("/uploadedFiles").asLong()
+        val responseDownloadFileCount = tree.at("/downloadedFiles").asLong()
+
         assertEquals(FilesystemMigrationStatus.RUNNING.name, responseStatus)
         assertEquals(testReason, responseReason)
         assertEquals(testFile.toUri().toString(), responseFailedFile)
         assertEquals(1000000, responseSuccessFileCount)
+        assertEquals(1000000, responseDownloadFileCount)
     }
 
     @Test
