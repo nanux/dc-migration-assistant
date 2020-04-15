@@ -33,19 +33,29 @@ dummyStarted.subtract(23, 'minutes');
 const getFsMigrationProgress = (): Promise<Progress> => {
     return fs.getFsMigrationStatus().then(result => {
         if (result.status === 'UPLOADING') {
-            const progress = {
-                phase: 'Uploading files',
+            const progress: Progress = {
+                phase: 'Uploading files to AWS',
                 progress: `${result.uploadedFiles} files uploaded`,
             };
 
             if (result.allFilesFound) {
-                const completeness = Math.round(result.uploadedFiles / result.filesFound) / 10;
+                const uploadProgress = result.uploadedFiles / result.filesFound;
+                const weightedProgress = 0.5 * uploadProgress;
                 return {
                     ...progress,
-                    completeness,
+                    completeness: weightedProgress,
                 };
             }
             return progress;
+        }
+        if (result.status === 'DOWNLOADING') {
+            const downloadProgress = result.downloadedFiles / result.filesFound;
+            const weightedProgress = 0.5 + 0.5 * downloadProgress;
+            return {
+                phase: 'Loading files into target application',
+                progress: `${result.downloadedFiles} files loaded`,
+                completeness: weightedProgress,
+            };
         }
         return {
             phase: 'error',

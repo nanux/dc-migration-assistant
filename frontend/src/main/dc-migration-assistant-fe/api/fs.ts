@@ -16,7 +16,7 @@ type FileSystemMigrationStatusResponse = {
     filesFound: number;
     allFilesFound: boolean;
     filesInFlight: number;
-    donwloadedFiles: number;
+    downloadedFiles: number;
 };
 
 export const fs = {
