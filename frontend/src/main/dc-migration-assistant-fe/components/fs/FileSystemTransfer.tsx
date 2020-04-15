@@ -40,7 +40,7 @@ const getFsMigrationProgress = (): Promise<Progress> => {
                     progress: `${result.uploadedFiles} files uploaded`,
                 };
 
-                if (result.allFilesFound) {
+                if (result.crawlingFinished) {
                     const uploadProgress = result.uploadedFiles / result.filesFound;
                     const weightedProgress = 0.5 * uploadProgress;
                     return {

@@ -14,7 +14,7 @@ type FileSystemMigrationStatusResponse = {
     failedFiles: Array<FailedFile>;
     uploadedFiles: number;
     filesFound: number;
-    allFilesFound: boolean;
+    crawlingFinished: boolean;
     filesInFlight: number;
     downloadedFiles: number;
 };
