@@ -56,6 +56,7 @@ public interface FileSystemMigrationProgress {
     /**
      * Gets the number of files that have been successfully downloaded on the remote application
      */
+    @JsonProperty("downloadedFiles")
     Long getCountOfDownloadFiles();
 
     /**
