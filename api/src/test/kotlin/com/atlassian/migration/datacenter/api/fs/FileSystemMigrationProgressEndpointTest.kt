@@ -79,7 +79,7 @@ class FileSystemMigrationProgressEndpointTest {
         val responseStatus = tree.at("/status").asText()
         val responseReason = tree.at("/failedFiles/0/reason").asText()
         val responseFailedFile = tree.at("/failedFiles/0/filePath").asText()
-        val responseSuccessFileCount = tree.at("/migratedFiles").asLong()
+        val responseSuccessFileCount = tree.at("/uploadedFiles").asLong()
 
         assertEquals(FilesystemMigrationStatus.RUNNING.name, responseStatus)
         assertEquals(testReason, responseReason)
@@ -114,7 +114,7 @@ class FileSystemMigrationProgressEndpointTest {
         val responseStatus = tree.at("/status").asText()
         val responseReason = tree.at("/failedFiles/99/reason").asText()
         val responseFailedFile = tree.at("/failedFiles/99/filePath").asText()
-        val responseSuccessFileCount = tree.at("/migratedFiles").asLong()
+        val responseSuccessFileCount = tree.at("/uploadedFiles").asLong()
         assertEquals(FilesystemMigrationStatus.RUNNING.name, responseStatus)
         assertEquals(testReason, responseReason)
         assertEquals(testFile.toUri().toString(), responseFailedFile)
