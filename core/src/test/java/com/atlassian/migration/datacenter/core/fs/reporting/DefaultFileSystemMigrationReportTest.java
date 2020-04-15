@@ -40,7 +40,7 @@ import java.util.Set;
 import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.DONE;
 import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.FAILED;
 import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.NOT_STARTED;
-import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.RUNNING;
+import static com.atlassian.migration.datacenter.spi.fs.reporting.FilesystemMigrationStatus.UPLOADING;
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.mock;
@@ -105,7 +105,7 @@ public class DefaultFileSystemMigrationReportTest {
         Clock testClock = Clock.fixed(Instant.ofEpochMilli(0), ZoneId.systemDefault());
         sut.setClock(testClock);
 
-        sut.setStatus(RUNNING);
+        sut.setStatus(UPLOADING);
 
         assertEquals(Duration.ZERO, sut.getElapsedTime());
 
@@ -119,12 +119,12 @@ public class DefaultFileSystemMigrationReportTest {
         Clock testClock = Clock.fixed(Instant.ofEpochMilli(0), ZoneId.systemDefault());
         sut.setClock(testClock);
 
-        sut.setStatus(RUNNING);
+        sut.setStatus(UPLOADING);
 
         sut.setClock(Clock.offset(testClock, Duration.ofSeconds(10)));
         assertEquals(10L, sut.getElapsedTime().getSeconds());
 
-        sut.setStatus(RUNNING);
+        sut.setStatus(UPLOADING);
         assertEquals(10L, sut.getElapsedTime().getSeconds());
 
         sut.setClock(Clock.offset(testClock, Duration.ofSeconds(20)));
@@ -137,7 +137,7 @@ public class DefaultFileSystemMigrationReportTest {
         Clock testClock = Clock.fixed(Instant.ofEpochMilli(0), ZoneId.systemDefault());
         sut.setClock(testClock);
 
-        sut.setStatus(RUNNING);
+        sut.setStatus(UPLOADING);
 
         sut.setClock(Clock.offset(testClock, Duration.ofSeconds(10)));
         assertEquals(10L, sut.getElapsedTime().getSeconds());
