@@ -31,51 +31,59 @@ dummyStarted.subtract(49, 'hours');
 dummyStarted.subtract(23, 'minutes');
 
 const getFsMigrationProgress = (): Promise<Progress> => {
-    return fs.getFsMigrationStatus().then(result => {
-        if (result.status === 'UPLOADING') {
-            const progress: Progress = {
-                phase: 'Uploading files to AWS',
-                progress: `${result.uploadedFiles} files uploaded`,
-            };
+    return fs
+        .getFsMigrationStatus()
+        .then(result => {
+            if (result.status === 'UPLOADING') {
+                const progress: Progress = {
+                    phase: 'Uploading files to AWS',
+                    progress: `${result.uploadedFiles} files uploaded`,
+                };
 
-            if (result.allFilesFound) {
-                const uploadProgress = result.uploadedFiles / result.filesFound;
-                const weightedProgress = 0.5 * uploadProgress;
+                if (result.allFilesFound) {
+                    const uploadProgress = result.uploadedFiles / result.filesFound;
+                    const weightedProgress = 0.5 * uploadProgress;
+                    return {
+                        ...progress,
+                        completeness: weightedProgress,
+                    };
+                }
+                return progress;
+            }
+            if (result.status === 'DOWNLOADING') {
+                const downloadProgress = result.downloadedFiles / result.filesFound;
+                const weightedProgress = 0.5 + 0.5 * downloadProgress;
                 return {
-                    ...progress,
+                    phase: 'Loading files into target application',
+                    progress: `${result.downloadedFiles} files loaded`,
                     completeness: weightedProgress,
                 };
             }
-            return progress;
-        }
-        if (result.status === 'DOWNLOADING') {
-            const downloadProgress = result.downloadedFiles / result.filesFound;
-            const weightedProgress = 0.5 + 0.5 * downloadProgress;
+            if (result.status === 'DONE') {
+                return {
+                    phase: 'Finished!',
+                    progress: `${result.downloadedFiles} files loaded`,
+                    completeness: 1,
+                };
+            }
+            if (result.status === 'NOT_STARTED') {
+                return {
+                    phase: 'Preparing to migrate files',
+                    progress: '...',
+                };
+            }
             return {
-                phase: 'Loading files into target application',
-                progress: `${result.downloadedFiles} files loaded`,
-                completeness: weightedProgress,
+                phase: 'error',
+                completeness: 0,
+                progress: 'error',
             };
-        }
-        if (result.status === 'DONE') {
+        })
+        .catch(err => {
             return {
-                phase: 'Finished!',
-                progress: `${result.downloadedFiles} files loaded`,
-                completeness: 1,
+                phase: 'error',
+                progress: err,
             };
-        }
-        if (result.status === 'NOT_STARTED') {
-            return {
-                phase: 'Preparing to migrate files',
-                progress: '...',
-            };
-        }
-        return {
-            phase: 'error',
-            completeness: 0,
-            progress: 'error',
-        };
-    });
+        });
 };
 
 const fsMigrationTranferPageProps: MigrationTransferProps = {
