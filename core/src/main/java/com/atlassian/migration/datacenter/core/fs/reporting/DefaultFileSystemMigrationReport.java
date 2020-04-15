@@ -133,6 +133,16 @@ public class DefaultFileSystemMigrationReport implements FileSystemMigrationRepo
     }
 
     @Override
+    public boolean allFilesFound() {
+        return progress.allFilesFound();
+    }
+
+    @Override
+    public void reportAllFilesFound() {
+        progress.reportAllFilesFound();
+    }
+
+    @Override
     public Long getNumberOfCommencedFileUploads() {
         return progress.getNumberOfCommencedFileUploads();
     }
