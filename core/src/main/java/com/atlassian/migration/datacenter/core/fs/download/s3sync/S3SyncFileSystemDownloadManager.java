@@ -16,6 +16,7 @@
 
 package com.atlassian.migration.datacenter.core.fs.download.s3sync;
 
+import com.atlassian.migration.datacenter.spi.fs.reporting.FileSystemMigrationProgress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +35,7 @@ public class S3SyncFileSystemDownloadManager {
         this.downloader = downloader;
     }
 
-    public void downloadFileSystem() throws S3SyncFileSystemDownloader.CannotLaunchCommandException {
+    public void downloadFileSystem(FileSystemMigrationProgress progress) throws S3SyncFileSystemDownloader.CannotLaunchCommandException {
         downloader.initiateFileSystemDownload();
 
         CompletableFuture<?> syncCompleteFuture = new CompletableFuture<>();
@@ -43,7 +44,10 @@ public class S3SyncFileSystemDownloadManager {
         ScheduledFuture<?> scheduledFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
             S3SyncCommandStatus status = downloader.getFileSystemDownloadStatus();
 
+            long remaining = status.getFilesRemainingToDownload();
+            long downloadedFiles = progress.getCountOfUploadedFiles() - remaining;
 
+            progress.setNumberOfFilesDownloaded(downloadedFiles);
 
             logger.debug("got status of file system download: " + status.toString());
 
