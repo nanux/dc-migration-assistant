@@ -65,7 +65,7 @@ class FileSystemMigrationProgressEndpointTest {
             every { numberOfCommencedFileUploads } returns 1L
             every { numberOfFilesFound } returns 1L
             every { failedFiles } returns failedFilesCollection
-            every { countOfMigratedFiles } returns 1L
+            every { countOfUploadedFiles } returns 1L
             every { elapsedTime } returns Duration.ofMinutes(1)
         }
 
@@ -102,7 +102,7 @@ class FileSystemMigrationProgressEndpointTest {
             failedFiles.add(failedFileMigration)
         }
         every { report.failedFiles } returns failedFiles
-        every { report.countOfMigratedFiles } returns 1000000L
+        every { report.countOfUploadedFiles } returns 1000000L
 
         val response = endpoint.getFilesystemMigrationStatus()
 

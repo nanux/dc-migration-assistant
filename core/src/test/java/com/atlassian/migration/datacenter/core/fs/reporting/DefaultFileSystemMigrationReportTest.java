@@ -91,13 +91,13 @@ public class DefaultFileSystemMigrationReportTest {
     @Test
     void shouldDelegateToWrappedProgress() {
         final Path path = Paths.get("file");
-        sut.reportFileMigrated();
+        sut.reportFileUploaded();
 
-        verify(progress).reportFileMigrated();
+        verify(progress).reportFileUploaded();
 
-        sut.getCountOfMigratedFiles();
+        sut.getCountOfUploadedFiles();
 
-        verify(progress).getCountOfMigratedFiles();
+        verify(progress).getCountOfUploadedFiles();
     }
 
     @Test
@@ -151,7 +151,7 @@ public class DefaultFileSystemMigrationReportTest {
     void testToString() {
         final long successfullyMigrated = 888L;
         final int failedFiles = 666;
-        when(progress.getCountOfMigratedFiles()).thenReturn(successfullyMigrated);
+        when(progress.getCountOfUploadedFiles()).thenReturn(successfullyMigrated);
 
         final Set errorList = mock(Set.class);
         when(errorList.size()).thenReturn(failedFiles);

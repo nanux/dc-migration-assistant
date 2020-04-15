@@ -126,7 +126,7 @@ public class S3Uploader implements Uploader {
                 addFailedFile(operation.path, errorMessage);
             } else {
                 logger.trace("{} migrated successfully", operation.path);
-                report.reportFileMigrated();
+                report.reportFileUploaded();
             }
         } catch (InterruptedException | ExecutionException e) {
             addFailedFile(operation.path, e.getMessage());

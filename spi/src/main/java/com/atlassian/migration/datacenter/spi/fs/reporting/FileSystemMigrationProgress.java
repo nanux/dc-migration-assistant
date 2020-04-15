@@ -44,12 +44,12 @@ public interface FileSystemMigrationProgress {
     /**
      * Gets the number of files which have been successfully migrated
      */
-    @JsonProperty("migratedFiles")
-    Long getCountOfMigratedFiles();
+    @JsonProperty("uploadedFiles")
+    Long getCountOfUploadedFiles();
 
     /**
      * Reports that a file was migrated successfully. Implementers should be careful that the underlying
      * collection is thread safe as this may be called from multiple file upload threads.
      */
-    void reportFileMigrated();
+    void reportFileUploaded();
 }
