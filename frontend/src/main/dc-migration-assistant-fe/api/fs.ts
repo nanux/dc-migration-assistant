@@ -10,7 +10,7 @@ type FailedFile = {
 };
 
 type FileSystemMigrationStatusResponse = {
-    status: 'NOT_STARTED' | 'FAILED' | 'RUNNING' | 'DONE';
+    status: 'NOT_STARTED' | 'FAILED' | 'UPLOADING' | 'DOWNLOADING' | 'DONE';
     failedFiles: Array<FailedFile>;
     uploadedFiles: number;
     filesFound: number;

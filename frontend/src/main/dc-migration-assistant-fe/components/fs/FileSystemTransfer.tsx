@@ -18,12 +18,42 @@ import React, { FunctionComponent } from 'react';
 
 import { I18n } from '@atlassian/wrm-react-i18n';
 import moment from 'moment';
-import { MigrationTransferProps, MigrationTransferPage } from '../shared/MigrationTransferPage';
+import {
+    MigrationTransferProps,
+    MigrationTransferPage,
+    Progress,
+} from '../shared/MigrationTransferPage';
+import { fs } from '../../api/fs';
 
 const dummyStarted = moment();
 
 dummyStarted.subtract(49, 'hours');
 dummyStarted.subtract(23, 'minutes');
+
+const getFsMigrationProgress = (): Promise<Progress> => {
+    return fs.getFsMigrationStatus().then(result => {
+        if (result.status === 'UPLOADING') {
+            const progress = {
+                phase: 'Uploading files',
+                progress: `${result.uploadedFiles} files uploaded`,
+            };
+
+            if (result.allFilesFound) {
+                const completeness = Math.round(result.uploadedFiles / result.filesFound) / 10;
+                return {
+                    ...progress,
+                    completeness,
+                };
+            }
+            return progress;
+        }
+        return {
+            phase: 'error',
+            completeness: 0,
+            progress: 'error',
+        };
+    });
+};
 
 const fsMigrationTranferPageProps: MigrationTransferProps = {
     heading: I18n.getText('atlassian.migration.datacenter.fs.title'),
