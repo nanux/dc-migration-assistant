@@ -64,6 +64,12 @@ const getFsMigrationProgress = (): Promise<Progress> => {
                 completeness: 1,
             };
         }
+        if (result.status === 'NOT_STARTED') {
+            return {
+                phase: 'Preparing to migrate files',
+                progress: '...',
+            };
+        }
         return {
             phase: 'error',
             completeness: 0,
