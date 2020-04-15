@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class DefaultFilesystemMigrationProgress implements FileSystemMigrationProgress {
 
-    private AtomicLong numFilesMigrated = new AtomicLong(0);
+    private AtomicLong numFilesUploaded = new AtomicLong(0);
 
     private AtomicLong filesFound = new AtomicLong(0);
 
@@ -49,12 +49,12 @@ public class DefaultFilesystemMigrationProgress implements FileSystemMigrationPr
     }
 
     @Override
-    public Long getCountOfMigratedFiles() {
-        return numFilesMigrated.get();
+    public Long getCountOfUploadedFiles() {
+        return numFilesUploaded.get();
     }
 
     @Override
-    public void reportFileMigrated() {
-        numFilesMigrated.incrementAndGet();
+    public void reportFileUploaded() {
+        numFilesUploaded.incrementAndGet();
     }
 }

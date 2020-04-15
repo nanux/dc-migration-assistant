@@ -103,7 +103,7 @@ public class DefaultFileSystemMigrationReport implements FileSystemMigrationRepo
     public String toString() {
         return String.format("Filesystem migration report = { status: %s, migratedFiles: %d, erroredFiles: %d }",
                 currentStatus,
-                progress.getCountOfMigratedFiles(),
+                progress.getCountOfUploadedFiles(),
                 errorReport.getFailedFiles().size()
         );
     }
@@ -143,13 +143,13 @@ public class DefaultFileSystemMigrationReport implements FileSystemMigrationRepo
     }
 
     @Override
-    public Long getCountOfMigratedFiles() {
-        return progress.getCountOfMigratedFiles();
+    public Long getCountOfUploadedFiles() {
+        return progress.getCountOfUploadedFiles();
     }
 
     @Override
-    public void reportFileMigrated() {
-        progress.reportFileMigrated();
+    public void reportFileUploaded() {
+        progress.reportFileUploaded();
     }
 }
 
