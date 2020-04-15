@@ -3,90 +3,19 @@ Description: Jira / Confluence Server to DC (AWS) Helper
 
 Resources:
 
-  EncryptionKey:
-    Type: AWS::KMS::Key
-    Properties:
-      Description: Symmetric CMK for SQS and S3
-      KeyPolicy:
-        Version: '2012-10-17'
-        Id: migration-helper-key
-        Statement:
-          - Sid: Enable IAM User Permissions
-            Effect: Allow
-            Principal:
-              AWS:
-                Fn::Join:
-                  - ''
-                  - - 'arn:aws:iam::'
-                    - Ref: AWS::AccountId
-                    - ':root'
-            Action: kms:*
-            Resource: '*'
-          - Sid: S3 Use of Key
-            Effect: Allow
-            Principal:
-              Service: "s3.amazonaws.com"
-            Action:
-              - kms:Encrypt
-              - kms:Decrypt
-              - kms:GenerateDataKey:*
-            Resource: '*'
-          - Sid: SQS Use of Key
-            Effect: Allow
-            Principal:
-              Service: "sqs.amazonaws.com"
-            Action:
-              - kms:Encrypt
-              - kms:Decrypt
-              - kms:GenerateDataKey:*
-            Resource: '*'
-
   MigrationBucket:
     Type: AWS::S3::Bucket
     DependsOn: QueuePolicy
     Properties:
       BucketName: !Sub 'atl-migrationbucket-${AWS::StackName}'
       AccessControl: BucketOwnerFullControl
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              KMSMasterKeyID: !Ref EncryptionKey
-              SSEAlgorithm: aws:kms
       NotificationConfiguration:
         QueueConfigurations:
           - Queue: !GetAtt MigrationQueue.Arn
             Event: s3:ObjectCreated:*
     DeletionPolicy: Delete
 
-  ForceEncryption:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref MigrationBucket
-      PolicyDocument:
-        Version: "2008-10-17"
-        Statement:
-          - Sid: DenyIncorrectEncryptionHeader
-            Effect: Deny
-            Principal: "*"
-            Action:
-              - s3:PutObject
-            Resource:
-              - !Sub 'arn:aws:s3:::${MigrationBucket}/*'
-            Condition:
-              StringNotEquals:
-                's3:x-amz-server-side-encryption': 'aws:kms'
-          - Sid: DenyUnEncryptedObjectUploads
-            Effect: Deny
-            Principal: "*"
-            Action:
-              - s3:PutObject
-            Resource:
-              - !Join ["", ["arn:aws:s3:::", !Ref MigrationBucket, "/*"]]
-            Condition:
-              StringNotEquals:
-                "s3:x-amz-server-side-encryption":
-                  - "aws:kms"
-    DependsOn: MigrationBucket
+
 
   QueuePolicy:
     Type: AWS::SQS::QueuePolicy

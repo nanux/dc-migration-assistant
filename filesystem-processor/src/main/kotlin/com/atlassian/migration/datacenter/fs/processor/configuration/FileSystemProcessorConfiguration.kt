@@ -1,6 +1,5 @@
 package com.atlassian.migration.datacenter.fs.processor.configuration
 
-import com.amazonaws.services.s3.event.S3EventNotification
 import com.amazonaws.services.sqs.AmazonSQSAsync
 import com.atlassian.migration.datacenter.fs.processor.configuration.AWSServicesConfiguration.Companion.STACK_NAME
 import com.atlassian.migration.datacenter.fs.processor.services.SQSMessageProcessor
@@ -11,7 +10,6 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.integration.annotation.ServiceActivator
-import org.springframework.integration.annotation.Transformer
 import org.springframework.integration.aws.inbound.SqsMessageDrivenChannelAdapter
 import org.springframework.integration.channel.ExecutorChannel
 import org.springframework.integration.channel.PublishSubscribeChannel
@@ -32,11 +30,25 @@ open class FileSystemProcessorConfiguration {
 
     @Bean
     @ServiceActivator(inputChannel = "errorChannel")
-    open fun logging(): LoggingHandler? {
+    open fun errorLogging(): LoggingHandler? {
         val adapter = LoggingHandler(LoggingHandler.Level.INFO)
         adapter.setLoggerName("ERROR_LOGGER")
         adapter.setLogExpressionString("headers.id + ': ' + payload")
         return adapter
+    }
+
+    @Bean
+    @ServiceActivator(inputChannel = "loggingChannel")
+    open fun discardLogging(): LoggingHandler? {
+        val adapter = LoggingHandler(LoggingHandler.Level.INFO)
+        adapter.setLoggerName("DISCARD_LOGGER")
+        adapter.setLogExpressionString("headers.id + ': ' + payload")
+        return adapter
+    }
+
+    @Bean
+    open fun loggingChannel(): SubscribableChannel? {
+        return PublishSubscribeChannel()
     }
 
     @Bean
@@ -45,17 +57,7 @@ open class FileSystemProcessorConfiguration {
     }
 
     @Bean
-    open fun routingChannel(): SubscribableChannel? {
-        return PublishSubscribeChannel()
-    }
-
-    @Transformer(inputChannel = "routingChannel", outputChannel = "inboundTransformChannel")
-    open fun transformPayload(raw: String?): S3EventNotification? {
-        return S3EventNotification.parseJson(raw)
-    }
-
-    @Bean
-    open fun inboundTransformChannel(threadPoolTaskExecutor: ThreadPoolTaskExecutor): SubscribableChannel? {
+    open fun filteredChannel(threadPoolTaskExecutor: ThreadPoolTaskExecutor): SubscribableChannel? {
         return ExecutorChannel(threadPoolTaskExecutor, RoundRobinLoadBalancingStrategy())
     }
 
@@ -70,8 +72,8 @@ open class FileSystemProcessorConfiguration {
     }
 
     @Bean
-    open fun consumer(inboundTransformChannel: SubscribableChannel?, sqsMessageProcessor: SQSMessageProcessor?): EventDrivenConsumer {
-        return EventDrivenConsumer(inboundTransformChannel, sqsMessageProcessor)
+    open fun consumer(filteredChannel: SubscribableChannel?, sqsMessageProcessor: SQSMessageProcessor?): EventDrivenConsumer {
+        return EventDrivenConsumer(filteredChannel, sqsMessageProcessor)
     }
 
     @Bean

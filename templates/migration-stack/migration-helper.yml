@@ -57,8 +57,14 @@ Resources:
           - AbortIncompleteMultipartUpload:
               DaysAfterInitiation: 4
             Status: "Enabled"
+      NotificationConfiguration:
+        QueueConfigurations:
+          - Queue: !GetAtt MigrationQueue.Arn
+            Event: s3:ObjectCreated:*
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
+
+
 
   #EC2 Migration Helper
   HelperLaunchConfig:
