@@ -145,7 +145,7 @@ public class S3FilesystemMigrationService implements FilesystemMigrationService 
 
             logger.info("upload of shared home complete. commencing shared home download");
             report.setStatus(DOWNLOADING);
-            fileSystemDownloadManager.downloadFileSystem();
+            fileSystemDownloadManager.downloadFileSystem(report);
 
             report.setStatus(DONE);
 
