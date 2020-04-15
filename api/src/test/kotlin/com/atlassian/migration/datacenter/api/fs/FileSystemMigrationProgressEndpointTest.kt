@@ -61,7 +61,7 @@ class FileSystemMigrationProgressEndpointTest {
         val failedFilesCollection = hashSetOf<FailedFileMigration>()
         failedFilesCollection.add(failedFileMigration)
         every { fsMigrationService.report } returns mockk {
-            every { status } returns FilesystemMigrationStatus.RUNNING
+            every { status } returns FilesystemMigrationStatus.UPLOADING
             every { numberOfCommencedFileUploads } returns 1L
             every { numberOfFilesFound } returns 1L
             every { failedFiles } returns failedFilesCollection
@@ -83,7 +83,7 @@ class FileSystemMigrationProgressEndpointTest {
         val responseSuccessFileCount = tree.at("/uploadedFiles").asLong()
         val responseDownloadFileCount = tree.at("/downloadedFiles").asLong()
 
-        assertEquals(FilesystemMigrationStatus.RUNNING.name, responseStatus)
+        assertEquals(FilesystemMigrationStatus.UPLOADING.name, responseStatus)
         assertEquals(testReason, responseReason)
         assertEquals(testFile.toUri().toString(), responseFailedFile)
         assertEquals(1, responseSuccessFileCount)
@@ -93,7 +93,7 @@ class FileSystemMigrationProgressEndpointTest {
     @Test
     fun shouldHandleVeryLargeReport() {
         every { fsMigrationService.report } returns report
-        every { report.status } returns FilesystemMigrationStatus.RUNNING
+        every { report.status } returns FilesystemMigrationStatus.UPLOADING
         every { report.elapsedTime } returns Duration.ofMinutes(1)
         every { report.numberOfFilesFound } returns 1000000L
         every { report.numberOfCommencedFileUploads } returns 1000000L
@@ -121,7 +121,7 @@ class FileSystemMigrationProgressEndpointTest {
         val responseSuccessFileCount = tree.at("/uploadedFiles").asLong()
         val responseDownloadFileCount = tree.at("/downloadedFiles").asLong()
 
-        assertEquals(FilesystemMigrationStatus.RUNNING.name, responseStatus)
+        assertEquals(FilesystemMigrationStatus.UPLOADING.name, responseStatus)
         assertEquals(testReason, responseReason)
         assertEquals(testFile.toUri().toString(), responseFailedFile)
         assertEquals(1000000, responseSuccessFileCount)
@@ -144,14 +144,14 @@ class FileSystemMigrationProgressEndpointTest {
     @Test
     fun shouldNotRunFileMigrationWhenExistingMigrationIsInProgress() {
         val reportMock = mockk<FileSystemMigrationReport>()
-        every { reportMock.status } returns FilesystemMigrationStatus.RUNNING
+        every { reportMock.status } returns FilesystemMigrationStatus.UPLOADING
         every { fsMigrationService.isRunning } returns true
         every { fsMigrationService.report } returns reportMock
 
         val response = endpoint.runFileMigration()
 
         assertEquals(Response.Status.CONFLICT.statusCode, response.status)
-        assertEquals(FilesystemMigrationStatus.RUNNING, (response.entity as MutableMap<*, *>)["status"])
+        assertEquals(FilesystemMigrationStatus.UPLOADING, (response.entity as MutableMap<*, *>)["status"])
     }
 
     @Test
