@@ -65,17 +65,3 @@ export enum RestApiPathConstants {
     awsStackCreateRestPath = `aws/stack/create`,
     awsStackStatusRestPath = `aws/stack/:stackId:/status`,
 }
-
-export const fs = {
-    getFsMigrationStatus: (): Promise<Progress> => {
-        return callAppRest('GET', RestApiPathConstants.fsStatusRestPath)
-            .then(result => result.json())
-            .then(result => {
-                return {
-                    phase: 'Copying files',
-                    progress: result.migratedFiles,
-                    completeness: result.status === 'DONE' ? 1 : null,
-                };
-            });
-    },
-};
