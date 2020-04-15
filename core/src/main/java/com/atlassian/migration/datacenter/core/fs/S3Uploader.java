@@ -63,14 +63,15 @@ public class S3Uploader implements Uploader {
             logger.error(msg, e);
             throw new FilesystemUploader.FileUploadException(msg, e);
         }
-        responsesQueue.forEach(this::handlePutObjectResponse);
+        logger.debug("Finished uploading all files, acknowledging pending responses");
+        acknowledgeAndFlushResponses();
         logger.info("Finished uploading files to S3");
     }
 
     private void uploadFile(Path path) {
         if (responsesQueue.size() >= MAX_OPEN_CONNECTIONS) {
             logger.trace("Response queue greater than connection threshold. Acknowledging response queue");
-            responsesQueue.forEach(this::handlePutObjectResponse);
+            acknowledgeAndFlushResponses();
         }
 
         if (Files.exists(path)) {
@@ -99,6 +100,16 @@ public class S3Uploader implements Uploader {
             }
         } else {
             addFailedFile(path, String.format("File doesn't exist: %s", path));
+        }
+    }
+
+    private void acknowledgeAndFlushResponses() {
+        final int initialQueueSize = responsesQueue.size();
+        for (int i = 0; i < initialQueueSize; i++) {
+            S3UploadOperation operation = responsesQueue.poll();
+            if (operation != null) {
+                handlePutObjectResponse(operation);
+            }
         }
     }
 
