@@ -36,6 +36,17 @@ const props: MigrationTransferProps = {
     ],
     nextText: 'nextText',
     started: moment().subtract(20, 'minutes'),
+    getProgress: () => {
+        return new Promise(resolve => {
+            setTimeout(() => {
+                resolve({
+                    completeness: 0.5,
+                    phase: 'uploading files...',
+                    progress: '45 020 files copied',
+                });
+            }, 500);
+        });
+    },
 };
 
 describe('Migration Page Component', () => {

@@ -20,10 +20,6 @@ import { I18n } from '@atlassian/wrm-react-i18n';
 import { MigrationTransferProps, MigrationTransferPage } from '../shared/MigrationTransferPage';
 import moment from 'moment';
 
-const dummyStarted = moment();
-dummyStarted.subtract(49, 'hours');
-dummyStarted.subtract(23, 'minutes');
-
 const props: MigrationTransferProps = {
     heading: I18n.getText('atlassian.migration.datacenter.db.title'),
     description: I18n.getText('atlassian.migration.datacenter.db.description'),
@@ -38,7 +34,18 @@ const props: MigrationTransferProps = {
         },
     ],
     nextText: I18n.getText('atlassian.migration.datacenter.fs.nextStep'),
-    started: dummyStarted,
+    started: moment(),
+    getProgress: () => {
+        return new Promise(resolve => {
+            setTimeout(() => {
+                resolve({
+                    completeness: 0.5,
+                    phase: 'uploading files...',
+                    progress: '45 020 files copied',
+                });
+            }, 500);
+        });
+    },
 };
 
 export const DatabaseTransferPage: FunctionComponent = () => {
