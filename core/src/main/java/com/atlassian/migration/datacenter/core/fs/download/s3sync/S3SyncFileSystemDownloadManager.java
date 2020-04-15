@@ -43,6 +43,8 @@ public class S3SyncFileSystemDownloadManager {
         ScheduledFuture<?> scheduledFuture = Executors.newSingleThreadScheduledExecutor().scheduleAtFixedRate(() -> {
             S3SyncCommandStatus status = downloader.getFileSystemDownloadStatus();
 
+
+
             logger.debug("got status of file system download: " + status.toString());
 
             if (status.isComplete()) {
