@@ -69,7 +69,7 @@ public class DefaultFileSystemMigrationProgressTest {
 
     @Test
     void shouldNoteWhenAllFilesAreFound() {
-        sut.reportAllFilesFound();
-        assertTrue(sut.allFilesFound());
+        sut.reportCrawlingFinished();
+        assertTrue(sut.isCrawlingFinished());
     }
 }

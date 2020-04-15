@@ -83,7 +83,7 @@ class DirectoryStreamCrawlerTest {
         directoryStreamCrawler = new DirectoryStreamCrawler(report);
         directoryStreamCrawler.crawlDirectory(tempDir, queue);
 
-        assertTrue(report.allFilesFound());
+        assertTrue(report.isCrawlingFinished());
     }
 
     @Test

@@ -37,12 +37,13 @@ public interface FileSystemMigrationProgress {
      * @return true if all files have been discovered by the migration, false otherwise. At this point, {@link FileSystemMigrationProgress#getNumberOfFilesFound()}
      * should return the number of files that will be migrated
      */
-    boolean allFilesFound();
+    @JsonProperty("crawlingFinished")
+    boolean isCrawlingFinished();
 
     /**
      * Reports that the migration has finished discovering files to be migrated
      */
-    void reportAllFilesFound();
+    void reportCrawlingFinished();
 
     /**
      * Gets the number of files which have had their upload commenced

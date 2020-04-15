@@ -134,13 +134,13 @@ public class DefaultFileSystemMigrationReport implements FileSystemMigrationRepo
     }
 
     @Override
-    public boolean allFilesFound() {
-        return progress.allFilesFound();
+    public boolean isCrawlingFinished() {
+        return progress.isCrawlingFinished();
     }
 
     @Override
-    public void reportAllFilesFound() {
-        progress.reportAllFilesFound();
+    public void reportCrawlingFinished() {
+        progress.reportCrawlingFinished();
     }
 
     @Override

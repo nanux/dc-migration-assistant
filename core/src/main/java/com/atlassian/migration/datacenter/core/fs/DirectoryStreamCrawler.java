@@ -53,7 +53,7 @@ public class DirectoryStreamCrawler implements Crawler {
         } finally {
             try {
                 logger.info("Crawled and added {} files for upload.", report.getNumberOfFilesFound());
-                report.reportAllFilesFound();
+                report.reportCrawlingFinished();
                 queue.finish();
             } catch (InterruptedException e) {
                 logger.error("Failed to finalise upload queue.", e);

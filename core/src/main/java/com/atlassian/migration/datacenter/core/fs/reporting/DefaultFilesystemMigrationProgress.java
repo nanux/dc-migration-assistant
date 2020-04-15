@@ -44,12 +44,12 @@ public class DefaultFilesystemMigrationProgress implements FileSystemMigrationPr
     }
 
     @Override
-    public boolean allFilesFound() {
+    public boolean isCrawlingFinished() {
         return allFilesFound.get();
     }
 
     @Override
-    public void reportAllFilesFound() {
+    public void reportCrawlingFinished() {
         allFilesFound.set(true);
     }
 
