@@ -76,6 +76,7 @@ export const fs = {
                 return {
                     phase: 'Copying files',
                     progress: result.migratedFiles,
+                    completeness: result.status === 'DONE' ? 1 : null,
                 };
             });
     },
