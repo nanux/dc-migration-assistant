@@ -26,7 +26,7 @@ import Spinner from '@atlaskit/spinner';
 import { I18n } from '../../atlassian/mocks/@atlassian/wrm-react-i18n';
 import { overviewPath } from '../../utils/RoutePaths';
 
-const POLL_INTERVAL_MILLIS = 60000;
+const POLL_INTERVAL_MILLIS = 10000;
 
 export type Progress = {
     phase: string;
