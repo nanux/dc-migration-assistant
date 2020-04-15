@@ -17,8 +17,8 @@
 import React, { FunctionComponent } from 'react';
 
 import { I18n } from '@atlassian/wrm-react-i18n';
-import { MigrationTransferProps, MigrationTransferPage } from '../shared/MigrationTransferPage';
 import moment from 'moment';
+import { MigrationTransferProps, MigrationTransferPage } from '../shared/MigrationTransferPage';
 
 const dummyStarted = moment();
 
@@ -40,6 +40,17 @@ const fsMigrationTranferPageProps: MigrationTransferProps = {
     ],
     nextText: I18n.getText('atlassian.migration.datacenter.fs.nextStep'),
     started: dummyStarted,
+    getProgress: () => {
+        return new Promise(resolve => {
+            setTimeout(() => {
+                resolve({
+                    completeness: 0.5,
+                    phase: 'uploading files...',
+                    progress: '45 020 files copied',
+                });
+            }, 500);
+        });
+    },
 };
 
 export const FileSystemTransferPage: FunctionComponent = () => {
