@@ -18,9 +18,7 @@ import org.springframework.integration.dispatcher.RoundRobinLoadBalancingStrateg
 import org.springframework.integration.endpoint.EventDrivenConsumer
 import org.springframework.integration.handler.LoggingHandler
 import org.springframework.messaging.SubscribableChannel
-import org.springframework.scheduling.TaskScheduler
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor
-import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler
 
 
 @Configuration
@@ -51,15 +49,6 @@ open class FileSystemProcessorConfiguration {
         return PublishSubscribeChannel()
     }
 
-    @Bean
-    open fun inboundChannel(): SubscribableChannel? {
-        return PublishSubscribeChannel()
-    }
-
-    @Bean
-    open fun filteredChannel(threadPoolTaskExecutor: ThreadPoolTaskExecutor): SubscribableChannel? {
-        return ExecutorChannel(threadPoolTaskExecutor, RoundRobinLoadBalancingStrategy())
-    }
 
     @Bean
     open fun sqsMessageDrivenChannelAdapter(destinationResolver: DynamicQueueUrlDestinationResolver?, errorChannel: PublishSubscribeChannel?, inboundChannel: SubscribableChannel?, amazonSqs: AmazonSQSAsync): MessageProducer? {
@@ -72,6 +61,16 @@ open class FileSystemProcessorConfiguration {
     }
 
     @Bean
+    open fun inboundChannel(threadPoolTaskExecutor: ThreadPoolTaskExecutor): SubscribableChannel? {
+        return ExecutorChannel(threadPoolTaskExecutor, RoundRobinLoadBalancingStrategy())
+    }
+
+    @Bean
+    open fun filteredChannel(threadPoolTaskExecutor: ThreadPoolTaskExecutor): SubscribableChannel? {
+        return ExecutorChannel(threadPoolTaskExecutor, RoundRobinLoadBalancingStrategy())
+    }
+
+    @Bean
     open fun consumer(filteredChannel: SubscribableChannel?, sqsMessageProcessor: SQSMessageProcessor?): EventDrivenConsumer {
         return EventDrivenConsumer(filteredChannel, sqsMessageProcessor)
     }
@@ -79,14 +78,6 @@ open class FileSystemProcessorConfiguration {
     @Bean
     open fun dynamicQueueUrlDestinationResolver(idResolver: ResourceIdResolver, amazonSqs: AmazonSQSAsync): DynamicQueueUrlDestinationResolver? {
         return DynamicQueueUrlDestinationResolver(amazonSqs, idResolver)
-    }
-
-    @Bean
-    open fun taskScheduler(): TaskScheduler? {
-        val scheduler = ThreadPoolTaskScheduler()
-        val cores = Runtime.getRuntime().availableProcessors()
-        scheduler.poolSize = cores
-        return scheduler
     }
 
     companion object {
