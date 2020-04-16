@@ -17,19 +17,14 @@
 import React, { FunctionComponent } from 'react';
 
 import { I18n } from '@atlassian/wrm-react-i18n';
-import moment from 'moment';
 import { MigrationTransferProps, MigrationTransferPage } from '../shared/MigrationTransferPage';
+import moment from 'moment';
 
-const dummyStarted = moment();
-
-dummyStarted.subtract(49, 'hours');
-dummyStarted.subtract(23, 'minutes');
-
-const fsMigrationTranferPageProps: MigrationTransferProps = {
-    heading: I18n.getText('atlassian.migration.datacenter.fs.title'),
-    description: I18n.getText('atlassian.migration.datacenter.fs.description'),
-    infoTitle: I18n.getText('atlassian.migration.datacenter.fs.infoTitle'),
-    infoContent: I18n.getText('atlassian.migration.datacenter.fs.infoContent'),
+const props: MigrationTransferProps = {
+    heading: I18n.getText('atlassian.migration.datacenter.db.title'),
+    description: I18n.getText('atlassian.migration.datacenter.db.description'),
+    infoTitle: I18n.getText('atlassian.migration.datacenter.db.progress.title.in_progress'),
+    infoContent: I18n.getText('atlassian.migration.datacenter.common.can_close_window'),
     infoActions: [
         {
             key: 'learn',
@@ -39,7 +34,7 @@ const fsMigrationTranferPageProps: MigrationTransferProps = {
         },
     ],
     nextText: I18n.getText('atlassian.migration.datacenter.fs.nextStep'),
-    started: dummyStarted,
+    started: moment(),
     getProgress: () => {
         return new Promise(resolve => {
             setTimeout(() => {
@@ -53,6 +48,6 @@ const fsMigrationTranferPageProps: MigrationTransferProps = {
     },
 };
 
-export const FileSystemTransferPage: FunctionComponent = () => {
-    return <MigrationTransferPage {...fsMigrationTranferPageProps} />;
+export const DatabaseTransferPage: FunctionComponent = () => {
+    return <MigrationTransferPage {...props} />;
 };

@@ -15,31 +15,27 @@
  */
 
 import React, { FunctionComponent } from 'react';
+import { render } from '@testing-library/react';
+import { BrowserRouter as Router } from 'react-router-dom';
 
-import { I18n } from '@atlassian/wrm-react-i18n';
+import { MigrationTransferProps, MigrationTransferPage } from './MigrationTransferPage';
 import moment from 'moment';
-import { MigrationTransferProps, MigrationTransferPage } from '../shared/MigrationTransferPage';
 
-const dummyStarted = moment();
-
-dummyStarted.subtract(49, 'hours');
-dummyStarted.subtract(23, 'minutes');
-
-const fsMigrationTranferPageProps: MigrationTransferProps = {
-    heading: I18n.getText('atlassian.migration.datacenter.fs.title'),
-    description: I18n.getText('atlassian.migration.datacenter.fs.description'),
-    infoTitle: I18n.getText('atlassian.migration.datacenter.fs.infoTitle'),
-    infoContent: I18n.getText('atlassian.migration.datacenter.fs.infoContent'),
+const props: MigrationTransferProps = {
+    heading: 'heading',
+    description: 'description',
+    infoTitle: 'infoTitle',
+    infoContent: 'infoContent',
     infoActions: [
         {
             key: 'learn',
             href:
                 'https://media0.giphy.com/media/a6OnFHzHgCU1O/giphy.gif?cid=ecf05e472ee78099c642a7d2427127e6f1d4d6f0b77551c7&rid=giphy.gif',
-            text: I18n.getText('atlassian.migration.datacenter.common.learn_more'),
+            text: 'infotext',
         },
     ],
-    nextText: I18n.getText('atlassian.migration.datacenter.fs.nextStep'),
-    started: dummyStarted,
+    nextText: 'nextText',
+    started: moment().subtract(20, 'minutes'),
     getProgress: () => {
         return new Promise(resolve => {
             setTimeout(() => {
@@ -53,6 +49,19 @@ const fsMigrationTranferPageProps: MigrationTransferProps = {
     },
 };
 
-export const FileSystemTransferPage: FunctionComponent = () => {
-    return <MigrationTransferPage {...fsMigrationTranferPageProps} />;
-};
+describe('Migration Page Component', () => {
+    it('should render', () => {
+        const Page: FunctionComponent = () => {
+            return <MigrationTransferPage {...props} />;
+        };
+        const { getByText } = render(
+            <Router>
+                <Page />
+            </Router>
+        );
+
+        expect(getByText('heading')).toBeTruthy();
+        expect(getByText('description')).toBeTruthy();
+        expect(getByText('infoContent')).toBeTruthy();
+    });
+});

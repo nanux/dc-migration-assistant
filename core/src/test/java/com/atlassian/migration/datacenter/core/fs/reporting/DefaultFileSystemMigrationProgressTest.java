@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class DefaultFileSystemMigrationProgressTest {
 
@@ -34,14 +35,14 @@ public class DefaultFileSystemMigrationProgressTest {
 
     @Test
     void shouldBeInitialisedWithNoCompleteFiles() {
-        assertEquals(0, sut.getCountOfMigratedFiles());
+        assertEquals(0, sut.getCountOfUploadedFiles());
     }
 
     @Test
     void shouldAddMigratedFileToMigratedFiles() {
-        sut.reportFileMigrated();
+        sut.reportFileUploaded();
 
-        assertEquals(1, sut.getCountOfMigratedFiles());
+        assertEquals(1, sut.getCountOfUploadedFiles());
     }
 
     @Test
@@ -61,8 +62,14 @@ public class DefaultFileSystemMigrationProgressTest {
     @Test
     void shouldHandleLargeNumberOfMigratedFiles() {
         int numFilesToMigrate = 1000000;
-        IntStream.range(0, numFilesToMigrate).forEach(i -> sut.reportFileMigrated());
+        IntStream.range(0, numFilesToMigrate).forEach(i -> sut.reportFileUploaded());
 
-        assertEquals(numFilesToMigrate, sut.getCountOfMigratedFiles());
+        assertEquals(numFilesToMigrate, sut.getCountOfUploadedFiles());
+    }
+
+    @Test
+    void shouldNoteWhenAllFilesAreFound() {
+        sut.reportCrawlingFinished();
+        assertTrue(sut.isCrawlingFinished());
     }
 }

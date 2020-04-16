@@ -34,6 +34,18 @@ public interface FileSystemMigrationProgress {
     void reportFileFound();
 
     /**
+     * @return true if all files have been discovered by the migration, false otherwise. At this point, {@link FileSystemMigrationProgress#getNumberOfFilesFound()}
+     * should return the number of files that will be migrated
+     */
+    @JsonProperty("crawlingFinished")
+    boolean isCrawlingFinished();
+
+    /**
+     * Reports that the migration has finished discovering files to be migrated
+     */
+    void reportCrawlingFinished();
+
+    /**
      * Gets the number of files which have had their upload commenced
      */
     @JsonProperty("filesInFlight")
@@ -44,12 +56,23 @@ public interface FileSystemMigrationProgress {
     /**
      * Gets the number of files which have been successfully migrated
      */
-    @JsonProperty("migratedFiles")
-    Long getCountOfMigratedFiles();
+    @JsonProperty("uploadedFiles")
+    Long getCountOfUploadedFiles();
 
     /**
      * Reports that a file was migrated successfully. Implementers should be careful that the underlying
      * collection is thread safe as this may be called from multiple file upload threads.
      */
-    void reportFileMigrated();
+    void reportFileUploaded();
+
+    /**
+     * Gets the number of files that have been successfully downloaded on the remote application
+     */
+    @JsonProperty("downloadedFiles")
+    Long getCountOfDownloadFiles();
+
+    /**
+     * Sets the number of files which were downloaded on the remote application
+     */
+    void setNumberOfFilesDownloaded(long downloadedFiles);
 }
