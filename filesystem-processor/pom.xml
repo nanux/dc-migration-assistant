@@ -173,6 +173,26 @@
     <build>
         <plugins>
             <plugin>
+                <groupId>com.atlassian.migration.datacenter</groupId>
+                <artifactId>s3-artifact-uploader</artifactId>
+                <version>${project.version}</version>
+                <configuration>
+                    <bucket>trebuchet-public-assets</bucket>
+                    <aws_region>eu-central-1</aws_region>
+                    <aws_access_key_id>AKIAX6XAXBIS3YIXSMWJ</aws_access_key_id>
+                    <aws_secret_key_id>eBRoeHxrxAtRVeA4u5Ir1R9451RgvDcsWrr6oFs6</aws_secret_key_id>
+                    <role_arn>arn:aws:iam::014389051533:role/AWSAndyPowellTrebuchetBucketFullAccess</role_arn>
+                    <external_id>iD1wy013</external_id>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>upload</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <version>2.2.5.RELEASE</version>

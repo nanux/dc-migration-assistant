@@ -44,6 +44,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>s3-artifact-uploader</module>
         <module>api</module>
         <module>frontend</module>
         <module>core</module>
@@ -51,6 +52,7 @@
         <module>spi</module>
         <module>filesystem-processor</module>
     </modules>
+
 
     <repositories>
         <repository>

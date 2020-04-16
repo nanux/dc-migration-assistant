@@ -4,16 +4,16 @@ Parameters:
 
   NetworkPrivateSubnet:
     Description: "Private SubnetId where Migration helper will be placed - Must have connection to desitnation Storage"
-    Type: AWS::EC2::Subnet::Id
+    Type: String
   EFSFileSystemId:
     Description: "The Elastic File System Id we will mount to the Migration Helper EC2 Instance"
     Type: String
   EFSSecurityGroup:
     Description: "The Security Group attached to EFS, access to NFS port will be open from Migration Helper Security Group"
-    Type: AWS::EC2::SecurityGroup::Id
+    Type: String
   RDSSecurityGroup:
     Description: "The Security Group attached to RDS, access to PostgreSQL port will be open from Migration Helper Security Group"
-    Type: AWS::EC2::SecurityGroup::Id
+    Type: String
   RDSEndpoint:
     Description: "The RDS endpoint address that hosts the database on AWS"
     Type: String
@@ -30,7 +30,7 @@ Parameters:
     Type: String
   HelperVpcId:
     Description: "The VPC for Helper EC2 Instance"
-    Type: AWS::EC2::VPC::Id
+    Type: String
   LatestAmiId:
     Type: 'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
@@ -39,6 +39,11 @@ Parameters:
     Default: '11'
     AllowedValues: ['9.6', '10', '11']
     Type: String
+  MigrationFilePath:
+    Type: String
+    Description: 'The directory on the migration helper server to write the files to from S3'
+    Default: '/efs/jira/shared'
+
 Resources:
 
   #S3 Bucket for Database Transfer
@@ -64,7 +69,80 @@ Resources:
     DeletionPolicy: Retain
     UpdateReplacePolicy: Retain
 
+  QueuePolicy:
+    Type: AWS::SQS::QueuePolicy
+    Properties:
+      PolicyDocument:
+        Id: !Sub "MigrationQueue_Policy_${AWS::AccountId}"
+        Version: 2012-10-17
+        Statement:
+          - Sid: "MigrationQueue_SendMessage_Bucket"
+            Effect: Allow
+            Principal:
+              AWS: "*"
+            Action:
+              - SQS:SendMessage
+            Resource: !GetAtt MigrationQueue.Arn
+            Condition:
+              ArnEquals:
+                aws:SourceArn: !Join ["", ["arn:aws:s3:::",!Sub 'atl-migrationbucket-${AWS::StackName}']]
+      Queues:
+        - !Ref MigrationQueue
 
+  MigrationQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      DelaySeconds: 0
+      MaximumMessageSize: 262144
+      RedrivePolicy:
+        deadLetterTargetArn: !GetAtt DeadLetterQueue.Arn
+        maxReceiveCount: 5
+      MessageRetentionPeriod: 864000
+      QueueName: !Sub 'atl-migration-queue-${AWS::StackName}'
+      ReceiveMessageWaitTimeSeconds: 0
+      VisibilityTimeout: 43200
+
+  DeadLetterQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      DelaySeconds: 0
+      MaximumMessageSize: 262144
+      MessageRetentionPeriod: 864000
+      QueueName: !Sub 'atl-migration-dlq-${AWS::StackName}'
+      ReceiveMessageWaitTimeSeconds: 0
+      VisibilityTimeout: 43200
+
+  StackNameParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /config/migration-helper/cloud.aws.stack.name
+      Type: String
+      Value: !Ref AWS::StackName
+      Description: CloudFormation Stack Name
+
+  JiraFilePathParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /config/migration-helper/app.jira.file.path
+      Type: String
+      Value: !Ref MigrationFilePath
+      Description: File Path
+
+  VPCIdParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /config/migration-helper/app.vpc.id
+      Type: String
+      Value: !Ref HelperVpcId
+      Description: Helper VPC Id
+
+  RegionParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /config/migration-helper/app.region.id
+      Type: String
+      Value: !Ref AWS::Region
+      Description: Region Name
 
   #EC2 Migration Helper
   HelperLaunchConfig:
@@ -72,7 +150,7 @@ Resources:
     Metadata:
       AWS::CloudFormation::Init:
         configSets:
-          install_prerequisites: [create_efs_script,mount_efs,prepare_efs_sync_script,install_psql_client, create_rds_restore_script]
+          install_prerequisites: [create_efs_script,mount_efs,prepare_efs_sync_script,install_psql_client, create_rds_restore_script, download_java_helper_app, start_java_helper_app]
         create_efs_script:
           files:
             /opt/atlassian/dc-migration-assistant/mount-efs.sh:
@@ -137,6 +215,14 @@ Resources:
           commands:
             01_mount:
               command: /opt/atlassian/dc-migration-assistant/mount-efs.sh
+        download_java_helper_app:
+          commands:
+            01_download:
+              command: "aws s3 cp s3://trebuchet-public-assets/filesystem-processor-1.0.0.jar /opt/atlassian/dc-migration-assistant/filesystem-processor-1.0.0.jar"
+        start_java_helper_app:
+          commands:
+            01_start_app:
+              command: "java -jar /opt/atlassian/dc-migration-assistant/filesystem-processor-1.0.0.jar --spring.profiles.active=production"
         install_psql_client:
           commands:
             01_install_psql:
@@ -306,6 +392,7 @@ Resources:
           yum install -y aws-cfn-bootstrap
           /opt/aws/bin/cfn-init -v --stack ${AWS::StackId} --resource HelperLaunchConfig --configsets install_prerequisites --region ${AWS::Region}
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackId} --resource HelperServerGroup --region ${AWS::Region}
+
   HelperServerGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     CreationPolicy:

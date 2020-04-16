@@ -150,7 +150,7 @@ Resources:
     Metadata:
       AWS::CloudFormation::Init:
         configSets:
-          install_prerequisites: [create_efs_script,mount_efs,prepare_efs_sync_script,install_psql_client, create_rds_restore_script]
+          install_prerequisites: [create_efs_script,mount_efs,prepare_efs_sync_script,install_psql_client, create_rds_restore_script, download_java_helper_app, start_java_helper_app]
         create_efs_script:
           files:
             /opt/atlassian/dc-migration-assistant/mount-efs.sh:
@@ -215,6 +215,14 @@ Resources:
           commands:
             01_mount:
               command: /opt/atlassian/dc-migration-assistant/mount-efs.sh
+        download_java_helper_app:
+          commands:
+            01_download:
+              command: "aws s3 cp s3://trebuchet-public-assets/filesystem-processor-1.0.0.jar /opt/atlassian/dc-migration-assistant/filesystem-processor-1.0.0.jar"
+        start_java_helper_app:
+          commands:
+            01_start_app:
+              command: "java -jar /opt/atlassian/dc-migration-assistant/filesystem-processor-1.0.0.jar --spring.profiles.active=production"
         install_psql_client:
           commands:
             01_install_psql:
