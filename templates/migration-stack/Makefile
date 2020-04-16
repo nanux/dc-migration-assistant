@@ -6,15 +6,20 @@ INSTANCE_TYPE ?= c5.large
 # SUBNET_ID: the IDs of the subnets to distribute the elastic beanstalk EC2 instance between (There is only 1 instance so should just be a single subnet)
 # EFS_ID: the file system ID of the EFS to sync the files to. Should be the EFS of the freshly deployed product stack
 # SG_ID: The ID of the security group attached to the EFS, required to allow the beanstalk instance to communicate with the EFS for the duration of the migration
+# RDS_ENDPOINT:  The RDS endpoint to connect to for data migration
+# PLSQL_VERSION:  The version of PostgreSQL database engine to use for compatibility
 
-PARAM_VPC := ParameterKey=HelperVpcId,ParameterValue=$(VPC_ID)
 PARAM_SUBNET := ParameterKey=NetworkPrivateSubnet,ParameterValue=$(SUBNET_ID)
 PARAM_EFS := ParameterKey=EFSFileSystemId,ParameterValue=$(EFS_ID)
 PARAM_EFS_SG := ParameterKey=EFSSecurityGroup,ParameterValue=$(SG_ID)
-PARAM_INSTANCE_TYPE := ParameterKey=HelperInstanceType,ParameterValue=$(INSTANCE_TYPE)
 PARAM_RDS_SG := ParameterKey=RDSSecurityGroup,ParameterValue=$(SG_ID)
+PARAM_RDS_ENDPOINT := ParameterKey=RDSEndpoint,ParameterValue=$(RDS_ENDPOINT)
+PARAM_INSTANCE_TYPE := ParameterKey=HelperInstanceType,ParameterValue=$(INSTANCE_TYPE)
+PARAM_VPC := ParameterKey=HelperVpcId,ParameterValue=$(VPC_ID)
+PARAM_PLSQL_VERSION := ParameterKey=PSQLVersion,ParameterValue=$(PLSQL_VERSION)
 
-PARAMS := $(PARAM_VPC) $(PARAM_SUBNET) $(PARAM_EFS) $(PARAM_EFS_SG) $(PARAM_INSTANCE_TYPE) $(PARAM_RDS_SG)
+
+PARAMS :=  $(PARAM_SUBNET) $(PARAM_EFS) $(PARAM_EFS_SG) $(PARAM_RDS_SG) ${PARAM_RDS_ENDPOINT} $(PARAM_INSTANCE_TYPE) $(PARAM_VPC) ${PARAM_PLSQL_VERSION}
 
 rendertemplate:
 	mkdir render;
