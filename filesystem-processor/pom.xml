@@ -177,12 +177,10 @@
                 <artifactId>s3-artifact-uploader</artifactId>
                 <version>${project.version}</version>
                 <configuration>
-                    <bucket>trebuchet-public-assets</bucket>
-                    <aws_region>eu-central-1</aws_region>
-                    <aws_access_key_id>AKIAX6XAXBIS3YIXSMWJ</aws_access_key_id>
-                    <aws_secret_key_id>eBRoeHxrxAtRVeA4u5Ir1R9451RgvDcsWrr6oFs6</aws_secret_key_id>
-                    <role_arn>arn:aws:iam::014389051533:role/AWSAndyPowellTrebuchetBucketFullAccess</role_arn>
-                    <external_id>iD1wy013</external_id>
+                    <bucketName>trebuchet-public-assets</bucketName>
+                    <region>eu-central-1</region>
+                    <profile>atlassian</profile>
+                    <enabled>false</enabled>
                 </configuration>
                 <executions>
                     <execution>

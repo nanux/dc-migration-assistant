@@ -25,6 +25,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.services.ssm.model.GetCommandInvocationResponse;
 
+import java.io.IOException;
+
 public class UnmarshalS3SyncStatusSSMCommandConsumer extends SuccessfulSSMCommandConsumer<S3SyncCommandStatus> {
     private static final Logger logger = LoggerFactory.getLogger(UnmarshalS3SyncStatusSSMCommandConsumer.class);
 
@@ -39,7 +41,7 @@ public class UnmarshalS3SyncStatusSSMCommandConsumer extends SuccessfulSSMComman
 
         try {
             return mapper.readValue(commandInvocation.standardOutputContent(), S3SyncCommandStatus.class);
-        } catch (Exception e) {
+        } catch (IOException e) {
             logger.error("unable to unmarshal output from s3 sync status command", e);
             throw new SSMCommandInvocationProcessingError("unable to read status of sync command", e);
         }
