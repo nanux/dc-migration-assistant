@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React, { FunctionComponent, useState, useEffect, ReactElement } from 'react';
+import React, { FunctionComponent, useState, useEffect, ReactElement, ReactNode } from 'react';
 import ProgressBar, { SuccessProgressBar } from '@atlaskit/progress-bar';
 import SectionMessage from '@atlaskit/section-message';
 import styled from 'styled-components';
@@ -54,7 +54,9 @@ export type MigrationTransferProps = {
     heading: string;
     description: string;
     nextText: string;
-    started: moment.Moment;
+    startMoment: moment.Moment;
+    hasStarted: boolean;
+    startMigrationPhase: () => Promise<void>;
     getProgress: ProgressCallback;
 };
 
@@ -130,11 +132,31 @@ const renderContentIfLoading = (
     );
 };
 
+const renderMigrationProgress = (
+    transferError: string,
+    progress: Progress,
+    loading: boolean,
+    startedMoment: Moment
+): ReactNode => {
+    return (
+        <>
+            {transferError && <SectionMessage appearance="error">{transferError}</SectionMessage>}
+            {progress?.completeness === 1 && (
+                <SectionMessage appearance="confirmation">
+                    <strong>{progress.completeMessage.boldPrefix}</strong>{' '}
+                    {progress.completeMessage.message}
+                </SectionMessage>
+            )}
+            {renderContentIfLoading(loading, progress, startedMoment)}
+        </>
+    );
+};
+
 export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = ({
     description,
     heading,
     nextText,
-    started,
+    startMoment,
     getProgress,
 }) => {
     const [progress, setProgress] = useState<Progress>();
@@ -171,16 +193,7 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
             <TransferContentContainer>
                 <h1>{heading}</h1>
                 <p>{description}</p>
-                {transferError && (
-                    <SectionMessage appearance="error">{transferError}</SectionMessage>
-                )}
-                {progress?.completeness === 1 && (
-                    <SectionMessage appearance="confirmation">
-                        <strong>{progress.completeMessage.boldPrefix}</strong>{' '}
-                        {progress.completeMessage.message}
-                    </SectionMessage>
-                )}
-                {renderContentIfLoading(loading, progress, started)}
+                {renderMigrationProgress(transferError, progress, loading, startMoment)}
             </TransferContentContainer>
             <TransferActionsContainer>
                 <Link to={overviewPath}>

@@ -96,7 +96,9 @@ const fsMigrationTranferPageProps: MigrationTransferProps = {
     heading: I18n.getText('atlassian.migration.datacenter.fs.title'),
     description: I18n.getText('atlassian.migration.datacenter.fs.description'),
     nextText: I18n.getText('atlassian.migration.datacenter.fs.nextStep'),
-    started: dummyStarted,
+    startMoment: dummyStarted,
+    hasStarted: true,
+    startMigrationPhase: Promise.resolve,
     getProgress: getFsMigrationProgress,
 };
 

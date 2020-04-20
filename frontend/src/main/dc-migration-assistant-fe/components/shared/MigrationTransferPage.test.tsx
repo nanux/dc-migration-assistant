@@ -25,7 +25,9 @@ const props: MigrationTransferProps = {
     heading: 'heading',
     description: 'description',
     nextText: 'nextText',
-    started: moment().subtract(20, 'minutes'),
+    startMoment: moment().subtract(20, 'minutes'),
+    hasStarted: true,
+    startMigrationPhase: Promise.resolve,
     getProgress: () => {
         return new Promise(resolve => {
             setTimeout(() => {

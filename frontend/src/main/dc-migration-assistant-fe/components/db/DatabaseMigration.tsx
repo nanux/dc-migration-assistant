@@ -24,7 +24,9 @@ const props: MigrationTransferProps = {
     heading: I18n.getText('atlassian.migration.datacenter.db.title'),
     description: I18n.getText('atlassian.migration.datacenter.db.description'),
     nextText: I18n.getText('atlassian.migration.datacenter.fs.nextStep'),
-    started: moment(),
+    startMoment: moment(),
+    hasStarted: true,
+    startMigrationPhase: Promise.resolve,
     getProgress: () => {
         return new Promise(resolve => {
             setTimeout(() => {
