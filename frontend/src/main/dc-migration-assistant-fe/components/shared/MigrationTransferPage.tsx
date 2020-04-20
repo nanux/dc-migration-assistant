@@ -53,7 +53,8 @@ export type MigrationTransferProps = {
     infoContent: string;
     infoActions?: Action[];
     nextText: string;
-    started: moment.Moment;
+    started?: moment.Moment;
+    elapsedTimeSeconds?: number;
     getProgress: ProgressCallback;
 };
 
@@ -82,10 +83,27 @@ const TransferActionsContainer = styled.div`
     margin-top: 20px;
 `;
 
+type TransferDuration = {
+    days: number;
+    hours: number;
+    minutes: number;
+};
+
+const calculateDurationFromBeginning = (start: Moment): TransferDuration => {
+    const elapsedTime = moment.duration(moment.now() - start.valueOf());
+
+    return {
+        days: elapsedTime.days(),
+        hours: elapsedTime.hours(),
+        minutes: elapsedTime.minutes(),
+    };
+};
+
 const renderContentIfLoading = (
     loading: boolean,
     progress: Progress,
-    started: Moment
+    started: Moment,
+    elapsedSeconds: number
 ): ReactElement => {
     if (loading) {
         return (
@@ -96,10 +114,9 @@ const renderContentIfLoading = (
             </>
         );
     }
-    const elapsedTime = moment.duration(moment.now() - started.valueOf());
-    const elapsedDays = elapsedTime.days();
-    const elapsedHours = elapsedTime.hours();
-    const elapsedMins = elapsedTime.minutes();
+
+    const duration = calculateDurationFromBeginning(started);
+
     return (
         <>
             <h4>{progress.phase}</h4>
@@ -117,8 +134,8 @@ const renderContentIfLoading = (
             <p>
                 {I18n.getText(
                     'atlassian.migration.datacenter.common.progress.mins_elapsed',
-                    `${elapsedDays * 24 + elapsedHours}`,
-                    `${elapsedMins}`
+                    `${duration.days * 24 + duration.hours}`,
+                    `${duration.minutes}`
                 )}
             </p>
             <p>{progress.progress}</p>
@@ -134,6 +151,7 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
     infoActions,
     nextText,
     started,
+    elapsedTimeSeconds,
     getProgress,
 }) => {
     const [progress, setProgress] = useState<Progress>();
@@ -167,7 +185,7 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                 <SectionMessage title={infoTitle} actions={infoActions || []}>
                     {infoContent}
                 </SectionMessage>
-                {renderContentIfLoading(loading, progress, started)}
+                {renderContentIfLoading(loading, progress, started, elapsedTimeSeconds)}
             </TransferContentContainer>
             <TransferActionsContainer>
                 <Link to={overviewPath}>
