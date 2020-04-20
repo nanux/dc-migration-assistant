@@ -102,7 +102,11 @@ const renderContentIfLoading = (
     const elapsedMins = elapsedTime.minutes();
     return (
         <>
-            <h4>{progress.phase}</h4>
+            <h4>
+                {progress.phase}
+                {progress.completeness ||
+                    ` (${I18n.getText('atlassian.migration.datacenter.common.estimating')}...)`}
+            </h4>
             {progress.completeness ? (
                 <SuccessProgressBar value={progress.completeness} />
             ) : (
@@ -121,7 +125,7 @@ const renderContentIfLoading = (
                     `${elapsedMins}`
                 )}
             </p>
-            <p>{progress.progress}</p>
+            {progress.progress && <p>{progress.progress}</p>}
         </>
     );
 };
