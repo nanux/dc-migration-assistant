@@ -62,7 +62,6 @@ const TransferPageContainer = styled.div`
     flex-direction: column;
     width: 25%;
     margin-right: auto;
-    margin-left: auto;
     margin-bottom: auto;
 `;
 
@@ -70,14 +69,13 @@ const TransferContentContainer = styled.div`
     display: flex;
     flex-direction: column;
 
-    padding-bottom: 20px;
-    border-bottom: 2px solid gray;
+    padding-bottom: 5px;
 `;
 
 const TransferActionsContainer = styled.div`
     display: flex;
     flex-direction: row;
-    justify-content: space-between;
+    justify-content: flex-start;
 
     margin-top: 20px;
 `;
@@ -175,7 +173,9 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
             </TransferContentContainer>
             <TransferActionsContainer>
                 <Link to={overviewPath}>
-                    <Button>{I18n.getText('atlassian.migration.datacenter.generic.cancel')}</Button>
+                    <Button style={{ marginRight: '20px' }}>
+                        {I18n.getText('atlassian.migration.datacenter.generic.cancel')}
+                    </Button>
                 </Link>
                 <Button appearance="primary" isDisabled={progress?.completeness !== 1}>
                     {nextText}
