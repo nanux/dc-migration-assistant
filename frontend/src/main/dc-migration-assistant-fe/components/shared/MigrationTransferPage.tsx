@@ -31,7 +31,7 @@ const POLL_INTERVAL_MILLIS = 3000;
 export type Progress = {
     phase: string;
     completeness?: number;
-    progress: string;
+    error?: string;
 };
 
 export interface ProgressCallback {
@@ -49,9 +49,6 @@ interface Action {
 export type MigrationTransferProps = {
     heading: string;
     description: string;
-    infoTitle: string;
-    infoContent: string;
-    infoActions?: Action[];
     nextText: string;
     started: moment.Moment;
     getProgress: ProgressCallback;
@@ -125,7 +122,6 @@ const renderContentIfLoading = (
                     `${elapsedMins}`
                 )}
             </p>
-            {progress.progress && <p>{progress.progress}</p>}
         </>
     );
 };
@@ -133,13 +129,13 @@ const renderContentIfLoading = (
 export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = ({
     description,
     heading,
-    infoContent,
     nextText,
     started,
     getProgress,
 }) => {
     const [progress, setProgress] = useState<Progress>();
     const [loading, setLoading] = useState<boolean>(true);
+    const [error, setError] = useState<string>();
 
     useEffect(() => {
         const updateProgress = (): Promise<void> => {
@@ -148,7 +144,10 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                     setProgress(result);
                     setLoading(false);
                 })
-                .catch(console.error);
+                .catch(err => {
+                    console.error(err);
+                    setError(err);
+                });
         };
 
         const id = setInterval(async () => {
@@ -161,12 +160,16 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
         return (): void => clearInterval(id);
     }, []);
 
+    const transferError = progress?.error || error;
+
     return (
         <TransferPageContainer>
             <TransferContentContainer>
                 <h1>{heading}</h1>
-                {description && <p>{description}</p>}
-                <p>{infoContent}</p>
+                <p>{description}</p>
+                {transferError && (
+                    <SectionMessage appearance="error">{transferError}</SectionMessage>
+                )}
                 {renderContentIfLoading(loading, progress, started)}
             </TransferContentContainer>
             <TransferActionsContainer>
