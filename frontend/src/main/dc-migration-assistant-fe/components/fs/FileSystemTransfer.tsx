@@ -37,7 +37,7 @@ const getFsMigrationProgress = (): Promise<Progress> => {
             if (result.status === 'UPLOADING') {
                 const progress: Progress = {
                     phase: 'Uploading files to AWS',
-                    progress: `${result.uploadedFiles} files uploaded`,
+                    progress: '',
                 };
 
                 if (result.crawlingFinished) {
@@ -55,7 +55,7 @@ const getFsMigrationProgress = (): Promise<Progress> => {
                 const weightedProgress = 0.5 + 0.5 * downloadProgress;
                 return {
                     phase: 'Loading files into target application',
-                    progress: `${result.downloadedFiles} files loaded`,
+                    progress: '',
                     completeness: weightedProgress,
                 };
             }
@@ -69,13 +69,13 @@ const getFsMigrationProgress = (): Promise<Progress> => {
             if (result.status === 'NOT_STARTED') {
                 return {
                     phase: 'Preparing to migrate files',
-                    progress: '...',
+                    progress: '',
                 };
             }
             return {
                 phase: 'error',
                 completeness: 0,
-                progress: 'error',
+                progress: '',
             };
         })
         .catch(err => {
