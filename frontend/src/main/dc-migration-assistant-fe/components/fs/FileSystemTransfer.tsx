@@ -38,6 +38,7 @@ const getFsMigrationProgress = (): Promise<Progress> => {
                 const progress: Progress = {
                     phase: 'Uploading files to AWS',
                     progress: `${result.uploadedFiles} files uploaded`,
+                    elapsedTimeSeconds: result.elapsedTime.seconds,
                 };
 
                 if (result.crawlingFinished) {
@@ -100,7 +101,6 @@ const fsMigrationTranferPageProps: MigrationTransferProps = {
         },
     ],
     nextText: I18n.getText('atlassian.migration.datacenter.fs.nextStep'),
-    started: dummyStarted,
     getProgress: getFsMigrationProgress,
 };
 

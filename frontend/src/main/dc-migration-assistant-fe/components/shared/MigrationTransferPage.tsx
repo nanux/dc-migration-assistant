@@ -32,6 +32,7 @@ export type Progress = {
     phase: string;
     completeness?: number;
     progress: string;
+    elapsedTimeSeconds?: number;
 };
 
 export interface ProgressCallback {
@@ -54,7 +55,6 @@ export type MigrationTransferProps = {
     infoActions?: Action[];
     nextText: string;
     started?: moment.Moment;
-    elapsedTimeSeconds?: number;
     getProgress: ProgressCallback;
 };
 
@@ -90,6 +90,10 @@ type TransferDuration = {
 };
 
 const calculateDurationFromBeginning = (start: Moment): TransferDuration => {
+    if (!start) {
+        return undefined;
+    }
+
     const elapsedTime = moment.duration(moment.now() - start.valueOf());
 
     return {
@@ -99,11 +103,29 @@ const calculateDurationFromBeginning = (start: Moment): TransferDuration => {
     };
 };
 
+const calcualateDurationFromElapsedSeconds = (seconds: number): TransferDuration => {
+    if (!seconds) {
+        return undefined;
+    }
+
+    const duration = moment.duration(seconds, 'seconds');
+
+    return {
+        days: duration.days(),
+        hours: duration.hours(),
+        minutes: duration.minutes(),
+    };
+};
+
+const calculateStartedFromElapsedSeconds = (elapsedSeconds: number): Moment => {
+    const now = moment();
+    return now.subtract(elapsedSeconds, 'seconds');
+};
+
 const renderContentIfLoading = (
     loading: boolean,
     progress: Progress,
-    started: Moment,
-    elapsedSeconds: number
+    started: Moment
 ): ReactElement => {
     if (loading) {
         return (
@@ -115,7 +137,9 @@ const renderContentIfLoading = (
         );
     }
 
-    const duration = calculateDurationFromBeginning(started);
+    const duration =
+        calculateDurationFromBeginning(started) ||
+        calcualateDurationFromElapsedSeconds(progress.elapsedTimeSeconds);
 
     return (
         <>
@@ -128,15 +152,18 @@ const renderContentIfLoading = (
             <p>
                 {I18n.getText(
                     'atlassian.migration.datacenter.common.progress.started',
-                    started.format('D/MMM/YY h:m A')
+                    (
+                        started || calculateStartedFromElapsedSeconds(progress.elapsedTimeSeconds)
+                    ).format('D/MMM/YY h:m A')
                 )}
             </p>
             <p>
-                {I18n.getText(
-                    'atlassian.migration.datacenter.common.progress.mins_elapsed',
-                    `${duration.days * 24 + duration.hours}`,
-                    `${duration.minutes}`
-                )}
+                {duration &&
+                    I18n.getText(
+                        'atlassian.migration.datacenter.common.progress.mins_elapsed',
+                        `${duration.days * 24 + duration.hours}`,
+                        `${duration.minutes}`
+                    )}
             </p>
             <p>{progress.progress}</p>
         </>
@@ -151,7 +178,6 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
     infoActions,
     nextText,
     started,
-    elapsedTimeSeconds,
     getProgress,
 }) => {
     const [progress, setProgress] = useState<Progress>();
@@ -185,7 +211,7 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                 <SectionMessage title={infoTitle} actions={infoActions || []}>
                     {infoContent}
                 </SectionMessage>
-                {renderContentIfLoading(loading, progress, started, elapsedTimeSeconds)}
+                {renderContentIfLoading(loading, progress, started)}
             </TransferContentContainer>
             <TransferActionsContainer>
                 <Link to={overviewPath}>
