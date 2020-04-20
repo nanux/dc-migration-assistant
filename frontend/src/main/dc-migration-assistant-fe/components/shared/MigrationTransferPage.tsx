@@ -152,6 +152,42 @@ const renderMigrationProgress = (
     );
 };
 
+const renderMigrationActions = (
+    completeness: number,
+    nextText: string,
+    startMigrationPhase: () => Promise<void>,
+    updateProgress: () => Promise<void>,
+    hasStarted: boolean
+): ReactNode => {
+    const defaultButtonStyle = {
+        padding: '5px',
+    };
+    const marginButtonStyle = {
+        ...defaultButtonStyle,
+        marginRight: '20px',
+    };
+
+    if (completeness === 1) {
+        return (
+            <Button style={defaultButtonStyle} appearance="primary">
+                {nextText}
+            </Button>
+        );
+    }
+    if (hasStarted) {
+        return (
+            <Button style={marginButtonStyle} onClick={updateProgress}>
+                Refresh
+            </Button>
+        );
+    }
+    return (
+        <Button style={marginButtonStyle} appearance="primary" onClick={startMigrationPhase}>
+            Start
+        </Button>
+    );
+};
+
 export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = ({
     description,
     heading,
@@ -199,19 +235,15 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                     renderMigrationProgress(transferError, progress, loading, startMoment)}
             </TransferContentContainer>
             <TransferActionsContainer>
-                {progress?.completeness === 1 && <Button appearance="primary">{nextText}</Button>}
-                <Button style={{ marginRight: '20px', padding: '5px' }} onClick={updateProgress}>
-                    Refresh
-                </Button>
-                <Button
-                    style={{ marginLeft: '20px' }}
-                    appearance="primary"
-                    onClick={startMigrationPhase}
-                >
-                    Start
-                </Button>
+                {renderMigrationActions(
+                    progress?.completeness,
+                    nextText,
+                    startMigrationPhase,
+                    updateProgress,
+                    hasStarted
+                )}
                 <Link to={overviewPath}>
-                    <Button style={{ marginLeft: '20px' }}>
+                    <Button style={{ marginLeft: '20px', paddingLeft: '5px' }}>
                         {I18n.getText('atlassian.migration.datacenter.generic.cancel')}
                     </Button>
                 </Link>
