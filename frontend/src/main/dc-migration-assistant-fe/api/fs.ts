@@ -21,8 +21,14 @@ type FileSystemMigrationStatusResponse = {
 
 export const fs = {
     getFsMigrationStatus: (): Promise<FileSystemMigrationStatusResponse> => {
-        return callAppRest('GET', RestApiPathConstants.fsStatusRestPath).then(result =>
-            result.json()
-        );
+        return callAppRest('GET', RestApiPathConstants.fsStatusRestPath)
+            .then(result => result.json())
+            .catch(err => {
+                // Assume migration not in progress if error occurs
+                console.error('error getting fs migration status', err);
+                return Promise.resolve({
+                    status: 'NOT_STARTED',
+                });
+            });
     },
 };
