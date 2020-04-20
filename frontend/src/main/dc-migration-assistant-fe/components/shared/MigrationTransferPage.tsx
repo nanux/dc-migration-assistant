@@ -28,11 +28,22 @@ import { overviewPath } from '../../utils/RoutePaths';
 
 const POLL_INTERVAL_MILLIS = 3000;
 
+/**
+ * **boldPrefix** - text that will be at the beginning of the message in bold. This should be used
+ * to communicate *how much* data has been migrated
+ *
+ * **message** - the remainder of the complete text
+ */
+export type CompleteMessage = {
+    boldPrefix: string;
+    message: string;
+};
+
 export type Progress = {
     phase: string;
     completeness?: number;
     error?: string;
-    completeMessage?: string;
+    completeMessage?: CompleteMessage;
 };
 
 export interface ProgressCallback {
@@ -94,7 +105,7 @@ const renderContentIfLoading = (
         <>
             <h4>
                 {progress.phase}
-                {progress.completeness ||
+                {progress.completeness === undefined &&
                     ` (${I18n.getText('atlassian.migration.datacenter.common.estimating')}...)`}
             </h4>
             {progress.completeness ? (
@@ -165,7 +176,8 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                 )}
                 {progress?.completeness === 1 && (
                     <SectionMessage appearance="confirmation">
-                        {progress.completeMessage}
+                        <strong>{progress.completeMessage.boldPrefix}</strong>{' '}
+                        {progress.completeMessage.message}
                     </SectionMessage>
                 )}
                 {renderContentIfLoading(loading, progress, started)}

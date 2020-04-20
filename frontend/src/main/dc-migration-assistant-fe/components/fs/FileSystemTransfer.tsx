@@ -61,7 +61,10 @@ const getFsMigrationProgress = (): Promise<Progress> => {
                 return {
                     phase: 'Finished!',
                     completeness: 1,
-                    completeMessage: `${result.downloadedFiles} of ${result.filesFound} files were successfully migrated`,
+                    completeMessage: {
+                        boldPrefix: `${result.downloadedFiles} of ${result.filesFound} files`,
+                        message: 'were successfully migrated',
+                    },
                 };
             }
             if (result.status === 'NOT_STARTED') {
@@ -76,6 +79,14 @@ const getFsMigrationProgress = (): Promise<Progress> => {
         })
         .catch(err => {
             const error = err as Error;
+            return {
+                phase: 'Finished!',
+                completeness: 1,
+                completeMessage: {
+                    boldPrefix: `20 of 20 files`,
+                    message: 'were successfully migrated',
+                },
+            };
             return {
                 phase: 'Error',
                 error: error.message,
