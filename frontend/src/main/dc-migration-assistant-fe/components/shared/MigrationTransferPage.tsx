@@ -158,24 +158,26 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
     nextText,
     startMoment,
     getProgress,
+    startMigrationPhase,
+    hasStarted,
 }) => {
     const [progress, setProgress] = useState<Progress>();
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string>();
 
-    useEffect(() => {
-        const updateProgress = (): Promise<void> => {
-            return getProgress()
-                .then(result => {
-                    setProgress(result);
-                    setLoading(false);
-                })
-                .catch(err => {
-                    console.error(err);
-                    setError(err);
-                });
-        };
+    const updateProgress = (): Promise<void> => {
+        return getProgress()
+            .then(result => {
+                setProgress(result);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error(err);
+                setError(err);
+            });
+    };
 
+    useEffect(() => {
         const id = setInterval(async () => {
             await updateProgress();
         }, POLL_INTERVAL_MILLIS);
@@ -193,17 +195,26 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
             <TransferContentContainer>
                 <h1>{heading}</h1>
                 <p>{description}</p>
-                {renderMigrationProgress(transferError, progress, loading, startMoment)}
+                {hasStarted &&
+                    renderMigrationProgress(transferError, progress, loading, startMoment)}
             </TransferContentContainer>
             <TransferActionsContainer>
+                {progress?.completeness === 1 && <Button appearance="primary">{nextText}</Button>}
+                <Button style={{ marginRight: '20px', padding: '5px' }} onClick={updateProgress}>
+                    Refresh
+                </Button>
+                <Button
+                    style={{ marginLeft: '20px' }}
+                    appearance="primary"
+                    onClick={startMigrationPhase}
+                >
+                    Start
+                </Button>
                 <Link to={overviewPath}>
-                    <Button style={{ marginRight: '20px' }}>
+                    <Button style={{ marginLeft: '20px' }}>
                         {I18n.getText('atlassian.migration.datacenter.generic.cancel')}
                     </Button>
                 </Link>
-                <Button appearance="primary" isDisabled={progress?.completeness !== 1}>
-                    {nextText}
-                </Button>
             </TransferActionsContainer>
         </TransferPageContainer>
     );
