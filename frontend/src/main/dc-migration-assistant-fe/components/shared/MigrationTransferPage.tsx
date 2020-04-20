@@ -23,7 +23,7 @@ import { Link } from 'react-router-dom';
 import moment, { Moment } from 'moment';
 import Spinner from '@atlaskit/spinner';
 
-import { I18n } from '../../atlassian/mocks/@atlassian/wrm-react-i18n';
+import { I18n } from '@atlassian/wrm-react-i18n';
 import { overviewPath } from '../../utils/RoutePaths';
 
 const POLL_INTERVAL_MILLIS = 3000;

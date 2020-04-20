@@ -36,7 +36,7 @@ const getFsMigrationProgress = (): Promise<Progress> => {
         .then(result => {
             if (result.status === 'UPLOADING') {
                 const progress: Progress = {
-                    phase: 'Uploading files to AWS',
+                    phase: I18n.getText('atlassian.migration.datacenter.fs.phase.upload'),
                 };
 
                 if (result.crawlingFinished) {
@@ -53,42 +53,40 @@ const getFsMigrationProgress = (): Promise<Progress> => {
                 const downloadProgress = result.downloadedFiles / result.filesFound;
                 const weightedProgress = 0.5 + 0.5 * downloadProgress;
                 return {
-                    phase: 'Loading files into target application',
+                    phase: I18n.getText('atlassian.migration.datacenter.fs.phase.download'),
                     completeness: weightedProgress,
                 };
             }
             if (result.status === 'DONE') {
                 return {
-                    phase: 'Finished!',
+                    phase: I18n.getText('atlassian.migration.datacenter.fs.phase.download'),
                     completeness: 1,
                     completeMessage: {
-                        boldPrefix: `${result.downloadedFiles} of ${result.filesFound} files`,
-                        message: 'were successfully migrated',
+                        boldPrefix: I18n.getText(
+                            'atlassian.migration.datacenter.fs.completeMessage.boldPrefix',
+                            result.downloadedFiles,
+                            result.filesFound
+                        ),
+                        message: I18n.getText(
+                            'atlassian.migration.datacenter.fs.completeMessage.message'
+                        ),
                     },
                 };
             }
             if (result.status === 'NOT_STARTED') {
                 return {
-                    phase: 'Preparing to migrate files',
+                    phase: I18n.getText('atlassian.migration.datacenter.fs.phase.notStarted'),
                 };
             }
             return {
-                phase: 'error',
+                phase: I18n.getText('atlassian.migration.datacenter.generic.error'),
                 completeness: 0,
             };
         })
         .catch(err => {
             const error = err as Error;
             return {
-                phase: 'Finished!',
-                completeness: 1,
-                completeMessage: {
-                    boldPrefix: `20 of 20 files`,
-                    message: 'were successfully migrated',
-                },
-            };
-            return {
-                phase: 'Error',
+                phase: I18n.getText('atlassian.migration.datacenter.generic.error'),
                 error: error.message,
             };
         });
