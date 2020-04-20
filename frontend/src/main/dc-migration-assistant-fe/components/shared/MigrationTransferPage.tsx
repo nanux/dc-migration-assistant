@@ -32,18 +32,11 @@ export type Progress = {
     phase: string;
     completeness?: number;
     error?: string;
+    completeMessage?: string;
 };
 
 export interface ProgressCallback {
     (): Promise<Progress>;
-}
-
-interface Action {
-    text: React.ReactNode;
-    onClick?: () => void;
-    href?: string;
-    key: string;
-    testId?: string;
 }
 
 export type MigrationTransferProps = {
@@ -169,6 +162,11 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                 <p>{description}</p>
                 {transferError && (
                     <SectionMessage appearance="error">{transferError}</SectionMessage>
+                )}
+                {progress?.completeness === 1 && (
+                    <SectionMessage appearance="confirmation">
+                        {progress.completeMessage}
+                    </SectionMessage>
                 )}
                 {renderContentIfLoading(loading, progress, started)}
             </TransferContentContainer>
