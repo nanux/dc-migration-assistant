@@ -134,8 +134,6 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
     description,
     heading,
     infoContent,
-    infoTitle,
-    infoActions,
     nextText,
     started,
     getProgress,
@@ -167,10 +165,8 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
         <TransferPageContainer>
             <TransferContentContainer>
                 <h1>{heading}</h1>
-                <p>{description}</p>
-                <SectionMessage title={infoTitle} actions={infoActions || []}>
-                    {infoContent}
-                </SectionMessage>
+                {description && <p>{description}</p>}
+                <p>{infoContent}</p>
                 {renderContentIfLoading(loading, progress, started)}
             </TransferContentContainer>
             <TransferActionsContainer>
