@@ -18,7 +18,7 @@ import React, { FunctionComponent, ReactElement, useEffect, useState } from 'rea
 import yaml from 'yaml';
 import Form, { ErrorMessage, Field, FormHeader, FormSection } from '@atlaskit/form';
 import TextField from '@atlaskit/textfield';
-import Button, {ButtonGroup} from '@atlaskit/button';
+import Button, { ButtonGroup } from '@atlaskit/button';
 import Spinner from '@atlaskit/spinner';
 import { OptionType } from '@atlaskit/select';
 import { I18n } from '@atlassian/wrm-react-i18n';
@@ -140,7 +140,9 @@ const QuickstartForm = ({
                 <ButtonRow>
                     <ButtonGroup>
                         <Button type="submit" appearance="primary">
-                            {I18n.getText('atlassian.migration.datacenter.provision.aws.form.deploy')}
+                            {I18n.getText(
+                                'atlassian.migration.datacenter.provision.aws.form.deploy'
+                            )}
                         </Button>
                         <Button appearance="default">
                             {I18n.getText('atlassian.migration.datacenter.provision.aws.form.save')}
