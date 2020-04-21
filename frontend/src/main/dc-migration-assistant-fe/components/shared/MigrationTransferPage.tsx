@@ -133,14 +133,12 @@ const renderContentIfLoading = (
 };
 
 const renderMigrationProgress = (
-    transferError: string,
     progress: Progress,
     loading: boolean,
     startedMoment: Moment
 ): ReactNode => {
     return (
         <>
-            {transferError && <SectionMessage appearance="error">{transferError}</SectionMessage>}
             {progress?.completeness === 1 && (
                 <SectionMessage appearance="confirmation">
                     <strong>{progress.completeMessage.boldPrefix}</strong>{' '}
@@ -223,9 +221,14 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
 
     const startMigration = (): Promise<void> => {
         setLoading(true);
-        return startMigrationPhase().then(() => {
-            setStarted(true);
-        });
+        return startMigrationPhase()
+            .then(() => {
+                setStarted(true);
+            })
+            .catch(err => {
+                setError(err.message);
+                setLoading(false);
+            });
     };
 
     useEffect(() => {
@@ -249,7 +252,10 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
             <TransferContentContainer>
                 <h1>{heading}</h1>
                 <p>{description}</p>
-                {started && renderMigrationProgress(transferError, progress, loading, startMoment)}
+                {transferError && (
+                    <SectionMessage appearance="error">{transferError}</SectionMessage>
+                )}
+                {started && renderMigrationProgress(progress, loading, startMoment)}
             </TransferContentContainer>
             <TransferActionsContainer>
                 {renderMigrationActions(
