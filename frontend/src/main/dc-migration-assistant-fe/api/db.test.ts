@@ -18,15 +18,14 @@ import { DBMigrationStatus, toUIStatus } from './db';
 
 describe('DB', () => {
     it('Backend string to status map', () => {
-        let status = toUIStatus("NOT_STARTED");
+        const status = toUIStatus('NOT_STARTED');
 
         expect(status).toBe(DBMigrationStatus.NOT_STARTED);
     });
 
     it('Backend string to status map FAIL', () => {
-        let status = toUIStatus("NOT_A_VALID_STATUS");
+        const status = toUIStatus('NOT_A_VALID_STATUS');
 
         expect(status).toBe(DBMigrationStatus.UNKNOWN);
     });
-
 });
