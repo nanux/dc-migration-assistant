@@ -85,6 +85,12 @@ const getFsMigrationProgress = (): Promise<Progress> => {
         })
         .catch(err => {
             const error = err as Error;
+            // JSON parse error usually means we're querying the progress before the fs migration has started
+            if (error.message.indexOf('JSON.parse') >= 0) {
+                return {
+                    phase: I18n.getText('atlassian.migration.datacenter.fs.phase.notStarted'),
+                };
+            }
             return {
                 phase: I18n.getText('atlassian.migration.datacenter.generic.error'),
                 error: error.message,
@@ -97,7 +103,7 @@ const fsMigrationTranferPageProps: MigrationTransferProps = {
     description: I18n.getText('atlassian.migration.datacenter.fs.description'),
     nextText: I18n.getText('atlassian.migration.datacenter.fs.nextStep'),
     startMoment: dummyStarted,
-    hasStarted: false,
+    hasStarted: true,
     startMigrationPhase: fs.startFsMigration,
     getProgress: getFsMigrationProgress,
 };

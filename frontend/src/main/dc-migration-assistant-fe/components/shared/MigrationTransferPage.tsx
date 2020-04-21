@@ -202,7 +202,7 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
     hasStarted,
 }) => {
     const [progress, setProgress] = useState<Progress>();
-    const [loading, setLoading] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(hasStarted);
     const [error, setError] = useState<string>();
     const [started, setStarted] = useState<boolean>(hasStarted);
 
@@ -213,6 +213,10 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                 setLoading(false);
             })
             .catch(err => {
+                const error = err as Error;
+                console.log('setting error from progress');
+                console.log(error.name);
+                console.log(err);
                 setError(err);
                 setLoading(false);
             });
@@ -226,6 +230,7 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                 setStarted(true);
             })
             .catch(err => {
+                console.log('setting error from start');
                 setError(err.message);
                 setLoading(false);
             });
