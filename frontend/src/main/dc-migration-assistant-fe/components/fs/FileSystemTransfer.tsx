@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import React, { FunctionComponent } from 'react';
+import React, { FunctionComponent, useState, useEffect } from 'react';
 
 import { I18n } from '@atlassian/wrm-react-i18n';
 import moment from 'moment';
@@ -24,6 +24,9 @@ import {
     Progress,
 } from '../shared/MigrationTransferPage';
 import { fs } from '../../api/fs';
+import Spinner from '@atlaskit/spinner';
+import { migration, MigrationStage } from '../../api/migration';
+import styled from 'styled-components';
 
 const dummyStarted = moment();
 
@@ -103,11 +106,32 @@ const fsMigrationTranferPageProps: MigrationTransferProps = {
     description: I18n.getText('atlassian.migration.datacenter.fs.description'),
     nextText: I18n.getText('atlassian.migration.datacenter.fs.nextStep'),
     startMoment: dummyStarted,
-    hasStarted: true,
+    hasStarted: false,
     startMigrationPhase: fs.startFsMigration,
     getProgress: getFsMigrationProgress,
 };
 
 export const FileSystemTransferPage: FunctionComponent = () => {
-    return <MigrationTransferPage {...fsMigrationTranferPageProps} />;
+    const [loading, setLoading] = useState<boolean>(true);
+    const [hasStarted, setHasStarted] = useState<boolean>(false);
+
+    useEffect(() => {
+        setLoading(true);
+        migration
+            .getMigrationStage()
+            .then(stage => {
+                if (stage === MigrationStage.FS_MIGRATION_COPY_WAIT) {
+                    setHasStarted(true);
+                }
+                setLoading(false);
+            })
+            .catch(() => {
+                setHasStarted(false);
+                setLoading(false);
+            });
+    }, []);
+    if (loading) {
+        return <Spinner />;
+    }
+    return <MigrationTransferPage {...fsMigrationTranferPageProps} hasStarted={hasStarted} />;
 };

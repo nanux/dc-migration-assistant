@@ -4,7 +4,7 @@ enum RestApiPathConstants {
     getMigrationRestPath = `migration`,
 }
 
-enum MigrationStage {
+export enum MigrationStage {
     NOT_STARTED = 'not_started',
     AUTHENTICATION = 'authentication',
     PROVISION_APPLICATION = 'provision_application',
