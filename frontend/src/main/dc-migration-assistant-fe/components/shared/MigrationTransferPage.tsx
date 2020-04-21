@@ -157,7 +157,8 @@ const renderMigrationActions = (
     nextText: string,
     startMigrationPhase: () => Promise<void>,
     updateProgress: () => Promise<void>,
-    hasStarted: boolean
+    started: boolean,
+    loading: boolean
 ): ReactNode => {
     const defaultButtonStyle = {
         padding: '5px',
@@ -174,15 +175,20 @@ const renderMigrationActions = (
             </Button>
         );
     }
-    if (hasStarted) {
+    if (started) {
         return (
-            <Button style={marginButtonStyle} onClick={updateProgress}>
+            <Button style={marginButtonStyle} isLoading={loading} onClick={updateProgress}>
                 Refresh
             </Button>
         );
     }
     return (
-        <Button style={marginButtonStyle} appearance="primary" onClick={startMigrationPhase}>
+        <Button
+            style={marginButtonStyle}
+            isLoading={loading}
+            appearance="primary"
+            onClick={startMigrationPhase}
+        >
             Start
         </Button>
     );
@@ -198,8 +204,9 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
     hasStarted,
 }) => {
     const [progress, setProgress] = useState<Progress>();
-    const [loading, setLoading] = useState<boolean>(true);
+    const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string>();
+    const [started, setStarted] = useState<boolean>(hasStarted);
 
     const updateProgress = (): Promise<void> => {
         return getProgress()
@@ -210,19 +217,30 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
             .catch(err => {
                 console.error(err);
                 setError(err);
+                setLoading(false);
             });
     };
 
-    useEffect(() => {
-        const id = setInterval(async () => {
-            await updateProgress();
-        }, POLL_INTERVAL_MILLIS);
-
+    const startMigration = (): Promise<void> => {
         setLoading(true);
-        updateProgress();
+        return startMigrationPhase().then(() => {
+            setStarted(true);
+        });
+    };
 
-        return (): void => clearInterval(id);
-    }, []);
+    useEffect(() => {
+        if (started) {
+            const id = setInterval(async () => {
+                await updateProgress();
+            }, POLL_INTERVAL_MILLIS);
+
+            setLoading(true);
+            updateProgress();
+
+            return (): void => clearInterval(id);
+        }
+        return (): void => undefined;
+    }, [started]);
 
     const transferError = progress?.error || error;
 
@@ -231,16 +249,16 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
             <TransferContentContainer>
                 <h1>{heading}</h1>
                 <p>{description}</p>
-                {hasStarted &&
-                    renderMigrationProgress(transferError, progress, loading, startMoment)}
+                {started && renderMigrationProgress(transferError, progress, loading, startMoment)}
             </TransferContentContainer>
             <TransferActionsContainer>
                 {renderMigrationActions(
                     progress?.completeness,
                     nextText,
-                    startMigrationPhase,
+                    startMigration,
                     updateProgress,
-                    hasStarted
+                    started,
+                    loading
                 )}
                 <Link to={overviewPath}>
                     <Button style={{ marginLeft: '20px', paddingLeft: '5px' }}>
