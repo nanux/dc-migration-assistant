@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-import { I18n } from '@atlassian/wrm-react-i18n';
-
 const dbAPIBase = 'migation/db';
 export const dbReport = `${dbAPIBase}/report`;
 
