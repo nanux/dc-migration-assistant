@@ -213,7 +213,6 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
                 setLoading(false);
             })
             .catch(err => {
-                console.error(err);
                 setError(err);
                 setLoading(false);
             });
@@ -221,6 +220,7 @@ export const MigrationTransferPage: FunctionComponent<MigrationTransferProps> = 
 
     const startMigration = (): Promise<void> => {
         setLoading(true);
+        setError('');
         return startMigrationPhase()
             .then(() => {
                 setStarted(true);
