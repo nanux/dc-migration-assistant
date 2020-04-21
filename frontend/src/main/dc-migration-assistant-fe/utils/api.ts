@@ -16,6 +16,7 @@
 
 // eslint-disable-next-line import/no-unresolved
 import contextPath from 'wrm/context-path';
+import { Progress } from '../components/shared/MigrationTransferPage';
 
 type HTTPMethod = 'GET' | 'POST' | 'PUT' | 'DELETE';
 
@@ -63,4 +64,6 @@ export const callAppRest = (
 export enum RestApiPathConstants {
     awsStackCreateRestPath = `aws/stack/create`,
     awsStackStatusRestPath = `aws/stack/:stackId:/status`,
+    awsCredentialsStorePath = `aws/configure`,
+    awsRegionListPath = `aws/global-infrastructure/regions`,
 }

@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-import React, { FunctionComponent, ReactElement } from 'react';
-import Form, { ErrorMessage, Field, HelperMessage } from '@atlaskit/form';
-import Button from '@atlaskit/button';
+import React, { FunctionComponent, ReactElement, useState } from 'react';
+import Form, { ErrorMessage, Field, FormFooter, HelperMessage } from '@atlaskit/form';
+import Button, { ButtonGroup } from '@atlaskit/button';
 import styled from 'styled-components';
 import TextField from '@atlaskit/textfield';
 import { I18n } from '@atlassian/wrm-react-i18n';
 import { AsyncSelect, OptionType } from '@atlaskit/select';
+import Flag from '@atlaskit/flag';
+import ErrorIcon from '@atlaskit/icon/glyph/error';
+import { colors } from '@atlaskit/theme';
+import { useHistory } from 'react-router-dom';
+import { quickstartPath } from '../../../utils/RoutePaths';
 
 export type AWSCreds = {
-    accessKeyID: string;
+    accessKeyId: string;
     secretAccessKey: string;
     region: string;
 };
@@ -45,15 +50,22 @@ export type AuthenticateAWSProps = {
     getRegions: QueryRegionFun;
 };
 
-const CredsSubmitButton = styled(Button)`
-    margin-top: 10px;
+type AuthenticationErrorProps = {
+    showError: boolean;
+    dismissErrorFunc: () => void;
+};
+
+const AwsAuthErrorContainer = styled.div`
+    position: fixed;
+    top: 70px;
+    left: 75%;
+    right: 1%;
+    overflow: inherit;
 `;
 
 const RegionSelect: FunctionComponent<{ getRegions: QueryRegionFun }> = (props): ReactElement => {
     const { getRegions } = props;
-
-    // This will be replaced by an API call
-    const promiseOptions = (): Promise<Array<OptionType>> => {
+    const regionListPromiseOptions = (): Promise<Array<OptionType>> => {
         return getRegions().then(regions => {
             return regions.map(region => ({ label: region, value: region, key: region }));
         });
@@ -68,32 +80,83 @@ const RegionSelect: FunctionComponent<{ getRegions: QueryRegionFun }> = (props):
             cacheOptions
             defaultOptions
             isSearchable
-            loadOptions={promiseOptions}
+            loadOptions={regionListPromiseOptions}
         />
     );
+};
+
+const AuthenticationErrorFlag: FunctionComponent<AuthenticationErrorProps> = (
+    props
+): ReactElement => {
+    const { showError, dismissErrorFunc } = props;
+
+    if (showError) {
+        return (
+            <AwsAuthErrorContainer>
+                <Flag
+                    actions={[
+                        {
+                            content: 'Dismiss',
+                            onClick: dismissErrorFunc,
+                        },
+                    ]}
+                    icon={<ErrorIcon primaryColor={colors.R400} label="Info" />}
+                    description="You may not have permissions to connect to the AWS account with the supplied credentials. Please try again with a different set of credentials to continue with the migration."
+                    id="aws-auth-connect-error-flag"
+                    key="connect-error"
+                    title="AWS Credentials Error"
+                />
+            </AwsAuthErrorContainer>
+        );
+    }
+    return null;
 };
 
 export const AuthenticateAWS: FunctionComponent<AuthenticateAWSProps> = ({
     onSubmitCreds,
     getRegions,
 }): ReactElement => {
+    const [credentialPersistError, setCredentialPersistError] = useState(false);
+    const [awaitResponseFromApi, setAwaitResponseFromApi] = useState(false);
+    const history = useHistory();
     const submitCreds = (formCreds: {
-        accessKeyID: string;
+        accessKeyId: string;
         secretAccessKey: string;
         region: OptionType;
     }): void => {
-        const { accessKeyID, secretAccessKey, region } = formCreds;
+        const { accessKeyId, secretAccessKey, region } = formCreds;
         const creds: AWSCreds = {
-            accessKeyID,
+            accessKeyId,
             secretAccessKey,
             region: region.value as string,
         };
-        onSubmitCreds(creds);
+
+        new Promise<void>(resolve => {
+            setAwaitResponseFromApi(true);
+            resolve();
+        })
+            .then(() => onSubmitCreds(creds))
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            .then(_value => {
+                setAwaitResponseFromApi(false);
+                history.push(quickstartPath);
+            })
+            .catch(() => {
+                setAwaitResponseFromApi(false);
+                setCredentialPersistError(true);
+            });
     };
 
     return (
         <>
+            <h1>{I18n.getText('atlassian.migration.datacenter.step.authenticate.phrase')}</h1>
             <h1>{I18n.getText('atlassian.migration.datacenter.authenticate.aws.title')}</h1>
+            <AuthenticationErrorFlag
+                showError={credentialPersistError}
+                dismissErrorFunc={(): void => {
+                    setCredentialPersistError(false);
+                }}
+            />
             <Form onSubmit={submitCreds}>
                 {({ formProps }: any): ReactElement => (
                     <form {...formProps}>
@@ -102,7 +165,7 @@ export const AuthenticateAWS: FunctionComponent<AuthenticateAWSProps> = ({
                             label={I18n.getText(
                                 'atlassian.migration.datacenter.authenticate.aws.accessKeyId.label'
                             )}
-                            name="accessKeyID"
+                            name="accessKeyId"
                             defaultValue=""
                         >
                             {({ fieldProps }: any): ReactElement => (
@@ -148,9 +211,25 @@ export const AuthenticateAWS: FunctionComponent<AuthenticateAWSProps> = ({
                                 </>
                             )}
                         </Field>
-                        <CredsSubmitButton type="submit" appearance="primary">
-                            {I18n.getText('atlassian.migration.datacenter.generic.submit')}
-                        </CredsSubmitButton>
+                        <FormFooter align="start">
+                            <ButtonGroup>
+                                <Button
+                                    type="submit"
+                                    appearance="primary"
+                                    testId="awsSecretKeySubmitFormButton"
+                                    isLoading={awaitResponseFromApi}
+                                >
+                                    {I18n.getText(
+                                        'atlassian.migration.datacenter.authenticate.aws.submit'
+                                    )}
+                                </Button>
+                                <Button appearance="default">
+                                    {I18n.getText(
+                                        'atlassian.migration.datacenter.authenticate.aws.cancel'
+                                    )}
+                                </Button>
+                            </ButtonGroup>
+                        </FormFooter>
                     </form>
                 )}
             </Form>
