@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import { I18n } from '@atlassian/wrm-react-i18n';
+
 const dbAPIBase = 'migation/db';
 export const dbReport = `${dbAPIBase}/report`;
 
@@ -26,6 +28,11 @@ export enum DBMigrationStatus {
     DONE,
     UNKNOWN,
 }
+
+export const toI18nProp = (status: DBMigrationStatus): string => {
+    const name = DBMigrationStatus[status].toLowerCase();
+    return `atlassian.migration.datacenter.db.status.${name}`;
+};
 
 // Partial mapping of backend migration status to simplified
 // UI-friendly version of the DB-related states. See
@@ -59,7 +66,7 @@ const dbMigrationStatusMap: Record<string, DBMigrationStatus> = {
     'ERROR': DBMigrationStatus.FAILED,
 };
 
-export const toUIStatus = (backendStatus: string) => {
+export const toUIStatus = (backendStatus: string): DBMigrationStatus => {
     if (dbMigrationStatusMap[backendStatus] === undefined) {
         return DBMigrationStatus.UNKNOWN;
     }

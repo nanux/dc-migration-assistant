@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { DBMigrationStatus, toUIStatus } from './db';
+import { DBMigrationStatus, toUIStatus, toI18nProp } from './db';
 
 describe('DB', () => {
     it('Backend string to status map', () => {
@@ -27,5 +27,11 @@ describe('DB', () => {
         const status = toUIStatus('NOT_A_VALID_STATUS');
 
         expect(status).toBe(DBMigrationStatus.UNKNOWN);
+    });
+
+    it('Status to i18n property', () => {
+        const prop = toI18nProp(DBMigrationStatus.UPLOADING);
+
+        expect(prop).toBe('atlassian.migration.datacenter.db.status.uploading');
     });
 });
