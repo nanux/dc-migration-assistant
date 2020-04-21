@@ -18,7 +18,7 @@ import React, { FunctionComponent, ReactElement, useEffect, useState } from 'rea
 import yaml from 'yaml';
 import Form, { ErrorMessage, Field, FormHeader, FormSection } from '@atlaskit/form';
 import TextField from '@atlaskit/textfield';
-import Button from '@atlaskit/button';
+import Button, {ButtonGroup} from '@atlaskit/button';
 import Spinner from '@atlaskit/spinner';
 import { OptionType } from '@atlaskit/select';
 import { I18n } from '@atlassian/wrm-react-i18n';
@@ -53,9 +53,9 @@ const QuickstartFormContainer = styled.form`
     width: 60%;
 `;
 
-const QuickstartSubmitButton = styled(Button)`
-    margin-top: 10px;
-`;
+const ButtonRow = (props: React.HTMLProps<HTMLDivElement>) => (
+    <div style={{ margin: '15px 0px 0px 10px' }} {...props} />
+);
 
 const StackNameField = (): ReactElement => {
     const fieldNameValidator = (stackName: string): string => {
@@ -137,9 +137,19 @@ const QuickstartForm = ({
                         </FormSection>
                     );
                 })}
-                <QuickstartSubmitButton type="submit" appearance="primary">
-                    {I18n.getText('atlassian.migration.datacenter.generic.submit')}
-                </QuickstartSubmitButton>
+                <ButtonRow>
+                    <ButtonGroup>
+                        <Button type="submit" appearance="primary">
+                            {I18n.getText('atlassian.migration.datacenter.provision.aws.form.deploy')}
+                        </Button>
+                        <Button appearance="default">
+                            {I18n.getText('atlassian.migration.datacenter.provision.aws.form.save')}
+                        </Button>
+                        <Button appearance="default">
+                            {I18n.getText('atlassian.migration.datacenter.generic.cancel')}
+                        </Button>
+                    </ButtonGroup>
+                </ButtonRow>
             </QuickstartFormContainer>
         )}
     </Form>
